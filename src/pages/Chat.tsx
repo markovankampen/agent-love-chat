@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Send, LogOut } from "lucide-react";
+import { Heart, Send, LogOut, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Message {
   id: string;
@@ -25,6 +27,10 @@ const Chat = () => {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState(
+    localStorage.getItem("n8n_webhook_url") || ""
+  );
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -57,20 +63,27 @@ const Chat = () => {
     navigate("/");
   };
 
-  const simulateAgentResponse = (userMessage: string) => {
-    const responses = [
-      "That's really interesting! Tell me more about that. 😊",
-      "I love your energy! Let's dig a bit deeper - what makes you unique?",
-      "Ooh, I'm getting a sense of your personality! What are you looking for in a match?",
-      "You're doing great! Just a few more questions to find your perfect match. 💫",
-    ];
-    
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    return randomResponse;
+  const saveWebhookUrl = () => {
+    localStorage.setItem("n8n_webhook_url", webhookUrl);
+    setIsConfigOpen(false);
+    toast({ 
+      title: "Configuration saved! ✅", 
+      description: "Your n8n webhook is now connected." 
+    });
   };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
+
+    if (!webhookUrl) {
+      toast({
+        title: "Webhook not configured",
+        description: "Please configure your n8n webhook URL in settings",
+        variant: "destructive",
+      });
+      setIsConfigOpen(true);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -80,19 +93,56 @@ const Chat = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageContent = inputValue;
     setInputValue("");
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      console.log("Sending message to n8n:", webhookUrl);
+      
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: messageContent,
+          timestamp: new Date().toISOString(),
+          conversation_history: messages.map(m => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Received response from n8n:", data);
+
       const agentMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "agent",
-        content: simulateAgentResponse(inputValue),
+        content: data.response || data.message || "I received your message! Let me think about that... 🤔",
         timestamp: new Date(),
       };
+
       setMessages((prev) => [...prev, agentMessage]);
+    } catch (error) {
+      console.error("Error calling n8n webhook:", error);
+      toast({
+        title: "Connection error",
+        description: "Failed to reach n8n. Please check your webhook URL and try again.",
+        variant: "destructive",
+      });
+
+      // Remove the user message if webhook fails
+      setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -105,13 +155,50 @@ const Chat = () => {
             </div>
             <div>
               <h1 className="font-bold text-lg">Agent Love</h1>
-              <p className="text-xs text-muted-foreground">Your matchmaking companion</p>
+              <p className="text-xs text-muted-foreground">
+                {webhookUrl ? "Connected to n8n ✓" : "Configure n8n webhook"}
+              </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>n8n Webhook Configuration</DialogTitle>
+                  <DialogDescription>
+                    Enter your n8n webhook URL to connect Agent Love with your workflows
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="webhook">n8n Webhook URL</Label>
+                    <Input
+                      id="webhook"
+                      placeholder="https://your-n8n-instance.com/webhook/..."
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Create a webhook trigger in n8n and paste the URL here
+                    </p>
+                  </div>
+                  <Button onClick={saveWebhookUrl} className="w-full">
+                    Save Configuration
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
