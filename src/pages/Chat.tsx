@@ -17,32 +17,68 @@ interface Message {
 }
 
 const Chat = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "agent",
-      content: "Hey there! 👋 I'm Agent Love, your personal matchmaker from Twente! Ready to find your perfect match? Let's start by getting to know you a bit better. What brings you here today?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState(
     localStorage.getItem("n8n_webhook_url") || ""
   );
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const initChat = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
+        return;
       }
+
+      setUserEmail(session.user.email || "");
+
+      // Load conversation history from database
+      const { data: conversations, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error loading conversations:", error);
+      } else if (conversations && conversations.length > 0) {
+        const loadedMessages: Message[] = conversations.map((conv) => ({
+          id: conv.id,
+          role: conv.role as "user" | "agent",
+          content: conv.content,
+          timestamp: new Date(conv.created_at),
+        }));
+        setMessages(loadedMessages);
+      } else {
+        // First time user - show welcome message
+        const welcomeMessage: Message = {
+          id: "welcome",
+          role: "agent",
+          content: "Hey there! 👋 I'm Agent Love, your personal matchmaker from Twente! Ready to find your perfect match? Let's start by getting to know you a bit better. What brings you here today?",
+          timestamp: new Date(),
+        };
+        setMessages([welcomeMessage]);
+        
+        // Save welcome message to database
+        await supabase.from("conversations").insert({
+          user_id: session.user.id,
+          role: "agent",
+          content: welcomeMessage.content,
+        });
+      }
+
+      setIsLoading(false);
     };
-    checkAuth();
+
+    initChat();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
@@ -85,17 +121,43 @@ const Chat = () => {
       return;
     }
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-      timestamp: new Date(),
-    };
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
-    setMessages((prev) => [...prev, userMessage]);
     const messageContent = inputValue;
     setInputValue("");
     setIsTyping(true);
+
+    // Save user message to database
+    const { data: userMsgData, error: userMsgError } = await supabase
+      .from("conversations")
+      .insert({
+        user_id: session.user.id,
+        role: "user",
+        content: messageContent,
+      })
+      .select()
+      .single();
+
+    if (userMsgError) {
+      console.error("Error saving user message:", userMsgError);
+      toast({
+        title: "Error",
+        description: "Failed to save your message",
+        variant: "destructive",
+      });
+      setIsTyping(false);
+      return;
+    }
+
+    const userMessage: Message = {
+      id: userMsgData.id,
+      role: "user",
+      content: messageContent,
+      timestamp: new Date(userMsgData.created_at),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
 
     try {
       console.log("Sending message to n8n:", webhookUrl);
@@ -106,6 +168,8 @@ const Chat = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          user_email: userEmail,
+          user_id: session.user.id,
           message: messageContent,
           timestamp: new Date().toISOString(),
           conversation_history: messages.map(m => ({
@@ -122,11 +186,28 @@ const Chat = () => {
       const data = await response.json();
       console.log("Received response from n8n:", data);
 
+      const agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
+
+      // Save agent response to database
+      const { data: agentMsgData, error: agentMsgError } = await supabase
+        .from("conversations")
+        .insert({
+          user_id: session.user.id,
+          role: "agent",
+          content: agentContent,
+        })
+        .select()
+        .single();
+
+      if (agentMsgError) {
+        console.error("Error saving agent message:", agentMsgError);
+      }
+
       const agentMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: agentMsgData?.id || (Date.now() + 1).toString(),
         role: "agent",
-        content: data.response || data.message || "I received your message! Let me think about that... 🤔",
-        timestamp: new Date(),
+        content: agentContent,
+        timestamp: new Date(agentMsgData?.created_at || new Date()),
       };
 
       setMessages((prev) => [...prev, agentMessage]);
@@ -138,12 +219,26 @@ const Chat = () => {
         variant: "destructive",
       });
 
-      // Remove the user message if webhook fails
+      // Remove the user message from UI and database if webhook fails
       setMessages((prev) => prev.filter((m) => m.id !== userMessage.id));
+      await supabase.from("conversations").delete().eq("id", userMessage.id);
     } finally {
       setIsTyping(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-purple rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-soft">
+            <Heart className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-muted-foreground">Loading your conversation...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
