@@ -183,6 +183,7 @@ const Chat = () => {
           user_email: userEmail,
           username: username,
           user_id: session.user.id,
+          user_message_id: userMsgData.id,
           message: messageContent,
           timestamp: new Date().toISOString(),
           conversation_history: messages.map(m => ({
