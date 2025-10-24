@@ -25,6 +25,7 @@ const Chat = () => {
   );
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -39,6 +40,17 @@ const Chat = () => {
       }
 
       setUserEmail(session.user.email || "");
+
+      // Get username from profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", session.user.id)
+        .single();
+      
+      if (profile?.username) {
+        setUsername(profile.username);
+      }
 
       // Load conversation history from database
       const { data: conversations, error } = await supabase
@@ -169,6 +181,7 @@ const Chat = () => {
         },
         body: JSON.stringify({
           user_email: userEmail,
+          username: username,
           user_id: session.user.id,
           message: messageContent,
           timestamp: new Date().toISOString(),
@@ -249,7 +262,9 @@ const Chat = () => {
               <Heart className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">Agent Love</h1>
+              <h1 className="font-bold text-lg">
+                {username ? `Hey, ${username}!` : "Agent Love"}
+              </h1>
               <p className="text-xs text-muted-foreground">
                 {webhookUrl ? "Connected to n8n ✓" : "Configure n8n webhook"}
               </p>
@@ -325,7 +340,7 @@ const Chat = () => {
               {message.role === "user" && (
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="bg-secondary text-white text-xs">
-                    You
+                    {username ? username.substring(0, 2).toUpperCase() : "You"}
                   </AvatarFallback>
                 </Avatar>
               )}

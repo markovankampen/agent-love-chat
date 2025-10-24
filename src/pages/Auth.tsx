@@ -12,6 +12,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -30,18 +31,32 @@ const Auth = () => {
         toast({ title: "Welcome back! 💕" });
         navigate("/chat");
       } else {
+        if (!username.trim()) {
+          toast({
+            title: "Username required",
+            description: "Please enter a username",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/chat`,
+            data: {
+              username: username.trim(),
+            },
           },
         });
         if (error) throw error;
         toast({ 
           title: "Account created! 🎉", 
-          description: "Please check your email to confirm your account." 
+          description: "Welcome to DPG AGENT!" 
         });
+        navigate("/chat");
       }
     } catch (error: any) {
       toast({
@@ -72,6 +87,21 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Your unique username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  minLength={3}
+                  maxLength={20}
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
