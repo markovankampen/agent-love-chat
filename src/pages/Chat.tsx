@@ -196,10 +196,20 @@ const Chat = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("Received response from n8n:", data);
-
-      const agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
+      // Handle both JSON and plain text responses
+      const contentType = response.headers.get("content-type");
+      let agentContent: string;
+      
+      if (contentType?.includes("application/json")) {
+        const data = await response.json();
+        console.log("Received JSON response from n8n:", data);
+        agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
+      } else {
+        // Handle plain text response
+        const textResponse = await response.text();
+        console.log("Received text response from n8n:", textResponse);
+        agentContent = textResponse || "I received your message! Let me think about that... 🤔";
+      }
 
       // Save agent response to database
       const { data: agentMsgData, error: agentMsgError } = await supabase
