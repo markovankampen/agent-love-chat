@@ -52,40 +52,14 @@ const Chat = () => {
         setUsername(profile.username);
       }
 
-      // Load conversation history from database
-      const { data: conversations, error } = await supabase
-        .from("conversations")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Error loading conversations:", error);
-      } else if (conversations && conversations.length > 0) {
-        const loadedMessages: Message[] = conversations.map((conv) => ({
-          id: conv.id,
-          role: conv.role as "user" | "agent",
-          content: conv.content,
-          timestamp: new Date(conv.created_at),
-        }));
-        setMessages(loadedMessages);
-      } else {
-        // First time user - show welcome message
-        const welcomeMessage: Message = {
-          id: "welcome",
-          role: "agent",
-          content: "Hey there! 👋 I'm Agent Love, your personal matchmaker from Twente! Ready to find your perfect match? Let's start by getting to know you a bit better. What brings you here today?",
-          timestamp: new Date(),
-        };
-        setMessages([welcomeMessage]);
-        
-        // Save welcome message to database
-        await supabase.from("conversations").insert({
-          user_id: session.user.id,
-          role: "agent",
-          content: welcomeMessage.content,
-        });
-      }
+      // Always show fresh welcome message on login
+      const welcomeMessage: Message = {
+        id: "welcome-" + Date.now(),
+        role: "agent",
+        content: "Hey there! 👋 I'm Agent Love, your personal matchmaker from Twente! Ready to find your perfect match? Let's start by getting to know you a bit better. What brings you here today?",
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
 
       setIsLoading(false);
     };
