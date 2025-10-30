@@ -151,6 +151,14 @@ const Chat = () => {
 
     try {
       console.log("Sending message to n8n:", webhookUrl);
+      console.log("Payload:", JSON.stringify({
+        user_email: userEmail,
+        username: username,
+        user_id: session.user.id,
+        user_message_id: userMessageCount,
+        message: messageContent,
+        timestamp: new Date().toISOString(),
+      }));
       
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -171,6 +179,9 @@ const Chat = () => {
         }),
       });
 
+      console.log("n8n response status:", response.status);
+      console.log("n8n response ok:", response.ok);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -181,16 +192,20 @@ const Chat = () => {
       try {
         // First, get the response as text to check if it's empty
         const responseText = await response.text();
-        console.log("Received response from n8n:", responseText);
+        console.log("n8n raw response text:", responseText);
+        console.log("Response length:", responseText.length);
         
         if (!responseText || responseText.trim() === '') {
+          console.warn("Empty response from n8n");
           agentContent = "I received your message! Let me think about that... 🤔";
         } else {
           // Try to parse as JSON first
           try {
             const data = JSON.parse(responseText);
-            agentContent = data.response || data.message || responseText;
+            console.log("Parsed JSON from n8n:", data);
+            agentContent = data.response || data.message || data.output || responseText;
           } catch (jsonError) {
+            console.log("Response is not JSON, using as text");
             // If not JSON, use the text directly
             agentContent = responseText;
           }
