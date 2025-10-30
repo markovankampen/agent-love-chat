@@ -52,14 +52,40 @@ const Chat = () => {
         setUsername(profile.username);
       }
 
-      // Always show fresh welcome message on login
-      const welcomeMessage: Message = {
-        id: "welcome-" + Date.now(),
-        role: "agent",
-        content: "Hey there! 👋 I'm Agent Love, your personal matchmaker from Twente! Ready to find your perfect match? Let's start by getting to know you a bit better. What brings you here today?",
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
+      // Load conversation history from database
+      const { data: conversations, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error loading conversations:", error);
+      } else if (conversations && conversations.length > 0) {
+        const loadedMessages: Message[] = conversations.map((conv) => ({
+          id: conv.id,
+          role: conv.role as "user" | "agent",
+          content: conv.content,
+          timestamp: new Date(conv.created_at),
+        }));
+        setMessages(loadedMessages);
+      } else {
+        // First time user - show welcome message
+        const welcomeMessage: Message = {
+          id: "welcome",
+          role: "agent",
+          content: "Hey there! 👋 I'm Agent Love, your personal matchmaker from Twente! Ready to find your perfect match? Let's start by getting to know you a bit better. What brings you here today?",
+          timestamp: new Date(),
+        };
+        setMessages([welcomeMessage]);
+        
+        // Save welcome message to database
+        await supabase.from("conversations").insert({
+          user_id: session.user.id,
+          role: "agent",
+          content: welcomeMessage.content,
+        });
+      }
 
       setIsLoading(false);
     };
@@ -80,7 +106,6 @@ const Chat = () => {
   }, [messages]);
 
   const handleSignOut = async () => {
-    setMessages([]);
     await supabase.auth.signOut();
     toast({ title: "See you soon! 💕" });
     navigate("/");
@@ -115,9 +140,6 @@ const Chat = () => {
     setInputValue("");
     setIsTyping(true);
 
-    // Calculate sequential message number
-    const userMessageCount = messages.filter(m => m.role === "user").length + 1;
-
     // Save user message to database
     const { data: userMsgData, error: userMsgError } = await supabase
       .from("conversations")
@@ -151,14 +173,6 @@ const Chat = () => {
 
     try {
       console.log("Sending message to n8n:", webhookUrl);
-      console.log("Payload:", JSON.stringify({
-        user_email: userEmail,
-        username: username,
-        user_id: session.user.id,
-        user_message_id: userMessageCount,
-        message: messageContent,
-        timestamp: new Date().toISOString(),
-      }));
       
       const response = await fetch(webhookUrl, {
         method: "POST",
@@ -169,7 +183,7 @@ const Chat = () => {
           user_email: userEmail,
           username: username,
           user_id: session.user.id,
-          user_message_id: userMessageCount,
+          user_message_id: userMsgData.id,
           message: messageContent,
           timestamp: new Date().toISOString(),
           conversation_history: messages.map(m => ({
@@ -179,40 +193,23 @@ const Chat = () => {
         }),
       });
 
-      console.log("n8n response status:", response.status);
-      console.log("n8n response ok:", response.ok);
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Handle response from n8n
+      // Handle both JSON and plain text responses
+      const contentType = response.headers.get("content-type");
       let agentContent: string;
       
-      try {
-        // First, get the response as text to check if it's empty
-        const responseText = await response.text();
-        console.log("n8n raw response text:", responseText);
-        console.log("Response length:", responseText.length);
-        
-        if (!responseText || responseText.trim() === '') {
-          console.warn("Empty response from n8n");
-          agentContent = "I received your message! Let me think about that... 🤔";
-        } else {
-          // Try to parse as JSON first
-          try {
-            const data = JSON.parse(responseText);
-            console.log("Parsed JSON from n8n:", data);
-            agentContent = data.response || data.message || data.output || responseText;
-          } catch (jsonError) {
-            console.log("Response is not JSON, using as text");
-            // If not JSON, use the text directly
-            agentContent = responseText;
-          }
-        }
-      } catch (parseError) {
-        console.error("Error parsing n8n response:", parseError);
-        agentContent = "I received your message! Let me think about that... 🤔";
+      if (contentType?.includes("application/json")) {
+        const data = await response.json();
+        console.log("Received JSON response from n8n:", data);
+        agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
+      } else {
+        // Handle plain text response
+        const textResponse = await response.text();
+        console.log("Received text response from n8n:", textResponse);
+        agentContent = textResponse || "I received your message! Let me think about that... 🤔";
       }
 
       // Save agent response to database
