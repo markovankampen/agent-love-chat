@@ -175,19 +175,29 @@ const Chat = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Handle both JSON and plain text responses
-      const contentType = response.headers.get("content-type");
+      // Handle response from n8n
       let agentContent: string;
       
-      if (contentType?.includes("application/json")) {
-        const data = await response.json();
-        console.log("Received JSON response from n8n:", data);
-        agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
-      } else {
-        // Handle plain text response
-        const textResponse = await response.text();
-        console.log("Received text response from n8n:", textResponse);
-        agentContent = textResponse || "I received your message! Let me think about that... 🤔";
+      try {
+        // First, get the response as text to check if it's empty
+        const responseText = await response.text();
+        console.log("Received response from n8n:", responseText);
+        
+        if (!responseText || responseText.trim() === '') {
+          agentContent = "I received your message! Let me think about that... 🤔";
+        } else {
+          // Try to parse as JSON first
+          try {
+            const data = JSON.parse(responseText);
+            agentContent = data.response || data.message || responseText;
+          } catch (jsonError) {
+            // If not JSON, use the text directly
+            agentContent = responseText;
+          }
+        }
+      } catch (parseError) {
+        console.error("Error parsing n8n response:", parseError);
+        agentContent = "I received your message! Let me think about that... 🤔";
       }
 
       // Save agent response to database
