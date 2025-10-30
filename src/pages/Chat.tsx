@@ -106,9 +106,6 @@ const Chat = () => {
   }, [messages]);
 
   const handleSignOut = async () => {
-    // Clear local state for fresh interface
-    setMessages([]);
-    
     await supabase.auth.signOut();
     toast({ title: "See you soon! 💕" });
     navigate("/");
