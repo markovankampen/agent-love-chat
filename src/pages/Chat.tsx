@@ -106,17 +106,7 @@ const Chat = () => {
   }, [messages]);
 
   const handleSignOut = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session) {
-      // Delete all conversation history for this user
-      await supabase
-        .from("conversations")
-        .delete()
-        .eq("user_id", session.user.id);
-    }
-    
-    // Clear local state
+    // Clear local state for fresh interface
     setMessages([]);
     
     await supabase.auth.signOut();
