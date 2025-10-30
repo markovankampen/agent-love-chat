@@ -106,6 +106,7 @@ const Chat = () => {
   }, [messages]);
 
   const handleSignOut = async () => {
+    setMessages([]);
     await supabase.auth.signOut();
     toast({ title: "See you soon! 💕" });
     navigate("/");
@@ -139,6 +140,9 @@ const Chat = () => {
     const messageContent = inputValue;
     setInputValue("");
     setIsTyping(true);
+
+    // Calculate sequential message number
+    const userMessageCount = messages.filter(m => m.role === "user").length + 1;
 
     // Save user message to database
     const { data: userMsgData, error: userMsgError } = await supabase
@@ -183,7 +187,7 @@ const Chat = () => {
           user_email: userEmail,
           username: username,
           user_id: session.user.id,
-          user_message_id: userMsgData.id,
+          user_message_id: userMessageCount,
           message: messageContent,
           timestamp: new Date().toISOString(),
           conversation_history: messages.map(m => ({
