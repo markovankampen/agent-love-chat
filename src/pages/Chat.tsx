@@ -170,8 +170,8 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b bg-card shadow-sm">
+    <div className="h-screen flex flex-col bg-background">
+      <header className="flex-shrink-0 border-b bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-purple rounded-full flex items-center justify-center">
@@ -191,8 +191,8 @@ const Chat = () => {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto max-w-3xl overflow-hidden">
-        <ScrollArea className="h-full px-4 py-6">
+      <ScrollArea className="flex-1">
+        <div className="container mx-auto max-w-3xl px-4 py-6">
           <div className="space-y-4">
             {messages.map((message) => (
               <div
@@ -244,8 +244,8 @@ const Chat = () => {
             )}
             <div ref={messagesEndRef} />
           </div>
-        </ScrollArea>
-      </main>
+        </div>
+      </ScrollArea>
 
       <footer className="flex-shrink-0 border-t bg-card shadow-lg">
         <div className="container mx-auto px-4 py-4 max-w-3xl">
