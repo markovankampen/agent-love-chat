@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, Send, LogOut } from "lucide-react";
 
@@ -190,58 +191,60 @@ const Chat = () => {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6 max-w-3xl overflow-y-auto">
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 animate-slide-up ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {message.role === "agent" && (
+      <main className="flex-1 container mx-auto max-w-3xl overflow-hidden">
+        <ScrollArea className="h-full px-4 py-6">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 animate-slide-up ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {message.role === "agent" && (
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-gradient-purple text-white text-xs">
+                      AL
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <div
+                  className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                    message.role === "user"
+                      ? "bg-gradient-warm text-white"
+                      : "bg-card border"
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                </div>
+                {message.role === "user" && (
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-secondary text-white text-xs">
+                      {username ? username.substring(0, 2).toUpperCase() : "You"}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+              </div>
+            ))}
+            {isTyping && (
+              <div className="flex gap-3 justify-start animate-pulse-soft">
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="bg-gradient-purple text-white text-xs">
                     AL
                   </AvatarFallback>
                 </Avatar>
-              )}
-              <div
-                className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                  message.role === "user"
-                    ? "bg-gradient-warm text-white"
-                    : "bg-card border"
-                }`}
-              >
-                <p className="text-sm">{message.content}</p>
-              </div>
-              {message.role === "user" && (
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-secondary text-white text-xs">
-                    {username ? username.substring(0, 2).toUpperCase() : "You"}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-            </div>
-          ))}
-          {isTyping && (
-            <div className="flex gap-3 justify-start animate-pulse-soft">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback className="bg-gradient-purple text-white text-xs">
-                  AL
-                </AvatarFallback>
-              </Avatar>
-              <div className="bg-card border rounded-2xl px-4 py-3">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <div className="bg-card border rounded-2xl px-4 py-3">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
       </main>
 
       <footer className="flex-shrink-0 border-t bg-card shadow-lg">
