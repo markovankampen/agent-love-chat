@@ -56,14 +56,12 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sessionNumber: user_message_id,
-          timestamp: new Date().toISOString(),
-          query: {
-            message: message,
-          },
-          email: user.email,
+          user_email: user.email,
           username: profile?.username || '',
           user_id: user.id,
+          user_message_id,
+          message,
+          timestamp: new Date().toISOString(),
           conversation_history,
         }),
         signal: controller.signal,
