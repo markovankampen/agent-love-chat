@@ -48,7 +48,7 @@ const Chat = () => {
       const welcomeMessage: Message = {
         id: "welcome",
         role: "agent",
-        content: "Hé daar! 👋 Ik ben Agent Love, jouw persoonlijke matchmaker uit Twente! Klaar om je perfecte match te vinden? Laten we beginnen met jou wat beter te leren kennen. Wat brengt je hier vandaag?",
+        content: "Hoi! 👋 Ik ben Agent Flori, de matchmaker van In de Buurt. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
