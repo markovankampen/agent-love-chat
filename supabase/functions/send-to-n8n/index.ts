@@ -69,26 +69,36 @@ serve(async (req) => {
 
       clearTimeout(timeoutId);
 
+      console.log("N8N webhook response status:", response.status);
+      console.log("N8N webhook response headers:", Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`N8N webhook error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`N8N webhook error: ${response.status}`, errorText);
+        throw new Error(`N8N webhook error: ${response.status} - ${errorText}`);
       }
 
       // Read response as text first to safely handle empty responses
       const responseText = await response.text();
-      console.log("Raw response from n8n:", responseText);
+      console.log("Raw response body from n8n (length:", responseText.length, "):", responseText);
       
       let agentContent: string;
 
       if (!responseText || responseText.trim() === '') {
-        console.log("Empty response from n8n, using fallback");
-        agentContent = "I received your message! Let me think about that... 🤔";
+        console.error("⚠️ N8N webhook returned empty response. Please ensure your n8n workflow returns a JSON response with 'response' or 'message' field.");
+        agentContent = "Sorry, ik kon geen antwoord genereren. Probeer het nog eens! 🙏";
       } else {
         try {
           const data = JSON.parse(responseText);
-          console.log("Parsed JSON response from n8n:", data);
-          agentContent = data.response || data.message || responseText;
+          console.log("✅ Successfully parsed JSON response from n8n:", data);
+          agentContent = data.response || data.message || data.text || responseText;
+          
+          if (!agentContent || agentContent.trim() === '') {
+            console.error("⚠️ N8N returned JSON but no content in expected fields (response/message/text):", data);
+            agentContent = "Sorry, ik kreeg een onvolledig antwoord. Probeer het nog eens! 🙏";
+          }
         } catch (parseError) {
-          console.log("Response is not JSON, using as text:", parseError);
+          console.log("Response is not JSON, using raw text as response");
           agentContent = responseText;
         }
       }
