@@ -73,17 +73,31 @@ serve(async (req) => {
         throw new Error(`N8N webhook error: ${response.status}`);
       }
 
-      const contentType = response.headers.get("content-type");
+      // Get response text first to check if it's empty
+      const responseText = await response.text();
+      console.log("Raw response from n8n:", responseText);
+
       let agentContent: string;
 
-      if (contentType?.includes("application/json")) {
-        const data = await response.json();
-        console.log("Received JSON response from n8n:", data);
-        agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
+      if (!responseText || responseText.trim() === '') {
+        console.log("Empty response from n8n, using fallback");
+        agentContent = "Bedankt voor je bericht! Laat me hier even over nadenken... 💭";
       } else {
-        const textResponse = await response.text();
-        console.log("Received text response from n8n:", textResponse);
-        agentContent = textResponse || "I received your message! Let me think about that... 🤔";
+        const contentType = response.headers.get("content-type");
+        
+        if (contentType?.includes("application/json")) {
+          try {
+            const data = JSON.parse(responseText);
+            console.log("Parsed JSON response from n8n:", data);
+            agentContent = data.response || data.message || responseText;
+          } catch (parseError) {
+            console.error("Failed to parse JSON response:", parseError);
+            agentContent = responseText;
+          }
+        } else {
+          console.log("Received text response from n8n");
+          agentContent = responseText;
+        }
       }
 
       // Save agent response to database
