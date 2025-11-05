@@ -73,17 +73,24 @@ serve(async (req) => {
         throw new Error(`N8N webhook error: ${response.status}`);
       }
 
-      const contentType = response.headers.get("content-type");
+      // Read response as text first to safely handle empty responses
+      const responseText = await response.text();
+      console.log("Raw response from n8n:", responseText);
+      
       let agentContent: string;
 
-      if (contentType?.includes("application/json")) {
-        const data = await response.json();
-        console.log("Received JSON response from n8n:", data);
-        agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
+      if (!responseText || responseText.trim() === '') {
+        console.log("Empty response from n8n, using fallback");
+        agentContent = "I received your message! Let me think about that... 🤔";
       } else {
-        const textResponse = await response.text();
-        console.log("Received text response from n8n:", textResponse);
-        agentContent = textResponse || "I received your message! Let me think about that... 🤔";
+        try {
+          const data = JSON.parse(responseText);
+          console.log("Parsed JSON response from n8n:", data);
+          agentContent = data.response || data.message || responseText;
+        } catch (parseError) {
+          console.log("Response is not JSON, using as text:", parseError);
+          agentContent = responseText;
+        }
       }
 
       // Save agent response to database
