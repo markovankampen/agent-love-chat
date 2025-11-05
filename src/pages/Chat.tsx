@@ -204,7 +204,7 @@ const Chat = () => {
                 {message.role === "agent" && (
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-gradient-purple text-white text-xs">
-                      AL
+                      AF
                     </AvatarFallback>
                   </Avatar>
                 )}
@@ -230,14 +230,17 @@ const Chat = () => {
               <div className="flex gap-3 justify-start animate-pulse-soft">
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="bg-gradient-purple text-white text-xs">
-                    AL
+                    AF
                   </AvatarFallback>
                 </Avatar>
                 <div className="bg-card border rounded-2xl px-4 py-3">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Agent Flori denkt na...</span>
                   </div>
                 </div>
               </div>
