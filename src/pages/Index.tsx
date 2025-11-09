@@ -54,7 +54,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-gradient-warm hover:opacity-90 transition-opacity text-lg px-8 py-6"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/register")}
             >
               Start Your Journey
             </Button>
@@ -115,7 +115,7 @@ const Index = () => {
           <Button 
             size="lg" 
             className="bg-white text-primary hover:bg-white/90 transition-opacity text-lg px-8 py-6"
-            onClick={() => navigate("/auth")}
+            onClick={() => navigate("/register")}
           >
             Get Started Now
           </Button>

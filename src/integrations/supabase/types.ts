@@ -49,21 +49,36 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string | null
+          date_of_birth: string | null
           email: string
+          eye_color: string | null
+          facial_features: Json | null
+          first_name: string | null
+          hair_color: string | null
           id: string
           updated_at: string | null
           username: string | null
         }
         Insert: {
           created_at?: string | null
+          date_of_birth?: string | null
           email: string
+          eye_color?: string | null
+          facial_features?: Json | null
+          first_name?: string | null
+          hair_color?: string | null
           id: string
           updated_at?: string | null
           username?: string | null
         }
         Update: {
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string
+          eye_color?: string | null
+          facial_features?: Json | null
+          first_name?: string | null
+          hair_color?: string | null
           id?: string
           updated_at?: string | null
           username?: string | null

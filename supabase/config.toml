@@ -1,1 +1,7 @@
 project_id = "mfeqjtatlvsxrywcpwpv"
+
+[functions.send-to-n8n]
+verify_jwt = true
+
+[functions.analyze-photo]
+verify_jwt = true
