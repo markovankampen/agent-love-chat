@@ -56,7 +56,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_email: user.email,
+          user_email: profile?.email || user.email,
           username: profile?.username || '',
           user_id: user.id,
           user_message_id,
