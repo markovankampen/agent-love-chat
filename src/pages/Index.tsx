@@ -18,7 +18,7 @@ const Index = () => {
     {
       id: "welcome",
       role: "agent",
-      content: "Hallo! Ik ben jouw digital dating-agent. Voedsters, geef je me jouw voornaam en leeftijd? Je antwordern blijer anoniem.",
+      content: "Hoi! 👋 Ik ben Agent Flori, de matchmaker van In de Buurt. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
       timestamp: new Date(),
     }
   ]);
@@ -145,10 +145,10 @@ const Index = () => {
               {/* Chat Header */}
               <div className="bg-muted/50 border-b p-4 flex items-center gap-3">
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback className="bg-primary text-primary-foreground">ME</AvatarFallback>
+                  <AvatarFallback className="bg-primary text-primary-foreground">AF</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="font-semibold">Matchmaker Eva</h4>
+                  <h4 className="font-semibold">Agent Flori</h4>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span>Online</span>
@@ -171,11 +171,6 @@ const Index = () => {
                             : "bg-muted/50 text-foreground"
                         }`}
                       >
-                        {message.role === "agent" && message.id === "welcome" && (
-                          <div className="mb-2 text-sm font-semibold">
-                            Netzoar no tewerqe tørttråtel
-                          </div>
-                        )}
                         <p className="text-sm">{message.content}</p>
                       </div>
                     </div>
