@@ -43,11 +43,11 @@ const Index = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-white/90 mb-4 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Jouw speelse AI matchmaker uit Twente
+            Jouw speelse AI matchmaker van indebuurt
           </p>
           
           <p className="text-lg text-white/80 mb-8 max-w-xl mx-auto animate-slide-up" style={{ animationDelay: "0.2s" }}>
-            Laten we chatten, jouw persoonlijkheid ontdekken, en je perfecte match vinden—geen foto's nodig totdat je er klaar voor bent!
+            Laten we chatten, jouw voorkeuren en persoonlijkheid ontdekken -  en hopelijk je perfecte match vinden
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up" style={{ animationDelay: "0.3s" }}>
