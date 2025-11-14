@@ -11,6 +11,7 @@ import { Heart } from "lucide-react";
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
@@ -41,6 +42,9 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: redirectUrl,
+            data: {
+              username: username,
+            },
           },
         });
 
@@ -80,6 +84,20 @@ const Auth = () => {
         </div>
 
         <form onSubmit={handleAuth} className="space-y-4">
+          {!isLogin && (
+            <div className="space-y-2">
+              <Label htmlFor="username">Gebruikersnaam</Label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Jouw naam"
+                required
+              />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
