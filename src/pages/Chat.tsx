@@ -118,22 +118,12 @@ const Chat = () => {
 
       if (error) throw error;
 
-      if (data?.response) {
-        const { data: agentMsgData } = await supabase
-          .from("conversations")
-          .insert({
-            user_id: session.user.id,
-            role: "agent",
-            content: data.response,
-          })
-          .select()
-          .single();
-
+      if (data?.content) {
         const agentMessage: Message = {
-          id: agentMsgData?.id || Date.now().toString(),
+          id: data.id || Date.now().toString(),
           role: "agent",
-          content: data.response,
-          timestamp: new Date(),
+          content: data.content,
+          timestamp: new Date(data.created_at || new Date()),
         };
 
         setMessages((prev) => [...prev, agentMessage]);
