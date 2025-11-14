@@ -14,6 +14,7 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+  const [showVerification, setShowVerification] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -50,10 +51,7 @@ const Auth = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "Account aangemaakt!",
-          description: "Check je email om je account te bevestigen.",
-        });
+        setShowVerification(true);
       }
     } catch (error: any) {
       toast({
@@ -65,6 +63,24 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
+  if (showVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+        <Card className="w-full max-w-md p-8 space-y-6">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+              <Heart className="w-8 h-8 text-primary fill-primary" />
+            </div>
+            <h1 className="text-3xl font-bold">Gelukt!</h1>
+            <p className="text-muted-foreground">
+              We hebben een mail naar uw emailadres gestuurd ter verificatie
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
