@@ -19,15 +19,23 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Extract JWT token from Authorization header
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create admin client to verify the JWT
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Verify the user's JWT token
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) {
+      console.error('Auth error:', userError);
       throw new Error('Unauthorized');
     }
+
+    // Create client with user context for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { message, user_message_id, conversation_history } = await req.json();
 
