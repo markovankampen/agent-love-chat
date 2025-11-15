@@ -48,13 +48,67 @@ const ProfileSetup = () => {
     }
   };
 
+  const handleSkip = async () => {
+    if (!userId || !firstName || !dateOfBirth) {
+      toast({
+        title: "Vul je gegevens in",
+        description: "Voer minimaal je naam en geboortedatum in",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // Update basic profile info without photo
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName,
+          date_of_birth: dateOfBirth,
+        })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Profiel opgeslagen!",
+        description: "Je wordt doorgestuurd naar de chat...",
+      });
+
+      setTimeout(() => {
+        navigate("/chat");
+      }, 1000);
+
+    } catch (error: any) {
+      console.error("Error:", error);
+      toast({
+        title: "Er ging iets mis",
+        description: error.message || "Probeer het opnieuw",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedFile || !userId || !firstName || !dateOfBirth) {
+    if (!userId || !firstName || !dateOfBirth) {
       toast({
         title: "Vul alle velden in",
-        description: "Voer je naam, geboortedatum in en upload een foto",
+        description: "Voer je naam en geboortedatum in",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedFile) {
+      toast({
+        title: "Upload een foto",
+        description: "Upload een foto of klik op 'Overslaan'",
         variant: "destructive",
       });
       return;
@@ -151,7 +205,7 @@ const ProfileSetup = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="photo">Profielfoto</Label>
+            <Label htmlFor="photo">Profielfoto (optioneel)</Label>
             <div className="flex flex-col gap-4">
               {previewUrl && (
                 <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
@@ -168,20 +222,30 @@ const ProfileSetup = () => {
                 accept="image/*"
                 onChange={handleFileSelect}
                 className="cursor-pointer"
-                required
               />
             </div>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={uploading || analyzing}
-          >
-            {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {analyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {uploading ? "Uploaden..." : analyzing ? "Analyseren..." : "Voltooien"}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={handleSkip}
+              disabled={uploading || analyzing}
+            >
+              Overslaan
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={uploading || analyzing}
+            >
+              {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {analyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {uploading ? "Uploaden..." : analyzing ? "Analyseren..." : "Voltooien"}
+            </Button>
+          </div>
         </form>
       </Card>
     </div>
