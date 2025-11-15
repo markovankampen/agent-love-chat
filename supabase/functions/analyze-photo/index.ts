@@ -31,51 +31,78 @@ serve(async (req) => {
 
     const { photoUrl, userId, firstName, dateOfBirth } = await req.json();
 
-    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
-    if (!webhookUrl) {
-      throw new Error('N8N_WEBHOOK_URL not configured');
+    const faceppApiKey = Deno.env.get('FACEPP_API_KEY');
+    const faceppApiSecret = Deno.env.get('FACEPP_API_SECRET');
+    
+    if (!faceppApiKey || !faceppApiSecret) {
+      throw new Error('Face++ API credentials not configured');
     }
 
-    console.log('Sending photo to n8n for analysis:', webhookUrl);
+    console.log('Analyzing photo with Face++ API:', photoUrl);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout for photo analysis
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const response = await fetch(webhookUrl, {
+      // Call Face++ API to analyze the photo
+      const formData = new FormData();
+      formData.append('api_key', faceppApiKey);
+      formData.append('api_secret', faceppApiSecret);
+      formData.append('image_url', photoUrl);
+      formData.append('return_attributes', 'gender,age,beauty,emotion,eyestatus,skinstatus');
+
+      const response = await fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'photo_analysis',
-          user_id: userId,
-          photo_url: photoUrl,
-          first_name: firstName,
-          date_of_birth: dateOfBirth,
-          timestamp: new Date().toISOString(),
-        }),
+        body: formData,
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`N8N webhook error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Face++ API error:', response.status, errorText);
+        throw new Error(`Face++ API error: ${response.status}`);
       }
 
-      const textResponse = await response.text();
-      console.log("Received response from n8n:", textResponse);
+      const faceppResult = await response.json();
+      console.log("Received response from Face++:", JSON.stringify(faceppResult));
 
-      let analysisResult: any = {};
-      
-      if (textResponse.trim()) {
-        try {
-          analysisResult = JSON.parse(textResponse);
-        } catch (parseError) {
-          console.log("Response is not JSON, treating as text:", textResponse);
-          analysisResult = { message: textResponse };
-        }
+      let analysisResult: any = {
+        hair_color: null,
+        eye_color: null,
+        facial_features: null,
+        attractiveness_score: null,
+      };
+
+      if (faceppResult.faces && faceppResult.faces.length > 0) {
+        const face = faceppResult.faces[0];
+        const attributes = face.attributes;
+
+        // Calculate attractiveness score from beauty scores
+        const maleScore = attributes?.beauty?.male_score || 0;
+        const femaleScore = attributes?.beauty?.female_score || 0;
+        const avgBeauty = (maleScore + femaleScore) / 2;
+        
+        // Convert 0-100 score to 0-10 scale
+        analysisResult.attractiveness_score = Math.round(avgBeauty / 10);
+
+        // Store facial features
+        analysisResult.facial_features = {
+          gender: attributes?.gender?.value || null,
+          age: attributes?.age?.value || null,
+          emotion: attributes?.emotion || null,
+          beauty_scores: {
+            male: maleScore,
+            female: femaleScore,
+          },
+          skin_status: attributes?.skinstatus || null,
+        };
+
+        console.log('Attractiveness score calculated:', analysisResult.attractiveness_score);
+      } else {
+        console.log('No faces detected in the photo');
+        throw new Error('No face detected in the photo');
       }
 
       // Update user profile with analysis results and basic info
@@ -84,8 +111,8 @@ serve(async (req) => {
         .update({
           first_name: firstName,
           date_of_birth: dateOfBirth,
-          hair_color: analysisResult.hair_color || null,
-          eye_color: analysisResult.eye_color || null,
+          photo_url: photoUrl,
+          attractiveness_score: analysisResult.attractiveness_score,
           facial_features: analysisResult.facial_features || null,
         })
         .eq('id', userId);

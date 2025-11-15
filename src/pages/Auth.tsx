@@ -36,7 +36,7 @@ const Auth = () => {
         });
         navigate("/chat");
       } else {
-        const redirectUrl = `${window.location.origin}/chat`;
+        const redirectUrl = `${window.location.origin}/profile-setup`;
         const { error } = await supabase.auth.signUp({
           email,
           password,

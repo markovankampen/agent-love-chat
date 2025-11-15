@@ -9,9 +9,9 @@ const Verify = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
             <Heart className="w-8 h-8 text-primary fill-primary" />
           </div>
-          <h1 className="text-3xl font-bold">Gelukt!</h1>
+          <h1 className="text-3xl font-bold">Bijna klaar!</h1>
           <p className="text-muted-foreground">
-            Check je inbox, we hebben een bericht gestuurd ter verificatie van je emailadres.
+            Je account is aangemaakt. Check je inbox voor de verificatie email, of klik op de link in de email om je profiel in te stellen.
           </p>
         </div>
       </Card>

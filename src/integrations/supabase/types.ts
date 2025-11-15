@@ -48,6 +48,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          attractiveness_score: number | null
           created_at: string | null
           date_of_birth: string | null
           email: string
@@ -56,10 +57,12 @@ export type Database = {
           first_name: string | null
           hair_color: string | null
           id: string
+          photo_url: string | null
           updated_at: string | null
           username: string | null
         }
         Insert: {
+          attractiveness_score?: number | null
           created_at?: string | null
           date_of_birth?: string | null
           email: string
@@ -68,10 +71,12 @@ export type Database = {
           first_name?: string | null
           hair_color?: string | null
           id: string
+          photo_url?: string | null
           updated_at?: string | null
           username?: string | null
         }
         Update: {
+          attractiveness_score?: number | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string
@@ -80,6 +85,7 @@ export type Database = {
           first_name?: string | null
           hair_color?: string | null
           id?: string
+          photo_url?: string | null
           updated_at?: string | null
           username?: string | null
         }
