@@ -10,16 +10,16 @@ const Verify = () => {
   useEffect(() => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // When email is verified or user signs in, redirect to profile setup
-      if (event === 'SIGNED_IN' && session?.user) {
+      // Only redirect when user completes email verification and is signed in
+      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
         navigate("/profile-setup");
       }
     });
 
-    // Check if user is already signed in
+    // Check if user is already verified and signed in
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
+      if (user?.email_confirmed_at) {
         navigate("/profile-setup");
       }
     };
