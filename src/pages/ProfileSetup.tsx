@@ -102,14 +102,16 @@ const ProfileSetup = () => {
 
       if (analysisError) throw analysisError;
 
+      setAnalyzing(false);
+
       toast({
-        title: "Profiel succesvol aangemaakt!",
+        title: "Analyse voltooid!",
         description: "Je wordt doorgestuurd naar de chat...",
       });
 
       setTimeout(() => {
         navigate("/chat");
-      }, 1500);
+      }, 1000);
 
     } catch (error: any) {
       console.error("Error:", error);
@@ -167,8 +169,16 @@ const ProfileSetup = () => {
                   <img
                     src={previewUrl}
                     alt="Preview"
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover transition-all duration-300 ${
+                      analyzing ? 'blur-md brightness-75' : ''
+                    }`}
                   />
+                  {analyzing && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                      <p className="text-sm font-medium text-foreground">Foto wordt geanalyseerd...</p>
+                    </div>
+                  )}
                 </div>
               )}
               <Input
@@ -177,6 +187,7 @@ const ProfileSetup = () => {
                 accept="image/*"
                 onChange={handleFileSelect}
                 className="cursor-pointer"
+                disabled={analyzing}
               />
             </div>
           </div>
