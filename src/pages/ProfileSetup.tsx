@@ -49,10 +49,10 @@ const ProfileSetup = () => {
   };
 
   const handleSkip = async () => {
-    if (!userId || !firstName || !dateOfBirth) {
+    if (!userId || !dateOfBirth) {
       toast({
-        title: "Vul je gegevens in",
-        description: "Voer minimaal je naam en geboortedatum in",
+        title: "Vul je geboortedatum in",
+        description: "Geboortedatum is verplicht",
         variant: "destructive",
       });
       return;
@@ -61,11 +61,10 @@ const ProfileSetup = () => {
     try {
       setUploading(true);
 
-      // Update basic profile info without photo
+      // Update only date of birth without photo or name
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          first_name: firstName,
           date_of_birth: dateOfBirth,
         })
         .eq('id', userId);
@@ -73,7 +72,7 @@ const ProfileSetup = () => {
       if (updateError) throw updateError;
 
       toast({
-        title: "Profiel opgeslagen!",
+        title: "Opgeslagen!",
         description: "Je wordt doorgestuurd naar de chat...",
       });
 
@@ -183,13 +182,12 @@ const ProfileSetup = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="firstName">Voornaam</Label>
+            <Label htmlFor="firstName">Voornaam (optioneel)</Label>
             <Input
               id="firstName"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Je voornaam"
-              required
             />
           </div>
 
