@@ -26,8 +26,8 @@ const Chat = () => {
 
   useEffect(() => {
     const initChat = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         navigate("/auth");
         return;
       }
@@ -67,8 +67,8 @@ const Chat = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
     const messageContent = inputValue;
     setInputValue("");
@@ -77,7 +77,7 @@ const Chat = () => {
     const { data: userMsgData, error: userMsgError } = await supabase
       .from("conversations")
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         role: "user",
         content: messageContent,
       })
