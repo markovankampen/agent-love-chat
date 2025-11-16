@@ -105,21 +105,22 @@ serve(async (req) => {
         throw new Error('No face detected in the photo');
       }
 
-      // Update user profile with analysis results and basic info
-      const { error: updateError } = await supabase
+      // Upsert user profile with analysis results and basic info
+      const { error: upsertError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: userId,
+          email: user.email,
           first_name: firstName,
           date_of_birth: dateOfBirth,
           photo_url: photoUrl,
           attractiveness_score: analysisResult.attractiveness_score,
           facial_features: analysisResult.facial_features || null,
-        })
-        .eq('id', userId);
+        });
 
-      if (updateError) {
-        console.error('Error updating profile:', updateError);
-        throw updateError;
+      if (upsertError) {
+        console.error('Error upserting profile:', upsertError);
+        throw upsertError;
       }
 
       // Send face_rate to n8n
