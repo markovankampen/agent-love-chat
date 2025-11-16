@@ -46,6 +46,33 @@ export type Database = {
           },
         ]
       }
+      face_analysis: {
+        Row: {
+          attractiveness_score: number | null
+          created_at: string
+          facial_features: Json | null
+          id: string
+          photo_url: string
+          user_id: string
+        }
+        Insert: {
+          attractiveness_score?: number | null
+          created_at?: string
+          facial_features?: Json | null
+          id?: string
+          photo_url: string
+          user_id: string
+        }
+        Update: {
+          attractiveness_score?: number | null
+          created_at?: string
+          facial_features?: Json | null
+          id?: string
+          photo_url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           attractiveness_score: number | null
