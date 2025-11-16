@@ -106,10 +106,11 @@ serve(async (req) => {
       }
 
       // Upsert user profile with analysis results and basic info
+      // Use user.id from authenticated user to satisfy RLS policy
       const { error: upsertError } = await supabase
         .from('profiles')
         .upsert({
-          id: userId,
+          id: user.id,
           email: user.email,
           first_name: firstName,
           date_of_birth: dateOfBirth,
