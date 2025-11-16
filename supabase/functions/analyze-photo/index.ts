@@ -15,7 +15,10 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required. Please log in again.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -26,7 +29,10 @@ serve(async (req) => {
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
-      throw new Error('Unauthorized');
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed. Please log in again.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const { photoUrl, userId, firstName, dateOfBirth } = await req.json();
@@ -35,7 +41,10 @@ serve(async (req) => {
     const faceppApiSecret = Deno.env.get('FACEPP_API_SECRET');
     
     if (!faceppApiKey || !faceppApiSecret) {
-      throw new Error('Face++ API credentials not configured');
+      return new Response(
+        JSON.stringify({ error: 'Photo analysis service is not configured. Please contact support.' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('Analyzing photo with Face++ API:', photoUrl);
@@ -62,7 +71,12 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Face++ API error:', response.status, errorText);
-        throw new Error(`Face++ API error: ${response.status}`);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Unable to analyze photo. Please ensure the image is clear and contains a visible face.' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       const faceppResult = await response.json();
@@ -102,7 +116,12 @@ serve(async (req) => {
         console.log('Attractiveness score calculated:', analysisResult.attractiveness_score);
       } else {
         console.log('No faces detected in the photo');
-        throw new Error('No face detected in the photo');
+        return new Response(
+          JSON.stringify({ 
+            error: 'No face detected in the photo. Please upload a clear photo showing your face.' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Store face analysis in separate table
@@ -117,7 +136,12 @@ serve(async (req) => {
 
       if (analysisError) {
         console.error('Error storing face analysis:', analysisError);
-        throw analysisError;
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to save analysis results. Please try again.' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Update basic profile info (first_name, date_of_birth only)
@@ -132,7 +156,12 @@ serve(async (req) => {
 
       if (profileError) {
         console.error('Error updating profile:', profileError);
-        throw profileError;
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to update profile. Please try again.' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Send face_rate to n8n
@@ -182,7 +211,13 @@ serve(async (req) => {
       clearTimeout(timeoutId);
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        throw new Error('Foto analyse duurde te lang. Probeer het opnieuw.');
+        console.error('Face++ API request timed out');
+        return new Response(
+          JSON.stringify({ 
+            error: 'Photo analysis timed out. Please try again with a smaller image.' 
+          }),
+          { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
       throw fetchError;
@@ -190,7 +225,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in analyze-photo function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
