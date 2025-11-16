@@ -73,6 +73,11 @@ const ProfileSetup = () => {
     try {
       setUploading(true);
 
+      toast({
+        title: "Foto uploaden...",
+        description: "Je foto wordt geüpload naar de server",
+      });
+
       // Upload photo to storage
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
@@ -80,7 +85,10 @@ const ProfileSetup = () => {
         .from('profile-photos-temp')
         .upload(fileName, selectedFile);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw new Error("Fout bij uploaden van foto. Controleer je internetverbinding en probeer opnieuw.");
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -89,6 +97,11 @@ const ProfileSetup = () => {
 
       setUploading(false);
       setAnalyzing(true);
+
+      toast({
+        title: "Foto analyseren...",
+        description: "Je foto wordt geanalyseerd. Dit kan even duren.",
+      });
 
       // Call analyze-photo function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-photo', {
@@ -100,24 +113,52 @@ const ProfileSetup = () => {
         },
       });
 
-      if (analysisError) throw analysisError;
+      if (analysisError) {
+        console.error("Analysis error:", analysisError);
+        throw new Error(analysisError.message || "Fout bij analyseren van foto");
+      }
+
+      // Check if the response contains an error
+      if (analysisData?.error) {
+        throw new Error(analysisData.error);
+      }
 
       setAnalyzing(false);
 
       toast({
         title: "Analyse voltooid!",
-        description: "Je wordt doorgestuurd naar de chat...",
+        description: "Je profiel is succesvol ingesteld. Je wordt doorgestuurd naar de chat...",
       });
 
       setTimeout(() => {
         navigate("/chat");
-      }, 1000);
+      }, 1500);
 
     } catch (error: any) {
       console.error("Error:", error);
+      
+      // Determine the most appropriate error message
+      let errorTitle = "Er ging iets mis";
+      let errorDescription = error.message || "Probeer het opnieuw";
+      
+      // Handle specific error cases
+      if (error.message?.includes("face")) {
+        errorTitle = "Geen gezicht gevonden";
+        errorDescription = "Upload een duidelijke foto met je gezicht erop";
+      } else if (error.message?.includes("timeout") || error.message?.includes("timed out")) {
+        errorTitle = "Time-out";
+        errorDescription = "De analyse duurde te lang. Probeer een kleinere foto";
+      } else if (error.message?.includes("network") || error.message?.includes("verbinding")) {
+        errorTitle = "Verbindingsprobleem";
+        errorDescription = "Controleer je internetverbinding en probeer opnieuw";
+      } else if (error.message?.includes("authentication") || error.message?.includes("Unauthorized")) {
+        errorTitle = "Authenticatie mislukt";
+        errorDescription = "Log opnieuw in en probeer het nog een keer";
+      }
+
       toast({
-        title: "Er ging iets mis",
-        description: error.message || "Probeer het opnieuw",
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
       });
     } finally {
