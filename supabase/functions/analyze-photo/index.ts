@@ -122,6 +122,27 @@ serve(async (req) => {
         throw updateError;
       }
 
+      // Send face_rate to n8n
+      const n8nWebhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
+      if (n8nWebhookUrl) {
+        try {
+          console.log('Sending face_rate to n8n:', analysisResult.attractiveness_score);
+          await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              face_rate: analysisResult.attractiveness_score,
+              user_id: userId,
+              timestamp: new Date().toISOString(),
+            }),
+          });
+          console.log('Successfully sent face_rate to n8n');
+        } catch (n8nError) {
+          console.error('Error sending to n8n:', n8nError);
+          // Don't fail the whole request if n8n fails
+        }
+      }
+
       // Delete the temporary photo
       const photoPath = photoUrl.split('/profile-photos-temp/')[1];
       if (photoPath) {
