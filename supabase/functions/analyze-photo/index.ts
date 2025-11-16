@@ -105,23 +105,34 @@ serve(async (req) => {
         throw new Error('No face detected in the photo');
       }
 
-      // Upsert user profile with analysis results and basic info
-      // Use user.id from authenticated user to satisfy RLS policy
-      const { error: upsertError } = await supabase
+      // Store face analysis in separate table
+      const { error: analysisError } = await supabase
+        .from('face_analysis')
+        .upsert({
+          user_id: user.id,
+          photo_url: photoUrl,
+          attractiveness_score: analysisResult.attractiveness_score,
+          facial_features: analysisResult.facial_features || null,
+        });
+
+      if (analysisError) {
+        console.error('Error storing face analysis:', analysisError);
+        throw analysisError;
+      }
+
+      // Update basic profile info (first_name, date_of_birth only)
+      const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
           email: user.email,
           first_name: firstName,
           date_of_birth: dateOfBirth,
-          photo_url: photoUrl,
-          attractiveness_score: analysisResult.attractiveness_score,
-          facial_features: analysisResult.facial_features || null,
         });
 
-      if (upsertError) {
-        console.error('Error upserting profile:', upsertError);
-        throw upsertError;
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        throw profileError;
       }
 
       // Send face_rate to n8n
