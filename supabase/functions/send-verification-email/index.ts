@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     const html = generateVerificationEmail(user.email, verificationLink)
 
     const { error } = await resend.emails.send({
-      from: 'Agent Love <onboarding@resend.dev>',
+      from: 'Agent Love Chat <onboarding@resend.dev>',
       to: [user.email],
       subject: 'Verifieer je e-mailadres',
       html,
