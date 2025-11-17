@@ -80,7 +80,7 @@ const ProfileSetup = () => {
 
       // Upload photo to storage
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-photos-temp')
         .upload(fileName, selectedFile);
