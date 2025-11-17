@@ -90,10 +90,15 @@ const ProfileSetup = () => {
         throw new Error("Fout bij uploaden van foto. Controleer je internetverbinding en probeer opnieuw.");
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      // Generate signed URL (valid for 60 minutes)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('profile-photos-temp')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 3600);
+
+      if (signedUrlError || !signedUrlData) {
+        console.error("Signed URL error:", signedUrlError);
+        throw new Error("Fout bij genereren van toegang tot foto");
+      }
 
       setUploading(false);
       setAnalyzing(true);
@@ -106,7 +111,7 @@ const ProfileSetup = () => {
       // Call analyze-photo function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-photo', {
         body: {
-          photoUrl: publicUrl,
+          photoUrl: signedUrlData.signedUrl,
           userId,
           firstName,
           dateOfBirth,
