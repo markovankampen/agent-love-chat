@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Heart, Send, LogOut, ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import chatBg from "@/assets/chat-bg.jpg";
 
 interface Message {
   id: string;
@@ -145,8 +146,18 @@ const Chat = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-soft">
-        <Heart className="h-12 w-12 text-primary animate-pulse-heart" />
+      <div className="flex items-center justify-center min-h-screen relative overflow-hidden">
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url(${chatBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+        </div>
+        <Heart className="h-12 w-12 text-primary animate-pulse-heart relative z-10" />
       </div>
     );
   }
@@ -202,9 +213,22 @@ const Chat = () => {
   );
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-gradient-soft">
+    <div className="flex h-screen w-full overflow-hidden relative">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `url(${chatBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+        }}
+      >
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      </div>
+
       {/* Desktop Sidebar - Collapsible */}
-      <div className="hidden md:block">
+      <div className="hidden md:block relative z-10">
         <Collapsible open={isRulesOpen} onOpenChange={setIsRulesOpen}>
           <div className={`h-full transition-all duration-300 ${isRulesOpen ? 'w-80' : 'w-12'} border-r border-border bg-card/50 backdrop-blur-sm`}>
             <CollapsibleTrigger asChild>
@@ -226,7 +250,7 @@ const Chat = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 w-full">
+      <div className="flex flex-col flex-1 w-full relative z-10">
         {/* Premium Header with Glassmorphism */}
         <div className="backdrop-blur-xl bg-card/70 border-b border-glass-border shadow-soft">
           <div className="flex items-center justify-between px-4 md:px-6 h-16">
