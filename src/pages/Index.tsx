@@ -1,12 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Sparkles } from "lucide-react";
-import heroImage from "@/assets/hero-bg.jpg";
+import romantic1 from "@/assets/romantic-1.jpg";
+import romantic2 from "@/assets/romantic-2.jpg";
+import romantic3 from "@/assets/romantic-3.jpg";
+import romantic4 from "@/assets/romantic-4.jpg";
+import romantic5 from "@/assets/romantic-5.jpg";
+import romantic6 from "@/assets/romantic-6.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6];
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -18,20 +26,33 @@ const Index = () => {
     checkAuth();
   }, [navigate]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % romanticImages.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: `url(${heroImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-        </div>
+        {/* Animated Background Images */}
+        {romanticImages.map((image, index) => (
+          <div
+            key={index}
+            className="absolute inset-0 z-0 transition-opacity duration-1000"
+            style={{
+              backgroundImage: `url(${image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: currentImageIndex === index ? 1 : 0,
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+          </div>
+        ))}
         
         <div className="relative z-10 container mx-auto px-4 text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/20 rounded-full mb-8 animate-pulse-soft">
