@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Send, LogOut } from "lucide-react";
+import { Heart, Send, LogOut, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 
 interface Message {
   id: string;
@@ -20,6 +22,7 @@ const Chat = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRulesOpen, setIsRulesOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -142,168 +145,190 @@ const Chat = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Heart className="w-12 h-12 text-primary fill-primary animate-pulse mx-auto mb-4" />
-          <p className="text-muted-foreground">Bezig met laden...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-soft">
+        <Heart className="h-12 w-12 text-primary animate-pulse-heart" />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
-      {/* Header */}
-      <header className="bg-card border-b p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Heart className="w-8 h-8 text-primary fill-primary" />
-            <h1 className="text-xl font-bold">Agent Flori</h1>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSignOut}
-            className="gap-2"
-          >
-            <LogOut className="w-4 h-4" />
-            Uitloggen
-          </Button>
+  const RulesContent = () => (
+    <div className="p-6 space-y-4">
+      <h2 className="text-2xl font-semibold text-primary">De spelregels en verwachtingen</h2>
+      <div className="space-y-3 text-sm text-foreground/80">
+        <p className="font-medium text-foreground">Hallo! 👋</p>
+        <p>
+          Ik ben Agent Flori, en ik ga je helpen om een geweldige match te vinden. Ik zal je
+          enkele vragen stellen om jou beter te leren kennen!
+        </p>
+        <div className="space-y-2">
+          <p className="font-medium text-foreground">Wat je kunt verwachten:</p>
+          <ul className="space-y-1.5 ml-4">
+            <li className="flex items-start gap-2">
+              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>Ik stel je persoonlijke vragen over jezelf en je ideale date</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>Ik probeer een beeld te krijgen van wie je bent en wat je zoekt</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>Op basis van jouw antwoorden ga ik op zoek naar een match</span>
+            </li>
+          </ul>
         </div>
-      </header>
+        <div className="space-y-2">
+          <p className="font-medium text-foreground">Spelregels:</p>
+          <ul className="space-y-1.5 ml-4">
+            <li className="flex items-start gap-2">
+              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>Wees eerlijk - dat helpt mij om de beste match te vinden</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>Neem de tijd voor je antwoorden</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>Er zijn geen foute antwoorden - gewoon jouw antwoorden!</span>
+            </li>
+          </ul>
+        </div>
+        <p className="text-xs text-muted-foreground italic">
+          PS: Dit gesprek blijft tussen ons. Jouw privacy is belangrijk! 🔒
+        </p>
+      </div>
+    </div>
+  );
 
-      {/* Main Content */}
-      <div className="flex-1 container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-[400px,1fr] gap-8 max-w-6xl mx-auto">
-          {/* Rules Box */}
-          <div className="bg-card border-2 border-primary/30 rounded-2xl p-6 h-fit">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-5 h-5 text-primary fill-primary" />
-              <h3 className="font-semibold text-lg">De spelregels en verwachtingen</h3>
-            </div>
-            
-            <div className="space-y-4 text-sm">
-              <div>
-                <h4 className="font-semibold mb-2">Welkom bij Agent Flori! 💕</h4>
-                <p className="text-muted-foreground">
-                  Voordat je begint met je gesprek, willen we je graag even meenemen in een paar simpele afspraken. Zo zorgen we ervoor dat iedereen een fijne en veilige ervaring heeft.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-2">De Spelregels:</h4>
-              </div>
-
-              <div>
-                <h5 className="font-semibold mb-1">Wees jezelf, maar blijf respectvol</h5>
-                <p className="text-muted-foreground">
-                  Agent Flori stelt je leuke en persoonlijke vragen. Wees eerlijk in je antwoorden—dat geeft de beste kans op een échte match! Maar houd het altijd netjes en respectvol.
-                </p>
-              </div>
-
-              <div>
-                <h5 className="font-semibold mb-1">Het gesprek duurt ongeveer 5 minuten</h5>
-                <p className="text-muted-foreground">
-                  Neem rustig de tijd om je antwoorden te geven. Je kunt altijd opnieuw beginnen als je wilt.
-                </p>
-              </div>
-
-              <div>
-                <h5 className="font-semibold mb-1">Jouw privacy is heilig</h5>
-                <p className="text-muted-foreground">
-                  Alles wat je deelt blijft anoniem. We gebruiken je foto alleen om je uiterlijke kenmerken in kaart te brengen—daarna wordt deze direct verwijderd. Je foto wordt nooit getoond aan anderen.
-                </p>
-              </div>
-
-              <div>
-                <h5 className="font-semibold mb-1">Geen ongepaste opmerkingen</h5>
-                <p className="text-muted-foreground">
-                  Dit is een veilige plek voor iedereen. Ongepaste, discriminerende of kwetsende opmerkingen zijn niet toegestaan.
-                </p>
-              </div>
-
-              <div>
-                <h5 className="font-semibold mb-1">Geniet van de ervaring!</h5>
-                <p className="text-muted-foreground">
-                  Dit is jouw kans om op een ludieke en laagdrempelige manier iemand te ontmoeten uit jouw buurt. Heb er plezier in!
-                </p>
-              </div>
-
-              <div className="pt-2 border-t">
-                <p className="font-semibold text-primary">
-                  Klaar om te beginnen? Agent Flori staat voor je klaar! 🚀
-                </p>
-              </div>
-            </div>
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-gradient-soft">
+      {/* Desktop Sidebar - Collapsible */}
+      <div className="hidden md:block">
+        <Collapsible open={isRulesOpen} onOpenChange={setIsRulesOpen}>
+          <div className={`h-full transition-all duration-300 ${isRulesOpen ? 'w-80' : 'w-12'} border-r border-border bg-card/50 backdrop-blur-sm`}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="m-2 hover:bg-primary/10"
+              >
+                {isRulesOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ScrollArea className="h-[calc(100vh-60px)]">
+                <RulesContent />
+              </ScrollArea>
+            </CollapsibleContent>
           </div>
+        </Collapsible>
+      </div>
 
-          {/* Chat Box */}
-          <div className="bg-card rounded-2xl shadow-lg overflow-hidden flex flex-col" style={{ height: "700px" }}>
-            {/* Chat Header */}
-            <div className="bg-muted/50 border-b p-4 flex items-center gap-3">
-              <Avatar className="h-12 w-12">
-                <AvatarFallback className="bg-primary text-primary-foreground">AF</AvatarFallback>
+      {/* Main Chat Area */}
+      <div className="flex flex-col flex-1 w-full">
+        {/* Premium Header with Glassmorphism */}
+        <div className="backdrop-blur-xl bg-card/70 border-b border-glass-border shadow-soft">
+          <div className="flex items-center justify-between px-4 md:px-6 h-16">
+            <div className="flex items-center gap-3">
+              {/* Mobile Rules Drawer Trigger */}
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button variant="ghost" size="icon" className="md:hidden hover:bg-primary/10">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="h-[85vh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Spelregels & Verwachtingen</DrawerTitle>
+                  </DrawerHeader>
+                  <ScrollArea className="flex-1 overflow-y-auto">
+                    <RulesContent />
+                  </ScrollArea>
+                </DrawerContent>
+              </Drawer>
+
+              <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-glow">
+                <AvatarFallback className="bg-gradient-romantic text-white font-semibold">
+                  AF
+                </AvatarFallback>
               </Avatar>
               <div>
-                <h4 className="font-semibold">Agent Flori</h4>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span>Online</span>
-                </div>
+                <h1 className="font-semibold text-foreground">Agent Flori</h1>
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse-soft"></span>
+                  Online
+                </p>
               </div>
             </div>
+            <Button
+              onClick={handleSignOut}
+              variant="ghost"
+              size="icon"
+              className="hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
 
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                        message.role === "user"
-                          ? "bg-primary text-primary-foreground ml-auto"
-                          : "bg-muted/50 text-foreground"
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                    </div>
-                  </div>
-                ))}
-                
-                {isTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted/50 rounded-2xl px-4 py-3">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-
-            {/* Input */}
-            <div className="border-t p-4 flex gap-2">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                placeholder="Type je antwoord hier..."
-                className="flex-1"
-                disabled={isTyping}
-              />
-              <Button 
-                onClick={handleSendMessage}
-                className="bg-primary hover:bg-primary/90"
-                disabled={isTyping}
+        {/* Messages Area */}
+        <ScrollArea className="flex-1 px-4 md:px-6 py-6">
+          <div className="max-w-4xl mx-auto space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
               >
-                <Send className="w-4 h-4" />
+                <div
+                  className={`max-w-[85%] md:max-w-[75%] rounded-[20px] px-5 py-3 ${
+                    message.role === "user"
+                      ? "bg-gradient-romantic text-white shadow-float ml-auto"
+                      : "bg-secondary/80 text-foreground shadow-soft"
+                  }`}
+                >
+                  <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+            
+            {isTyping && (
+              <div className="flex justify-start animate-fade-in">
+                <div className="bg-secondary/80 rounded-[20px] px-5 py-3 shadow-soft">
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-primary animate-pulse-heart" />
+                    <span className="text-sm text-muted-foreground">Agent Flori denkt na...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Premium Input Area */}
+        <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 md:p-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex gap-3 items-end">
+              <div className="flex-1 relative">
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  placeholder="Typ je bericht..."
+                  className="w-full rounded-[20px] border-border/50 bg-background/80 backdrop-blur-sm px-5 py-6 text-base shadow-soft focus:shadow-glow focus:border-primary/50 transition-all"
+                  disabled={isTyping}
+                />
+              </div>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isTyping}
+                className="rounded-full h-12 w-12 p-0 bg-gradient-romantic hover:shadow-glow transition-all hover:scale-105 shadow-float"
+                size="icon"
+              >
+                <Send className="h-5 w-5" />
               </Button>
             </div>
           </div>
