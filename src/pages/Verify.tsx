@@ -1,29 +1,47 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Verify = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isChecking, setIsChecking] = useState(false);
+
+  const checkVerification = async () => {
+    setIsChecking(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email_confirmed_at) {
+        navigate("/profile-setup");
+      } else {
+        toast({
+          title: "Nog niet geverifieerd",
+          description: "Check je inbox en klik op de verificatie link in de email.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Fout bij controleren",
+        description: "Probeer het opnieuw.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
   useEffect(() => {
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Only redirect when user completes email verification and is signed in
       if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
         navigate("/profile-setup");
       }
     });
 
-    // Check if user is already verified and signed in
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email_confirmed_at) {
-        navigate("/profile-setup");
-      }
-    };
-    checkUser();
+    checkVerification();
 
     return () => subscription.unsubscribe();
   }, [navigate]);
@@ -37,8 +55,25 @@ const Verify = () => {
           </div>
           <h1 className="text-3xl font-bold">Bijna klaar!</h1>
           <p className="text-muted-foreground">
-            Je account is aangemaakt. Check je inbox voor de verificatie email, of klik op de link in de email om je profiel in te stellen.
+            Je account is aangemaakt. Check je inbox voor de verificatie email en klik op de link om je profiel in te stellen.
           </p>
+          <Button 
+            onClick={checkVerification}
+            disabled={isChecking}
+            className="mt-4"
+          >
+            {isChecking ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Controleren...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Controleer verificatie
+              </>
+            )}
+          </Button>
         </div>
       </Card>
     </div>
