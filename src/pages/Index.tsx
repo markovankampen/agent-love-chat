@@ -54,7 +54,7 @@ const Index = () => {
           </div>
         ))}
         
-        <div className="relative z-10 container mx-auto px-4 text-center animate-fade-in">
+        <div className="relative z-10 w-full px-4 text-center animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/20 rounded-full mb-8 animate-pulse-soft">
             <Heart className="w-10 h-10 text-white fill-white" />
           </div>
@@ -125,8 +125,8 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary">
-        <div className="container mx-auto px-4 text-center">
+      <section className="py-20 bg-primary w-full">
+        <div className="w-full px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Klaar om je match te vinden?
           </h2>
