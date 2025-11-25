@@ -28,14 +28,10 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const HARDCODED_USER_ID = "93fc2384-4b8b-4f53-a5a6-9f53caaab22a"; // dpg user
+
   useEffect(() => {
     const initChat = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/");
-        return;
-      }
-
       const welcomeMessage: Message = {
         id: "welcome",
         role: "agent",
@@ -58,9 +54,6 @@ const Chat = () => {
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const messageContent = inputValue;
     setInputValue("");
     setIsTyping(true);
@@ -68,7 +61,7 @@ const Chat = () => {
     const { data: userMsgData, error: userMsgError } = await supabase
       .from("conversations")
       .insert({
-        user_id: user.id,
+        user_id: HARDCODED_USER_ID,
         role: "user",
         content: messageContent,
       })
