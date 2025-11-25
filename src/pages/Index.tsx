@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Sparkles } from "lucide-react";
 import romantic1 from "@/assets/romantic-1.jpg";
@@ -16,7 +17,13 @@ const Index = () => {
   const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6];
 
   useEffect(() => {
-    navigate("/chat");
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/chat");
+      }
+    };
+    checkAuth();
   }, [navigate]);
 
   useEffect(() => {
@@ -68,7 +75,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
-              onClick={() => navigate("/chat")}
+              onClick={() => navigate("/auth")}
             >
               Start je reis
             </Button>
@@ -129,7 +136,7 @@ const Index = () => {
           <Button 
             size="lg" 
             className="bg-white text-primary hover:bg-white/90 transition-opacity text-lg px-8 py-6"
-            onClick={() => navigate("/chat")}
+            onClick={() => navigate("/auth")}
           >
             Begin nu
           </Button>
