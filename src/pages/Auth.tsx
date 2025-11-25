@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart } from "lucide-react";
+import { Heart, UserCircle } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -52,6 +52,45 @@ const Auth = () => {
 
         navigate("/verify");
       }
+    } catch (error: any) {
+      toast({
+        title: "Fout",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setLoading(true);
+
+    try {
+      const guestId = crypto.randomUUID();
+      const guestUsername = `Gast_${guestId.slice(0, 8)}`;
+      const guestEmail = `guest_${guestId}@guest.com`;
+      const guestPassword = crypto.randomUUID();
+
+      const redirectUrl = `${window.location.origin}/profile-setup`;
+      const { error } = await supabase.auth.signUp({
+        email: guestEmail,
+        password: guestPassword,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            username: guestUsername,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Welkom!",
+        description: `Je bent ingelogd als ${guestUsername}`,
+      });
+      navigate("/verify");
     } catch (error: any) {
       toast({
         title: "Fout",
@@ -128,7 +167,26 @@ const Auth = () => {
           </Button>
         </form>
 
-        <div className="text-center">
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Of</span>
+          </div>
+        </div>
+
+        <Button
+          onClick={handleGuestLogin}
+          variant="outline"
+          className="w-full"
+          disabled={loading}
+        >
+          <UserCircle className="mr-2 h-4 w-4" />
+          Doorgaan als gast
+        </Button>
+
+        <div className="text-center mt-4">
           <button
             onClick={() => setIsLogin(!isLogin)}
             className="text-sm text-muted-foreground hover:text-primary transition-colors"

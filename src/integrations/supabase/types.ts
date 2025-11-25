@@ -78,7 +78,7 @@ export type Database = {
           attractiveness_score: number | null
           created_at: string | null
           date_of_birth: string | null
-          email: string
+          email: string | null
           eye_color: string | null
           facial_features: Json | null
           first_name: string | null
@@ -92,7 +92,7 @@ export type Database = {
           attractiveness_score?: number | null
           created_at?: string | null
           date_of_birth?: string | null
-          email: string
+          email?: string | null
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
@@ -106,7 +106,7 @@ export type Database = {
           attractiveness_score?: number | null
           created_at?: string | null
           date_of_birth?: string | null
-          email?: string
+          email?: string | null
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
