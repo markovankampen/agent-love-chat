@@ -24,8 +24,15 @@ serve(async (req) => {
     // Extract JWT token from Authorization header
     const token = authHeader.replace('Bearer ', '');
     
-    // Create client and verify the JWT token
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    // Create authenticated client with user's JWT
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
+    
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !user) {
@@ -85,6 +92,7 @@ serve(async (req) => {
       try {
         const responseText = await response.text();
         console.log("Raw response from n8n:", responseText);
+        console.log("Content-Type:", contentType);
         
         if (!responseText || responseText.trim() === '') {
           console.log("Empty response from n8n, using fallback");
@@ -92,13 +100,16 @@ serve(async (req) => {
         } else if (contentType?.includes("application/json")) {
           try {
             const data = JSON.parse(responseText);
-            console.log("Parsed JSON response from n8n:", data);
-            agentContent = data.response || data.message || data.content || responseText;
+            console.log("Parsed JSON response from n8n:", JSON.stringify(data));
+            // Try multiple fields to extract the response
+            agentContent = data.response || data.message || data.content || data.output || data.text || JSON.stringify(data);
           } catch (jsonError) {
             console.error("Failed to parse JSON, using text response:", jsonError);
             agentContent = responseText;
           }
         } else {
+          // Use raw text response
+          console.log("Using raw text response");
           agentContent = responseText;
         }
       } catch (textError) {
