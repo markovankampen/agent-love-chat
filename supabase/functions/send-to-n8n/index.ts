@@ -13,27 +13,16 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
+    // Hardcoded user ID for dpgmedia
+    const HARDCODED_USER_ID = "93fc2384-4b8b-4f53-a5a6-9f53caaab22a";
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Extract JWT token from Authorization header
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Create client and verify the JWT token
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error('Auth error:', userError);
-      throw new Error('Unauthorized');
-    }
+    // Create client with service role key to bypass RLS
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Authenticated user:', user.id);
+    console.log('Using hardcoded user:', HARDCODED_USER_ID);
 
     const { message, user_message_id, conversation_history } = await req.json();
 
@@ -46,7 +35,7 @@ serve(async (req) => {
     const { data: profile } = await supabaseClient
       .from('profiles')
       .select('username, email')
-      .eq('id', user.id)
+      .eq('id', HARDCODED_USER_ID)
       .single();
 
     console.log('Sending message to n8n:', webhookUrl);
@@ -62,9 +51,9 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: profile?.email || user.email,
-          username: profile?.username || '',
-          user_id: user.id,
+          email: profile?.email || 'dpgmedia@indebuurt.nl',
+          username: profile?.username || 'dpgmedia',
+          user_id: HARDCODED_USER_ID,
           user_message_id,
           message,
           timestamp: new Date().toISOString(),
@@ -96,7 +85,7 @@ serve(async (req) => {
       const { data: agentMsgData, error: agentMsgError } = await supabaseClient
         .from('conversations')
         .insert({
-          user_id: user.id,
+          user_id: HARDCODED_USER_ID,
           role: 'agent',
           content: agentContent,
         })
@@ -125,7 +114,7 @@ serve(async (req) => {
         const { data: agentMsgData } = await supabaseClient
           .from('conversations')
           .insert({
-            user_id: user.id,
+            user_id: HARDCODED_USER_ID,
             role: 'agent',
             content: fallbackContent,
           })
