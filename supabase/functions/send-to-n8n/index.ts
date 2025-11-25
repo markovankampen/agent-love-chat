@@ -63,7 +63,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           email: profile?.email || user.email,
-          username: profile?.username || '',
+          username: profile?.username || user.user_metadata?.username || '',
           user_id: user.id,
           user_message_id,
           message,
