@@ -82,14 +82,28 @@ serve(async (req) => {
       const contentType = response.headers.get("content-type");
       let agentContent: string;
 
-      if (contentType?.includes("application/json")) {
-        const data = await response.json();
-        console.log("Received JSON response from n8n:", data);
-        agentContent = data.response || data.message || "I received your message! Let me think about that... 🤔";
-      } else {
-        const textResponse = await response.text();
-        console.log("Received text response from n8n:", textResponse);
-        agentContent = textResponse || "I received your message! Let me think about that... 🤔";
+      try {
+        const responseText = await response.text();
+        console.log("Raw response from n8n:", responseText);
+        
+        if (!responseText || responseText.trim() === '') {
+          console.log("Empty response from n8n, using fallback");
+          agentContent = "Dank je voor je bericht! Laat me daar even over nadenken... 🤔";
+        } else if (contentType?.includes("application/json")) {
+          try {
+            const data = JSON.parse(responseText);
+            console.log("Parsed JSON response from n8n:", data);
+            agentContent = data.response || data.message || data.content || responseText;
+          } catch (jsonError) {
+            console.error("Failed to parse JSON, using text response:", jsonError);
+            agentContent = responseText;
+          }
+        } else {
+          agentContent = responseText;
+        }
+      } catch (textError) {
+        console.error("Failed to read response text:", textError);
+        agentContent = "Dank je voor je bericht! Laat me daar even over nadenken... 🤔";
       }
 
       // Save agent response to database
