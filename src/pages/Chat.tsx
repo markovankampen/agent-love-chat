@@ -30,29 +30,11 @@ const Chat = () => {
 
   useEffect(() => {
     const initChat = async () => {
-      let { data: { user } } = await supabase.auth.getUser();
-      
-      // Auto-login with test user if not authenticated
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: "test@dpgmedia.com",
-          password: "TestPassword123!",
-        });
-        
-        if (error) {
-          toast({
-            title: "Login mislukt",
-            description: "Test gebruiker niet gevonden. Neem contact op met de beheerder.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        const { data: { user: newUser } } = await supabase.auth.getUser();
-        user = newUser;
+        navigate("/");
+        return;
       }
-      
-      if (!user) return;
 
       const welcomeMessage: Message = {
         id: "welcome",
@@ -67,13 +49,9 @@ const Chat = () => {
 
     initChat();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!session && event === 'SIGNED_OUT') {
-        // Auto re-login on sign out
-        await supabase.auth.signInWithPassword({
-          email: "test@dpgmedia.com",
-          password: "TestPassword123!",
-        });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/");
       }
     });
 

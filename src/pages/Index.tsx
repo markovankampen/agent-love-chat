@@ -13,26 +13,34 @@ import romantic6 from "@/assets/romantic-6.jpg";
 const Index = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   
   const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6];
 
   useEffect(() => {
     const checkAuth = async () => {
-      let { data: { session } } = await supabase.auth.getSession();
-      
-      // Auto-login with test user
-      if (!session) {
-        await supabase.auth.signInWithPassword({
-          email: "test@dpgmedia.com",
-          password: "TestPassword123!",
-        });
+      try {
+        let { data: { session } } = await supabase.auth.getSession();
         
-        const { data: { session: newSession } } = await supabase.auth.getSession();
-        session = newSession;
-      }
-      
-      if (session) {
-        navigate("/chat");
+        // Auto-login with test user
+        if (!session) {
+          await supabase.auth.signInWithPassword({
+            email: "test@dpgmedia.com",
+            password: "TestPassword123!",
+          });
+          
+          const { data: { session: newSession } } = await supabase.auth.getSession();
+          session = newSession;
+        }
+        
+        if (session) {
+          navigate("/chat");
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        setIsLoading(false);
       }
     };
     checkAuth();
@@ -45,6 +53,14 @@ const Index = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Heart className="h-12 w-12 text-primary animate-pulse-heart" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
