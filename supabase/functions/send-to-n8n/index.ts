@@ -82,30 +82,26 @@ serve(async (req) => {
       const contentType = response.headers.get("content-type");
       let agentContent: string;
 
-      try {
-        const responseText = await response.text();
-        console.log("Raw response from n8n:", responseText);
-        
-        if (!responseText || responseText.trim() === '') {
-          console.error("Empty response from n8n webhook");
-          throw new Error("N8N webhook returned empty response. Please check your n8n workflow configuration.");
-        }
-        
-        if (contentType?.includes("application/json")) {
-          try {
-            const data = JSON.parse(responseText);
-            console.log("Parsed JSON response from n8n:", data);
-            agentContent = data.response || data.message || data.content || responseText;
-          } catch (jsonError) {
-            console.error("Failed to parse JSON, using text response:", jsonError);
-            agentContent = responseText;
-          }
-        } else {
+      const responseText = await response.text();
+      console.log("Raw response from n8n:", responseText);
+      console.log("Content-Type:", contentType);
+      
+      if (!responseText || responseText.trim() === '') {
+        console.error("Empty response from n8n webhook");
+        throw new Error("N8N webhook returned empty response. Please check your n8n workflow to ensure it returns a response.");
+      }
+      
+      if (contentType?.includes("application/json")) {
+        try {
+          const data = JSON.parse(responseText);
+          console.log("Parsed JSON response from n8n:", data);
+          agentContent = data.response || data.message || data.content || data.text || responseText;
+        } catch (jsonError) {
+          console.error("Failed to parse JSON, using text response:", jsonError);
           agentContent = responseText;
         }
-      } catch (textError) {
-        console.error("Failed to read response text:", textError);
-        throw new Error("Failed to read response from n8n webhook");
+      } else {
+        agentContent = responseText;
       }
 
       // Save agent response to database
