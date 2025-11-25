@@ -87,9 +87,11 @@ serve(async (req) => {
         console.log("Raw response from n8n:", responseText);
         
         if (!responseText || responseText.trim() === '') {
-          console.log("Empty response from n8n, using fallback");
-          agentContent = "Dank je voor je bericht! Laat me daar even over nadenken... 🤔";
-        } else if (contentType?.includes("application/json")) {
+          console.error("Empty response from n8n webhook");
+          throw new Error("N8N webhook returned empty response. Please check your n8n workflow configuration.");
+        }
+        
+        if (contentType?.includes("application/json")) {
           try {
             const data = JSON.parse(responseText);
             console.log("Parsed JSON response from n8n:", data);
@@ -103,7 +105,7 @@ serve(async (req) => {
         }
       } catch (textError) {
         console.error("Failed to read response text:", textError);
-        agentContent = "Dank je voor je bericht! Laat me daar even over nadenken... 🤔";
+        throw new Error("Failed to read response from n8n webhook");
       }
 
       // Save agent response to database
