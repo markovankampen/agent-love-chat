@@ -18,7 +18,19 @@ const Index = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      let { data: { session } } = await supabase.auth.getSession();
+      
+      // Auto-login with test user
+      if (!session) {
+        await supabase.auth.signInWithPassword({
+          email: "test@dpgmedia.com",
+          password: "TestPassword123!",
+        });
+        
+        const { data: { session: newSession } } = await supabase.auth.getSession();
+        session = newSession;
+      }
+      
       if (session) {
         navigate("/chat");
       }
@@ -75,7 +87,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/chat")}
             >
               Start je reis
             </Button>
@@ -136,7 +148,7 @@ const Index = () => {
           <Button 
             size="lg" 
             className="bg-white text-primary hover:bg-white/90 transition-opacity text-lg px-8 py-6"
-            onClick={() => navigate("/auth")}
+            onClick={() => navigate("/chat")}
           >
             Begin nu
           </Button>

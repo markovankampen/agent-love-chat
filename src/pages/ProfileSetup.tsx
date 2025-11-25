@@ -21,15 +21,25 @@ const ProfileSetup = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      let { data: { user } } = await supabase.auth.getUser();
+      
+      // Auto-login with test user if not authenticated
       if (!user) {
-        navigate("/auth");
-      } else {
+        await supabase.auth.signInWithPassword({
+          email: "test@dpgmedia.com",
+          password: "TestPassword123!",
+        });
+        
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+        user = newUser;
+      }
+      
+      if (user) {
         setUserId(user.id);
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, []);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
