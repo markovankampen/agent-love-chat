@@ -28,7 +28,7 @@ const Chat = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const HARDCODED_USER_ID = "93fc2384-4b8b-4f53-a5a6-9f53caaab22a"; // dpg user
+  const HARDCODED_USER_ID = "93fc2384-4b8b-4f53-a5a6-9f53caaab22a"; // dpgmedia user
 
   useEffect(() => {
     const initChat = async () => {
