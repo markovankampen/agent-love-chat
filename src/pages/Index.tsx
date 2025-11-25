@@ -13,34 +13,14 @@ import romantic6 from "@/assets/romantic-6.jpg";
 const Index = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   
   const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6];
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        let { data: { session } } = await supabase.auth.getSession();
-        
-        // Auto-login with test user
-        if (!session) {
-          await supabase.auth.signInWithPassword({
-            email: "test@dpgmedia.com",
-            password: "TestPassword123!",
-          });
-          
-          const { data: { session: newSession } } = await supabase.auth.getSession();
-          session = newSession;
-        }
-        
-        if (session) {
-          navigate("/chat");
-        } else {
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Auth error:", error);
-        setIsLoading(false);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/chat");
       }
     };
     checkAuth();
@@ -53,14 +33,6 @@ const Index = () => {
 
     return () => clearInterval(interval);
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Heart className="h-12 w-12 text-primary animate-pulse-heart" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen">
@@ -103,7 +75,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
-              onClick={() => navigate("/chat")}
+              onClick={() => navigate("/auth")}
             >
               Start je reis
             </Button>
@@ -164,7 +136,7 @@ const Index = () => {
           <Button 
             size="lg" 
             className="bg-white text-primary hover:bg-white/90 transition-opacity text-lg px-8 py-6"
-            onClick={() => navigate("/chat")}
+            onClick={() => navigate("/auth")}
           >
             Begin nu
           </Button>

@@ -32,7 +32,7 @@ const Chat = () => {
     const initChat = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/");
+        navigate("/auth");
         return;
       }
 
@@ -51,7 +51,7 @@ const Chat = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
-        navigate("/");
+        navigate("/auth");
       }
     });
 
