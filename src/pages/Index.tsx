@@ -17,13 +17,24 @@ const Index = () => {
   const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6];
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const autoLogin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/chat");
+        return;
+      }
+
+      // Auto-login as dpg
+      const { error } = await supabase.auth.signInWithPassword({
+        email: "dpg@indebuurt.nl",
+        password: "dpg123456",
+      });
+
+      if (!error) {
+        navigate("/chat");
       }
     };
-    checkAuth();
+    autoLogin();
   }, [navigate]);
 
   useEffect(() => {
@@ -75,7 +86,7 @@ const Index = () => {
             <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/chat")}
             >
               Start je reis
             </Button>
@@ -136,7 +147,7 @@ const Index = () => {
           <Button 
             size="lg" 
             className="bg-white text-primary hover:bg-white/90 transition-opacity text-lg px-8 py-6"
-            onClick={() => navigate("/auth")}
+            onClick={() => navigate("/chat")}
           >
             Begin nu
           </Button>
