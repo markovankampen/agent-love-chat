@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, UserCircle } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Heart } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -17,51 +16,6 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const generateGuestUsername = () => {
-    const randomNum = Math.floor(100000 + Math.random() * 900000);
-    return `Gast_${randomNum}`;
-  };
-
-  const handleGuestLogin = async () => {
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signInAnonymously();
-
-      if (error) throw error;
-
-      if (data.user) {
-        const guestUsername = generateGuestUsername();
-        
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            email: data.user.email || '',
-            username: guestUsername,
-          });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-        }
-
-        toast({
-          title: "Welkom!",
-          description: `Je bent ingelogd als ${guestUsername}`,
-        });
-        navigate("/chat");
-      }
-    } catch (error: any) {
-      toast({
-        title: "Fout",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,23 +127,6 @@ const Auth = () => {
             {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
           </Button>
         </form>
-
-        <div className="relative my-6">
-          <Separator />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-sm text-muted-foreground">
-            Of
-          </span>
-        </div>
-
-        <Button
-          onClick={handleGuestLogin}
-          variant="outline"
-          className="w-full"
-          disabled={loading}
-        >
-          <UserCircle className="mr-2 h-4 w-4" />
-          Inloggen als gast
-        </Button>
 
         <div className="text-center">
           <button
