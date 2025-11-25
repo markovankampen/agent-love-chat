@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, Send, LogOut, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { Heart, Send, ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import chatBg from "@/assets/chat-bg.jpg";
@@ -32,7 +32,7 @@ const Chat = () => {
     const initChat = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/auth");
+        navigate("/");
         return;
       }
 
@@ -48,25 +48,12 @@ const Chat = () => {
     };
 
     initChat();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        navigate("/auth");
-      }
-    });
-
-    return () => subscription.unsubscribe();
   }, [navigate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({ title: "Tot ziens! 💕" });
-    navigate("/");
-  };
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -285,14 +272,6 @@ const Chat = () => {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={handleSignOut}
-              variant="ghost"
-              size="icon"
-              className="hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
           </div>
         </div>
 
