@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Sparkles } from "lucide-react";
 import romantic1 from "@/assets/romantic-1.jpg";
@@ -17,24 +16,7 @@ const Index = () => {
   const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6];
 
   useEffect(() => {
-    const autoLogin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/chat");
-        return;
-      }
-
-      // Auto-login as dpg
-      const { error } = await supabase.auth.signInWithPassword({
-        email: "dpg@indebuurt.nl",
-        password: "dpg123456",
-      });
-
-      if (!error) {
-        navigate("/chat");
-      }
-    };
-    autoLogin();
+    navigate("/chat");
   }, [navigate]);
 
   useEffect(() => {
