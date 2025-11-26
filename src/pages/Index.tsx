@@ -97,7 +97,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Chat & Ontdek</h3>
               <p className="text-muted-foreground">
-                Heb een vriendelijk gesprek met Agent Flori. Deel je interesses, dromen, en wat jou uniek maakt.
+                Heb een vriendelijk gesprek met onze Matchmaker. Deel je interesses, dromen, en wat jou uniek maakt.
               </p>
             </div>
             
@@ -105,9 +105,9 @@ const Index = () => {
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">AI Magie</h3>
+              <h3 className="text-xl font-semibold mb-3">AI Hulp</h3>
               <p className="text-muted-foreground">
-                Onze slimme AI bouwt jouw persoonlijkheidsprofiel op basis van je gesprekken en vindt perfecte matches.
+                Onze slimme AI Matchmaker bouwt in een 1 op 1 gesprek een persoonlijkheidsprofiel op en gaat op zoek naar een perfecte match.
               </p>
             </div>
             
@@ -117,7 +117,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Blind Matches</h3>
               <p className="text-muted-foreground">
-                Ontmoet matches gebaseerd op persoonlijkheid, niet op foto's. Zie foto's alleen bij wederzijdse interesse!
+                Ontmoet matches gebaseerd op persoonlijkheid, niet op foto's. We delen geen foto's onder kandidaten. Pas bij een match.
               </p>
             </div>
           </div>
@@ -131,7 +131,7 @@ const Index = () => {
             Klaar om je match te vinden?
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Word vandaag lid en laat Agent Flori je begeleiden naar betekenisvolle connecties
+            Schrijf je in en laat onze matchmaker je helpen aan een echte connectie.
           </p>
           <Button 
             size="lg" 
