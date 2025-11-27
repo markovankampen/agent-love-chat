@@ -39,7 +39,7 @@ const Chat = () => {
       const welcomeMessage: Message = {
         id: "welcome",
         role: "agent",
-        content: "Hoi! 👋 Ik ben Agent Flori, de matchmaker van In de Buurt. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
+        content: "Hoi! 👋 Ik ben Matchmaker Flori van In de Buurt. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -136,7 +136,7 @@ const Chat = () => {
       console.error("Error sending message:", error);
       toast({
         title: "Fout",
-        description: "Kon bericht niet versturen naar Agent Flori",
+        description: "Kon bericht niet versturen naar Matchmaker Flori",
         variant: "destructive",
       });
     } finally {
@@ -168,7 +168,7 @@ const Chat = () => {
       <div className="space-y-3 text-sm text-foreground/80">
         <p className="font-medium text-foreground">Hallo! 👋</p>
         <p>
-          Ik ben Agent Flori, en ik ga je helpen om een geweldige match te vinden. Ik zal je
+          Ik ben Matchmaker Flori, en ik ga je helpen om een geweldige match te vinden. Ik zal je
           enkele vragen stellen om jou beter te leren kennen!
         </p>
         <div className="space-y-2">
@@ -278,7 +278,7 @@ const Chat = () => {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="font-semibold text-foreground">Agent Flori</h1>
+                <h1 className="font-semibold text-foreground">Matchmaker Flori</h1>
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse-soft"></span>
                   Online
@@ -323,7 +323,7 @@ const Chat = () => {
                 <div className="bg-secondary/80 rounded-[20px] px-5 py-3 shadow-soft">
                   <div className="flex items-center gap-2">
                     <Heart className="h-4 w-4 text-primary animate-pulse-heart" />
-                    <span className="text-sm text-muted-foreground">Agent Flori denkt na...</span>
+                    <span className="text-sm text-muted-foreground">Matchmaker Flori denkt na...</span>
                   </div>
                 </div>
               </div>
