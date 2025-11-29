@@ -34,10 +34,10 @@ const ProfileSetup = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > 2 * 1024 * 1024) {
         toast({
           title: "Bestand te groot",
-          description: "Upload een foto kleiner dan 10MB",
+          description: "Upload een foto kleiner dan 2MB voor de beste resultaten",
           variant: "destructive",
         });
         return;
