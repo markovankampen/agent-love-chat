@@ -71,10 +71,17 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Face++ API error:', response.status, errorText);
+        
+        // Parse error to provide specific feedback
+        let errorMessage = 'Unable to analyze photo. Please ensure the image is clear and contains a visible face.';
+        if (errorText.includes('IMAGE_FILE_TOO_LARGE')) {
+          errorMessage = 'Foto is te groot. Upload een kleinere foto (max 2MB) en probeer opnieuw.';
+        } else if (errorText.includes('INVALID_IMAGE')) {
+          errorMessage = 'Ongeldig bestandsformaat. Upload een JPG of PNG foto.';
+        }
+        
         return new Response(
-          JSON.stringify({ 
-            error: 'Unable to analyze photo. Please ensure the image is clear and contains a visible face.' 
-          }),
+          JSON.stringify({ error: errorMessage }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
