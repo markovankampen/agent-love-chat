@@ -35,7 +35,7 @@ serve(async (req) => {
       );
     }
 
-    const { photoUrl, userId, firstName, dateOfBirth } = await req.json();
+    const { photoUrl, photoPath, userId, firstName, dateOfBirth } = await req.json();
 
     const faceppApiKey = Deno.env.get('FACEPP_API_KEY');
     const faceppApiSecret = Deno.env.get('FACEPP_API_SECRET');
@@ -185,18 +185,24 @@ serve(async (req) => {
         }
       }
 
-      // Delete the temporary photo
-      const photoPath = photoUrl.split('/profile-photos-temp/')[1];
+      // Delete the temporary photo using the provided path
       if (photoPath) {
-        const { error: deleteError } = await supabase.storage
-          .from('profile-photos-temp')
-          .remove([photoPath]);
+        try {
+          const { error: deleteError } = await supabase.storage
+            .from('profile-photos-temp')
+            .remove([photoPath]);
 
-        if (deleteError) {
-          console.error('Error deleting photo:', deleteError);
-        } else {
-          console.log('Photo deleted successfully');
+          if (deleteError) {
+            console.error('Error deleting photo:', deleteError);
+          } else {
+            console.log('Photo deleted successfully:', photoPath);
+          }
+        } catch (deleteErr) {
+          console.error('Exception during photo deletion:', deleteErr);
+          // Don't fail the whole request if deletion fails
         }
+      } else {
+        console.warn('No photoPath provided for cleanup');
       }
 
       return new Response(
