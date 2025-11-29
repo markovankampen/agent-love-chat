@@ -83,7 +83,10 @@ const ProfileSetup = () => {
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-photos-temp')
-        .upload(fileName, selectedFile);
+        .upload(fileName, selectedFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -97,6 +100,8 @@ const ProfileSetup = () => {
 
       if (signedUrlError || !signedUrlData) {
         console.error("Signed URL error:", signedUrlError);
+        // Clean up uploaded file
+        await supabase.storage.from('profile-photos-temp').remove([fileName]);
         throw new Error("Fout bij genereren van toegang tot foto");
       }
 
@@ -108,10 +113,11 @@ const ProfileSetup = () => {
         description: "Je foto wordt geanalyseerd. Dit kan even duren.",
       });
 
-      // Call analyze-photo function
+      // Call analyze-photo function with both URL and fileName for reliable deletion
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-photo', {
         body: {
           photoUrl: signedUrlData.signedUrl,
+          photoPath: fileName,
           userId,
           firstName,
           dateOfBirth,
