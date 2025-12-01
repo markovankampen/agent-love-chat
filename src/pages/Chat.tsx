@@ -39,7 +39,7 @@ const Chat = () => {
       const welcomeMessage: Message = {
         id: "welcome",
         role: "agent",
-        content: "Hoi! 👋 Ik ben Matchmaker Flori van In de Buurt. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
+        content: "Hoi! 👋 Ik ben Matchmaker Flori van {{IN_DE_BUURT_LINK}}. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -312,7 +312,22 @@ const Chat = () => {
                   }`}
                 >
                   <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                    {message.content}
+                    {message.content.includes("{{IN_DE_BUURT_LINK}}") ? (
+                      <>
+                        {message.content.split("{{IN_DE_BUURT_LINK}}")[0]}
+                        <a 
+                          href="https://indebuurt.nl/" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="underline hover:text-primary transition-colors"
+                        >
+                          In de Buurt
+                        </a>
+                        {message.content.split("{{IN_DE_BUURT_LINK}}")[1]}
+                      </>
+                    ) : (
+                      message.content
+                    )}
                   </p>
                 </div>
               </div>
