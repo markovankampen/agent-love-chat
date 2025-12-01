@@ -14,7 +14,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const romanticImages = [romantic3, romantic4, romantic5, romantic6, romantic7, romantic8];
+  const romanticImages = [romantic3, romantic4, romantic7, romantic5, romantic6, romantic8];
 
   useEffect(() => {
     const checkAuth = async () => {
