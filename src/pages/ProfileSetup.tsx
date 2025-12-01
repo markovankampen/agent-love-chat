@@ -214,7 +214,9 @@ const ProfileSetup = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="photo">Profielfoto</Label>
+            <Label htmlFor="photo" className="text-sm text-muted-foreground">
+              NB: je foto wordt alleen gebruikt ter check of je jezelf goed beschrijft, de foto wordt verder aan niemand getoond
+            </Label>
             <div className="flex flex-col gap-4">
               {previewUrl && (
                 <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
