@@ -9,12 +9,14 @@ import romantic3 from "@/assets/romantic-3.jpg";
 import romantic4 from "@/assets/romantic-4.jpg";
 import romantic5 from "@/assets/romantic-5.jpg";
 import romantic6 from "@/assets/romantic-6.jpg";
+import romantic7 from "@/assets/romantic-7.jpg";
+import romantic8 from "@/assets/romantic-8.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6];
+  const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6, romantic7, romantic8];
 
   useEffect(() => {
     const checkAuth = async () => {
