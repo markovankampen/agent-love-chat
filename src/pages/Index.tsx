@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Sparkles } from "lucide-react";
-import romantic1 from "@/assets/romantic-1.jpg";
-import romantic2 from "@/assets/romantic-2.jpg";
 import romantic3 from "@/assets/romantic-3.jpg";
 import romantic4 from "@/assets/romantic-4.jpg";
 import romantic5 from "@/assets/romantic-5.jpg";
@@ -16,7 +14,7 @@ const Index = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const romanticImages = [romantic1, romantic2, romantic3, romantic4, romantic5, romantic6, romantic7, romantic8];
+  const romanticImages = [romantic3, romantic4, romantic5, romantic6, romantic7, romantic8];
 
   useEffect(() => {
     const checkAuth = async () => {
