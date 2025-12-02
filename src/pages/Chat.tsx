@@ -321,7 +321,7 @@ const Chat = () => {
                           rel="noopener noreferrer"
                           className="underline hover:text-primary transition-colors"
                         >
-                          In de Buurt
+                          indebuurt
                         </a>
                         {message.content.split("{{IN_DE_BUURT_LINK}}")[1]}
                       </>
