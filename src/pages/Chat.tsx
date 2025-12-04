@@ -25,6 +25,7 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRulesOpen, setIsRulesOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -61,6 +62,16 @@ const Chat = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Auto-focus input after agent responds or on initial load
+  useEffect(() => {
+    if (!isTyping && !isLoading) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [isTyping, isLoading]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -353,6 +364,7 @@ const Chat = () => {
             <div className="flex gap-3 items-end">
               <div className="flex-1 relative">
                 <Input
+                  ref={inputRef}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
