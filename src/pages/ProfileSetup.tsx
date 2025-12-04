@@ -391,8 +391,8 @@ const ProfileSetup = () => {
                 </div>
               )}
               {photoNote && (
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-sm text-amber-800">📷 {photoNote}</p>
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded-lg">
+                  <p className="text-sm text-orange-800 dark:text-orange-200">📷 {photoNote}</p>
                 </div>
               )}
               <Input
