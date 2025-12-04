@@ -8,6 +8,55 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, Loader2, Camera } from "lucide-react";
 
+// List of offensive/inappropriate names to filter
+const offensiveNames = [
+  "fuck", "shit", "ass", "bitch", "bastard", "damn", "cunt", "dick", "pussy",
+  "whore", "slut", "fag", "nigger", "nigga", "retard", "kut", "hoer", "lul",
+  "eikel", "klootzak", "kanker", "tyfus", "tering", "godverdomme", "homo",
+  "nazi", "hitler", "satan", "devil", "porn", "xxx", "sex", "cock", "penis",
+  "vagina", "anus", "dildo", "vibrator", "orgasm", "rape", "molest", "pedo",
+  "admin", "test", "fake", "anonymous", "unknown", "nobody", "null", "undefined"
+];
+
+const isOffensiveName = (name: string): boolean => {
+  const lowerName = name.toLowerCase().trim();
+  return offensiveNames.some(offensive => 
+    lowerName.includes(offensive) || lowerName === offensive
+  );
+};
+
+const isValidDateFormat = (dateStr: string): boolean => {
+  // Check mm/dd/yyyy format
+  const regex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
+  return regex.test(dateStr);
+};
+
+const parseDate = (dateStr: string): Date | null => {
+  if (!isValidDateFormat(dateStr)) return null;
+  const [month, day, year] = dateStr.split('/').map(Number);
+  const date = new Date(year, month - 1, day);
+  // Validate the date is real (e.g., not Feb 31)
+  if (date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  return date;
+};
+
+const isAtLeast18 = (dateStr: string): boolean => {
+  const birthDate = parseDate(dateStr);
+  if (!birthDate) return false;
+  
+  const today = new Date();
+  const age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+    return age - 1 >= 18;
+  }
+  return age >= 18;
+};
+
 const ProfileSetup = () => {
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -34,10 +83,10 @@ const ProfileSetup = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "Bestand te groot",
-          description: "Upload een foto kleiner dan 2MB voor de beste resultaten",
+          description: "Upload een foto kleiner dan 10MB",
           variant: "destructive",
         });
         return;
@@ -48,14 +97,86 @@ const ProfileSetup = () => {
     }
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^\d/]/g, '');
+    
+    // Auto-format with slashes
+    if (value.length === 2 && !value.includes('/')) {
+      value = value + '/';
+    } else if (value.length === 5 && value.split('/').length === 2) {
+      value = value + '/';
+    }
+    
+    // Limit length to mm/dd/yyyy (10 chars)
+    if (value.length <= 10) {
+      setDateOfBirth(value);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userId || !dateOfBirth) {
+    // Validate first name
+    const trimmedName = firstName.trim();
+    if (!trimmedName) {
+      toast({
+        title: "Voornaam verplicht",
+        description: "Vul je voornaam in om door te gaan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (trimmedName.length < 2) {
+      toast({
+        title: "Ongeldige voornaam",
+        description: "Je voornaam moet minimaal 2 tekens bevatten",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isOffensiveName(trimmedName)) {
+      toast({
+        title: "Ongeldige voornaam",
+        description: "Gebruik je echte voornaam",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate date of birth
+    if (!dateOfBirth) {
       toast({
         title: "Vul je geboortedatum in",
         description: "Geboortedatum is verplicht",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isValidDateFormat(dateOfBirth)) {
+      toast({
+        title: "Ongeldig datumformaat",
+        description: "Gebruik het formaat mm/dd/yyyy",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!parseDate(dateOfBirth)) {
+      toast({
+        title: "Ongeldige datum",
+        description: "Deze datum bestaat niet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isAtLeast18(dateOfBirth)) {
+      toast({
+        title: "Leeftijdsbeperking",
+        description: "Je moet minimaal 18 jaar oud zijn om deze app te gebruiken",
         variant: "destructive",
       });
       return;
@@ -70,6 +191,15 @@ const ProfileSetup = () => {
       return;
     }
 
+    if (!userId) {
+      toast({
+        title: "Niet ingelogd",
+        description: "Log opnieuw in en probeer het nog een keer",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setUploading(true);
 
@@ -77,6 +207,10 @@ const ProfileSetup = () => {
         title: "Foto uploaden...",
         description: "Je foto wordt geüpload naar de server",
       });
+
+      // Convert date from mm/dd/yyyy to yyyy-mm-dd for storage
+      const [month, day, year] = dateOfBirth.split('/');
+      const formattedDate = `${year}-${month}-${day}`;
 
       // Upload photo to storage
       const fileExt = selectedFile.name.split('.').pop();
@@ -119,8 +253,8 @@ const ProfileSetup = () => {
           photoUrl: signedUrlData.signedUrl,
           photoPath: fileName,
           userId,
-          firstName,
-          dateOfBirth,
+          firstName: trimmedName,
+          dateOfBirth: formattedDate,
         },
       });
 
@@ -152,10 +286,12 @@ const ProfileSetup = () => {
       let errorTitle = "Er ging iets mis";
       let errorDescription = error.message || "Probeer het opnieuw";
       
-      // Handle specific error cases
-      if (error.message?.includes("face")) {
+      // Handle specific error cases - face detection is the key one
+      if (error.message?.toLowerCase().includes("face") || 
+          error.message?.toLowerCase().includes("gezicht") ||
+          error.message?.includes("No faces detected")) {
         errorTitle = "Geen gezicht gevonden";
-        errorDescription = "Upload een duidelijke foto met je gezicht erop";
+        errorDescription = "Upload een duidelijke foto waarop je gezicht goed zichtbaar is. Zorg voor goede belichting en kijk recht in de camera.";
       } else if (error.message?.includes("timeout") || error.message?.includes("timed out")) {
         errorTitle = "Time-out";
         errorDescription = "De analyse duurde te lang. Probeer een kleinere foto";
@@ -193,29 +329,33 @@ const ProfileSetup = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="firstName">Voornaam (optioneel)</Label>
+            <Label htmlFor="firstName">Voornaam <span className="text-destructive">*</span></Label>
             <Input
               id="firstName"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Je voornaam"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dateOfBirth">Geboortedatum</Label>
-            <Input
-              id="dateOfBirth"
-              type="date"
-              value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
               required
             />
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">Geboortedatum <span className="text-destructive">*</span></Label>
+            <Input
+              id="dateOfBirth"
+              type="text"
+              value={dateOfBirth}
+              onChange={handleDateChange}
+              placeholder="mm/dd/yyyy"
+              maxLength={10}
+              required
+            />
+            <p className="text-xs text-muted-foreground">Je moet minimaal 18 jaar oud zijn</p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="photo" className="text-sm text-muted-foreground">
-              NB: je foto wordt alleen gebruikt ter check of je jezelf goed beschrijft, de foto wordt verder aan niemand getoond
+              NB: je foto wordt alleen gebruikt ter check of je jezelf goed beschrijft, de foto wordt verder aan niemand getoond. Upload een foto met je gezicht duidelijk zichtbaar.
             </Label>
             <div className="flex flex-col gap-4">
               {previewUrl && (
@@ -243,6 +383,7 @@ const ProfileSetup = () => {
                 className="cursor-pointer"
                 disabled={analyzing}
               />
+              <p className="text-xs text-muted-foreground">Max. 10MB</p>
             </div>
           </div>
 
