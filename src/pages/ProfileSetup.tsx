@@ -289,12 +289,17 @@ const ProfileSetup = () => {
       let errorTitle = "Er ging iets mis";
       let errorDescription = error.message || "Probeer het opnieuw";
       
-      // Handle specific error cases - face detection is the key one
+      // Handle specific error cases - face detection and selfie validation
       if (error.message?.toLowerCase().includes("face") || 
           error.message?.toLowerCase().includes("gezicht") ||
+          error.message?.toLowerCase().includes("persoon") ||
+          error.message?.toLowerCase().includes("selfie") ||
           error.message?.includes("No faces detected")) {
-        errorTitle = "Geen gezicht gevonden";
-        errorDescription = "Upload een duidelijke foto waarop je gezicht goed zichtbaar is. Zorg voor goede belichting en kijk recht in de camera.";
+        errorTitle = "Ongeldige foto";
+        // Use the error message from the server if it's in Dutch, otherwise use default
+        errorDescription = error.message?.includes("Upload") 
+          ? error.message 
+          : "Upload een duidelijke selfie waarop je gezicht goed zichtbaar is en je recht in de camera kijkt.";
       } else if (error.message?.includes("timeout") || error.message?.includes("timed out")) {
         errorTitle = "Time-out";
         errorDescription = "De analyse duurde te lang. Probeer een kleinere foto";

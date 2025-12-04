@@ -58,7 +58,8 @@ serve(async (req) => {
       formData.append('api_key', faceppApiKey);
       formData.append('api_secret', faceppApiSecret);
       formData.append('image_url', photoUrl);
-      formData.append('return_attributes', 'gender,age,beauty,emotion,eyestatus,skinstatus');
+      // Added headpose to verify it's a selfie (person facing camera)
+      formData.append('return_attributes', 'gender,age,beauty,emotion,eyestatus,skinstatus,headpose');
 
       const response = await fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
         method: 'POST',
@@ -100,6 +101,24 @@ serve(async (req) => {
         const face = faceppResult.faces[0];
         const attributes = face.attributes;
 
+        // Validate it's a proper selfie - check headpose (face should be facing camera)
+        const headpose = attributes?.headpose;
+        if (headpose) {
+          const yawAngle = Math.abs(headpose.yaw_angle || 0);
+          const pitchAngle = Math.abs(headpose.pitch_angle || 0);
+          
+          // If face is turned too much (not looking at camera), reject
+          if (yawAngle > 45 || pitchAngle > 30) {
+            console.log('Face not facing camera - yaw:', yawAngle, 'pitch:', pitchAngle);
+            return new Response(
+              JSON.stringify({ 
+                error: 'Upload een selfie waarbij je recht in de camera kijkt. Je gezicht moet duidelijk zichtbaar zijn.' 
+              }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+
         // Calculate attractiveness score from beauty scores
         const maleScore = attributes?.beauty?.male_score || 0;
         const femaleScore = attributes?.beauty?.female_score || 0;
@@ -118,6 +137,7 @@ serve(async (req) => {
             female: femaleScore,
           },
           skin_status: attributes?.skinstatus || null,
+          headpose: headpose || null,
         };
 
         console.log('Attractiveness score calculated:', analysisResult.attractiveness_score);
@@ -125,7 +145,7 @@ serve(async (req) => {
         console.log('No faces detected in the photo');
         return new Response(
           JSON.stringify({ 
-            error: 'No face detected in the photo. Please upload a clear photo showing your face.' 
+            error: 'Geen persoon gedetecteerd. Upload een duidelijke selfie foto van jezelf.' 
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
