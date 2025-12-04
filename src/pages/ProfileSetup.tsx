@@ -6,7 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, AlertCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // List of offensive/inappropriate names to filter
 const offensiveNames = [
@@ -65,7 +72,8 @@ const ProfileSetup = () => {
   const [firstName, setFirstName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
-  const [photoNote, setPhotoNote] = useState<string | null>(null);
+  const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -93,7 +101,7 @@ const ProfileSetup = () => {
         return;
       }
       setSelectedFile(file);
-      setPhotoNote(null); // Clear any previous photo note
+      setShowVerificationPrompt(false); // Close prompt when new file selected
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -295,11 +303,12 @@ const ProfileSetup = () => {
           error.message?.includes("No faces detected");
 
       if (isSelfieError) {
-        // Show as a friendly note instead of error
+        // Show verification prompt dialog instead of error
         const noteMessage = error.message?.includes("Upload") 
           ? error.message 
           : "Upload een duidelijke selfie waarop je gezicht goed zichtbaar is en je recht in de camera kijkt.";
-        setPhotoNote(noteMessage);
+        setVerificationMessage(noteMessage);
+        setShowVerificationPrompt(true);
         return; // Don't show error toast for selfie issues
       }
       
@@ -390,11 +399,6 @@ const ProfileSetup = () => {
                   )}
                 </div>
               )}
-              {photoNote && (
-                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 rounded-lg">
-                  <p className="text-sm text-orange-800 dark:text-orange-200">📷 {photoNote}</p>
-                </div>
-              )}
               <Input
                 id="photo"
                 type="file"
@@ -418,6 +422,40 @@ const ProfileSetup = () => {
           </Button>
         </form>
       </Card>
+
+      {/* Photo Verification Failed Dialog */}
+      <Dialog open={showVerificationPrompt} onOpenChange={setShowVerificationPrompt}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <DialogTitle>Foto verificatie mislukt</DialogTitle>
+            </div>
+            <DialogDescription className="pt-2">
+              {verificationMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-4">
+            <p className="text-sm text-muted-foreground">
+              Tips voor een goede selfie:
+            </p>
+            <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+              <li>Kijk recht in de camera</li>
+              <li>Zorg voor goede belichting</li>
+              <li>Zorg dat je gezicht duidelijk zichtbaar is</li>
+              <li>Gebruik een recente foto van jezelf</li>
+            </ul>
+            <Button 
+              onClick={() => setShowVerificationPrompt(false)}
+              className="mt-2"
+            >
+              Nieuwe foto uploaden
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
