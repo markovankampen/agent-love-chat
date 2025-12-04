@@ -258,14 +258,17 @@ const ProfileSetup = () => {
         },
       });
 
-      if (analysisError) {
-        console.error("Analysis error:", analysisError);
-        throw new Error(analysisError.message || "Fout bij analyseren van foto");
-      }
-
-      // Check if the response contains an error
+      // Check for error in response data first (edge function returns JSON with error field)
       if (analysisData?.error) {
         throw new Error(analysisData.error);
+      }
+
+      // Check for function invocation errors
+      if (analysisError) {
+        console.error("Analysis error:", analysisError);
+        // Try to extract error message from the response context
+        const errorMsg = analysisError.message || "Fout bij analyseren van foto";
+        throw new Error(errorMsg);
       }
 
       setAnalyzing(false);
