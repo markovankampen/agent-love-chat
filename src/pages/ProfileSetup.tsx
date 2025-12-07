@@ -273,11 +273,21 @@ const ProfileSetup = () => {
         throw new Error(analysisData.error);
       }
 
-      // Check for function invocation errors
+      // Check for function invocation errors (400/500 responses)
       if (analysisError) {
         console.error("Analysis error:", analysisError);
-        // Try to extract error message from the response context
-        const errorMsg = analysisError.message || "Fout bij analyseren van foto";
+        // Try to extract error message from the response - it may be embedded in the message
+        let errorMsg = "Fout bij analyseren van foto";
+        
+        // Parse the error message which may contain JSON
+        const errorMessage = analysisError.message || "";
+        const jsonMatch = errorMessage.match(/\{"error":"([^"]+)"\}/);
+        if (jsonMatch && jsonMatch[1]) {
+          errorMsg = jsonMatch[1];
+        } else if (analysisError.context?.error) {
+          errorMsg = analysisError.context.error;
+        }
+        
         throw new Error(errorMsg);
       }
 
