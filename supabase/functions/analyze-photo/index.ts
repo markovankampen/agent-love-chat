@@ -159,6 +159,27 @@ serve(async (req) => {
         }
       }
 
+      // Calculate attractiveness score from beauty scores
+      const maleScore = attributes?.beauty?.male_score || 0;
+      const femaleScore = attributes?.beauty?.female_score || 0;
+      const avgBeauty = (maleScore + femaleScore) / 2;
+
+      // Update analysis result
+      analysisResult.attractiveness_score = Math.round(avgBeauty / 10);
+      analysisResult.facial_features = {
+        gender: attributes?.gender?.value || null,
+        age: attributes?.age?.value || null,
+        emotion: attributes?.emotion || null,
+        beauty_scores: {
+          male: maleScore,
+          female: femaleScore,
+        },
+        skin_status: attributes?.skinstatus || null,
+        headpose: headpose || null,
+      };
+
+      console.log('Attractiveness score calculated:', analysisResult.attractiveness_score);
+
       // Store face analysis in separate table
       const { error: analysisError } = await supabase
         .from('face_analysis')
