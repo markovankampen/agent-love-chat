@@ -97,51 +97,8 @@ serve(async (req) => {
         attractiveness_score: null,
       };
 
-      if (faceppResult.faces && faceppResult.faces.length > 0) {
-        const face = faceppResult.faces[0];
-        const attributes = face.attributes;
-
-        // Validate it's a proper selfie - check headpose (face should be facing camera)
-        const headpose = attributes?.headpose;
-        if (headpose) {
-          const yawAngle = Math.abs(headpose.yaw_angle || 0);
-          const pitchAngle = Math.abs(headpose.pitch_angle || 0);
-          
-          // If face is turned too much (not looking at camera), reject
-          if (yawAngle > 45 || pitchAngle > 30) {
-            console.log('Face not facing camera - yaw:', yawAngle, 'pitch:', pitchAngle);
-            return new Response(
-              JSON.stringify({ 
-                error: 'Upload een selfie waarbij je recht in de camera kijkt. Je gezicht moet duidelijk zichtbaar zijn.' 
-              }),
-              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
-        }
-
-        // Calculate attractiveness score from beauty scores
-        const maleScore = attributes?.beauty?.male_score || 0;
-        const femaleScore = attributes?.beauty?.female_score || 0;
-        const avgBeauty = (maleScore + femaleScore) / 2;
-        
-        // Convert 0-100 score to 0-10 scale
-        analysisResult.attractiveness_score = Math.round(avgBeauty / 10);
-
-        // Store facial features
-        analysisResult.facial_features = {
-          gender: attributes?.gender?.value || null,
-          age: attributes?.age?.value || null,
-          emotion: attributes?.emotion || null,
-          beauty_scores: {
-            male: maleScore,
-            female: femaleScore,
-          },
-          skin_status: attributes?.skinstatus || null,
-          headpose: headpose || null,
-        };
-
-        console.log('Attractiveness score calculated:', analysisResult.attractiveness_score);
-      } else {
+      // Validate it's a selfie - must have exactly one face
+      if (!faceppResult.faces || faceppResult.faces.length === 0) {
         console.log('No faces detected in the photo');
         return new Response(
           JSON.stringify({ 
@@ -149,6 +106,57 @@ serve(async (req) => {
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
+
+      // Reject if multiple faces detected - must be a solo selfie
+      if (faceppResult.faces.length > 1) {
+        console.log('Multiple faces detected:', faceppResult.faces.length);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Meerdere personen gedetecteerd. Upload een selfie met alleen jezelf in beeld.' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const face = faceppResult.faces[0];
+      const attributes = face.attributes;
+      const faceRectangle = face.face_rectangle;
+
+      // Calculate face size relative to image - selfies typically have face taking up significant portion
+      const imageWidth = faceppResult.image_id ? 1000 : 1000; // Face++ doesn't return image dimensions directly
+      const faceWidth = faceRectangle?.width || 0;
+      const faceHeight = faceRectangle?.height || 0;
+      const faceArea = faceWidth * faceHeight;
+      
+      // If face is too small (likely not a selfie but a distant photo), reject
+      // Typical selfie has face area > 5% of image
+      if (faceWidth < 100 || faceHeight < 100) {
+        console.log('Face too small - width:', faceWidth, 'height:', faceHeight);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Je gezicht is te klein in de foto. Upload een close-up selfie waarbij je gezicht goed zichtbaar is.' 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate it's a proper selfie - check headpose (face should be facing camera)
+      const headpose = attributes?.headpose;
+      if (headpose) {
+        const yawAngle = Math.abs(headpose.yaw_angle || 0);
+        const pitchAngle = Math.abs(headpose.pitch_angle || 0);
+        
+        // If face is turned too much (not looking at camera), reject
+        if (yawAngle > 45 || pitchAngle > 30) {
+          console.log('Face not facing camera - yaw:', yawAngle, 'pitch:', pitchAngle);
+          return new Response(
+            JSON.stringify({ 
+              error: 'Upload een selfie waarbij je recht in de camera kijkt. Je gezicht moet duidelijk zichtbaar zijn.' 
+            }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
 
       // Store face analysis in separate table
