@@ -277,7 +277,7 @@ const ProfileSetup = () => {
       if (analysisError) {
         console.error("Analysis error:", analysisError);
         // Try to extract error message from the response - it may be embedded in the message
-        let errorMsg = "Fout bij analyseren van foto";
+        let errorMsg = "Fout tijdens het analyseren van de foto, upload een geldige selfie";
         
         // Parse the error message which may contain JSON
         const errorMessage = analysisError.message || "";
