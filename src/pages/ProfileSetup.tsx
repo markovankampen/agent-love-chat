@@ -300,6 +300,8 @@ const ProfileSetup = () => {
           error.message?.toLowerCase().includes("gezicht") ||
           error.message?.toLowerCase().includes("persoon") ||
           error.message?.toLowerCase().includes("selfie") ||
+          error.message?.toLowerCase().includes("close-up") ||
+          error.message?.toLowerCase().includes("meerdere") ||
           error.message?.includes("No faces detected");
 
       if (isSelfieError) {
