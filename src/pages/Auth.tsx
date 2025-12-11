@@ -12,6 +12,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [showGuestInput, setShowGuestInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
@@ -64,20 +66,31 @@ const Auth = () => {
   };
 
   const handleGuestLogin = async () => {
+    if (!showGuestInput) {
+      setShowGuestInput(true);
+      return;
+    }
+
+    if (!guestEmail || !guestEmail.includes("@")) {
+      toast({
+        title: "Fout",
+        description: "Voer een geldig emailadres in",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       const guestId = crypto.randomUUID();
       const guestUsername = `Gast_${guestId.slice(0, 8)}`;
-      const guestEmail = `guest_${guestId}@guest.com`;
       const guestPassword = crypto.randomUUID();
 
-      const redirectUrl = `${window.location.origin}/profile-setup`;
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: guestEmail,
         password: guestPassword,
         options: {
-          emailRedirectTo: redirectUrl,
           data: {
             username: guestUsername,
           },
@@ -86,11 +99,19 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // Auto sign in after signup (no email verification for guests)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: guestEmail,
+        password: guestPassword,
+      });
+
+      if (signInError) throw signInError;
+
       toast({
         title: "Welkom!",
-        description: `Je bent ingelogd als ${guestUsername}`,
+        description: `Je bent ingelogd als gast`,
       });
-      navigate("/verify");
+      navigate("/profile-setup");
     } catch (error: any) {
       toast({
         title: "Fout",
@@ -176,6 +197,20 @@ const Auth = () => {
           </div>
         </div>
 
+        {showGuestInput && (
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="guestEmail">Email voor gast account</Label>
+            <Input
+              id="guestEmail"
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              placeholder="jouw@email.nl"
+              required
+            />
+          </div>
+        )}
+
         <Button
           onClick={handleGuestLogin}
           variant="outline"
@@ -183,7 +218,7 @@ const Auth = () => {
           disabled={loading}
         >
           <UserCircle className="mr-2 h-4 w-4" />
-          Doorgaan als gast
+          {showGuestInput ? "Bevestig & doorgaan" : "Doorgaan als gast"}
         </Button>
 
         <div className="text-center mt-4">
