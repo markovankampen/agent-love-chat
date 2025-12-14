@@ -97,7 +97,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Chat & Ontdek</h3>
               <p className="text-muted-foreground">
-                Heb een vriendelijk gesprek met onze Matchmaker. Deel je interesses, dromen, en wat jou uniek maakt. Het is gratis, anoniem en 18+.
+                Heb een open gesprek met onze Matchmaker. Deel je interesses, je persoonlijkheid, wat jou uniek maakt en naar wat voor persoon je op zoek bent. Het is gratis, anoniem en 18+.
               </p>
             </div>
             
