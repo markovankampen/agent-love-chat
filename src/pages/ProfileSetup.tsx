@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Camera, AlertCircle } from "lucide-react";
+import { Loader2, Camera, AlertCircle, X, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +74,11 @@ const ProfileSetup = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -101,10 +106,80 @@ const ProfileSetup = () => {
         return;
       }
       setSelectedFile(file);
-      setShowVerificationPrompt(false); // Close prompt when new file selected
+      setShowVerificationPrompt(false);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
+  };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      setCameraStream(stream);
+      setShowCamera(true);
+      
+      // Wait for the video element to be available
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err: any) {
+      console.error("Camera access error:", err);
+      setCameraError("Geen toegang tot camera. Controleer je browser instellingen.");
+      toast({
+        title: "Camera niet beschikbaar",
+        description: "Geef toestemming voor camera toegang of upload een foto",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+
+    if (!context) return;
+
+    // Set canvas size to video size
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Draw the video frame to canvas (mirror it for selfie)
+    context.translate(canvas.width, 0);
+    context.scale(-1, 1);
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Convert to blob and create file
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: "image/jpeg" });
+        setSelectedFile(file);
+        setPreviewUrl(canvas.toDataURL("image/jpeg"));
+        setShowVerificationPrompt(false);
+        stopCamera();
+        
+        toast({
+          title: "Foto gemaakt!",
+          description: "Je selfie is klaar voor upload",
+        });
+      }
+    }, "image/jpeg", 0.9);
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -411,7 +486,7 @@ const ProfileSetup = () => {
               </p>
             </div>
             <div className="flex flex-col gap-4">
-              {previewUrl && (
+              {previewUrl && !showCamera && (
                 <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
                   <img
                     src={previewUrl}
@@ -428,14 +503,42 @@ const ProfileSetup = () => {
                   )}
                 </div>
               )}
-              <Input
-                id="photo"
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="cursor-pointer"
-                disabled={analyzing}
-              />
+              
+              {/* Camera buttons */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={startCamera}
+                  disabled={analyzing || showCamera}
+                  className="flex-1"
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Neem live selfie
+                </Button>
+                <label className="flex-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={analyzing}
+                    className="w-full"
+                    asChild
+                  >
+                    <span>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload foto
+                    </span>
+                  </Button>
+                  <Input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    disabled={analyzing}
+                  />
+                </label>
+              </div>
               <p className="text-xs text-muted-foreground">Max. 10MB</p>
             </div>
           </div>
@@ -451,6 +554,59 @@ const ProfileSetup = () => {
           </Button>
         </form>
       </Card>
+
+      {/* Camera Dialog */}
+      <Dialog open={showCamera} onOpenChange={(open) => { if (!open) stopCamera(); }}>
+        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-primary" />
+              Neem een selfie
+            </DialogTitle>
+            <DialogDescription>
+              Positioneer je gezicht in het midden en kijk recht in de camera
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative aspect-[4/3] bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+              style={{ transform: "scaleX(-1)" }}
+            />
+            {cameraError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted/90 p-4">
+                <p className="text-center text-muted-foreground">{cameraError}</p>
+              </div>
+            )}
+            {/* Face guide overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-full" />
+            </div>
+          </div>
+          <div className="p-4 flex gap-2">
+            <Button
+              variant="outline"
+              onClick={stopCamera}
+              className="flex-1"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Annuleren
+            </Button>
+            <Button
+              onClick={capturePhoto}
+              className="flex-1"
+              disabled={!cameraStream}
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              Maak foto
+            </Button>
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+        </DialogContent>
+      </Dialog>
 
       {/* Photo Verification Failed Dialog */}
       <Dialog open={showVerificationPrompt} onOpenChange={setShowVerificationPrompt}>
