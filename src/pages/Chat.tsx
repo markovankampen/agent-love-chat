@@ -195,7 +195,7 @@ const Chat = () => {
             </li>
             <li className="flex items-start gap-2">
               <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Op basis van jouw antwoorden ga ik op zoek naar een match</span>
+              <span>Op basis van jouw antwoorden en foto ga ik op zoek naar een match</span>
             </li>
           </ul>
         </div>
