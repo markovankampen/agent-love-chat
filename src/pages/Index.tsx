@@ -121,7 +121,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Blind Matches</h3>
               <p className="text-muted-foreground">
-                We maken matches gebaseerd op de overeenkomsten die blijken uit de chats en elkaars foto. De foto's worden niet met andere kandidaten gedeeld.
+                We maken matches gebaseerd op de overeenkomsten die blijken uit de chats en elkaars foto. De foto's worden nooit gedeeld, niemand krijgt deze te zien, ook niet met een eventuele match. We gebruiken de foto's alleen voor verificatie en matching.
               </p>
             </div>
           </div>
