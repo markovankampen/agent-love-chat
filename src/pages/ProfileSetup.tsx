@@ -426,14 +426,14 @@ const ProfileSetup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-3 py-6 sm:p-4">
+      <Card className="w-full max-w-md p-4 sm:p-8 space-y-4 sm:space-y-6">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-            <Camera className="w-8 h-8 text-primary" />
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-2 sm:mb-4">
+            <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold">Stel je profiel in</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold">Stel je profiel in</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Upload een foto en vertel ons over jezelf
           </p>
         </div>
@@ -468,20 +468,20 @@ const ProfileSetup = () => {
             <Label htmlFor="photo" className="font-medium">
               Profielfoto <span className="text-destructive">*</span>
             </Label>
-            <div className="p-3 bg-muted/50 rounded-lg border border-border/50 space-y-2">
-              <p className="text-sm text-muted-foreground">
+            <div className="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 space-y-1.5 sm:space-y-2">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 <strong>Jouw foto is privé</strong> – deze wordt aan niemand getoond maar is wel belangrijk voor een potentiële match.
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 <strong>Foto vereisten:</strong>
               </p>
-              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+              <ul className="text-xs sm:text-sm text-muted-foreground list-disc list-inside space-y-0.5 sm:space-y-1">
                 <li>Duidelijke selfie met je gezicht goed zichtbaar</li>
                 <li>Kijk recht in de camera</li>
                 <li>Goede belichting (niet te donker)</li>
                 <li>Alleen jij op de foto</li>
               </ul>
-              <p className="text-sm text-primary font-medium">
+              <p className="text-xs sm:text-sm text-primary font-medium">
                 💡 Tip: Een live selfie werkt het beste!
               </p>
             </div>
@@ -505,13 +505,13 @@ const ProfileSetup = () => {
               )}
               
               {/* Camera buttons */}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   type="button"
                   variant="default"
                   onClick={startCamera}
                   disabled={analyzing || showCamera}
-                  className="flex-1"
+                  className="flex-1 text-sm sm:text-base"
                 >
                   <Camera className="mr-2 h-4 w-4" />
                   Neem live selfie
@@ -521,7 +521,7 @@ const ProfileSetup = () => {
                     type="button"
                     variant="outline"
                     disabled={analyzing}
-                    className="w-full"
+                    className="w-full text-sm sm:text-base"
                     asChild
                   >
                     <span>
@@ -557,17 +557,17 @@ const ProfileSetup = () => {
 
       {/* Camera Dialog */}
       <Dialog open={showCamera} onOpenChange={(open) => { if (!open) stopCamera(); }}>
-        <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
-          <DialogHeader className="p-4 pb-0">
-            <DialogTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5 text-primary" />
+        <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="p-3 sm:p-4 pb-0">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Camera className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Neem een selfie
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Positioneer je gezicht in het midden en kijk recht in de camera
             </DialogDescription>
           </DialogHeader>
-          <div className="relative aspect-[4/3] bg-black">
+          <div className="relative aspect-[3/4] sm:aspect-[4/3] bg-black">
             <video
               ref={videoRef}
               autoPlay
@@ -578,29 +578,29 @@ const ProfileSetup = () => {
             />
             {cameraError && (
               <div className="absolute inset-0 flex items-center justify-center bg-muted/90 p-4">
-                <p className="text-center text-muted-foreground">{cameraError}</p>
+                <p className="text-center text-sm text-muted-foreground">{cameraError}</p>
               </div>
             )}
             {/* Face guide overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-full" />
+              <div className="w-36 h-48 sm:w-48 sm:h-64 border-2 border-dashed border-white/50 rounded-full" />
             </div>
           </div>
-          <div className="p-4 flex gap-2">
+          <div className="p-3 sm:p-4 flex gap-2">
             <Button
               variant="outline"
               onClick={stopCamera}
-              className="flex-1"
+              className="flex-1 text-sm sm:text-base"
             >
-              <X className="mr-2 h-4 w-4" />
+              <X className="mr-1.5 sm:mr-2 h-4 w-4" />
               Annuleren
             </Button>
             <Button
               onClick={capturePhoto}
-              className="flex-1"
+              className="flex-1 text-sm sm:text-base"
               disabled={!cameraStream}
             >
-              <Camera className="mr-2 h-4 w-4" />
+              <Camera className="mr-1.5 sm:mr-2 h-4 w-4" />
               Maak foto
             </Button>
           </div>
@@ -610,23 +610,23 @@ const ProfileSetup = () => {
 
       {/* Photo Verification Failed Dialog */}
       <Dialog open={showVerificationPrompt} onOpenChange={setShowVerificationPrompt}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
-                <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
               </div>
-              <DialogTitle>Foto verificatie mislukt</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">Foto verificatie mislukt</DialogTitle>
             </div>
-            <DialogDescription className="pt-2">
+            <DialogDescription className="pt-2 text-xs sm:text-sm">
               {verificationMessage}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-3 pt-4">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-2 sm:gap-3 pt-3 sm:pt-4">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Tips voor een goede selfie:
             </p>
-            <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+            <ul className="text-xs sm:text-sm text-muted-foreground list-disc list-inside space-y-0.5 sm:space-y-1">
               <li>Kijk recht in de camera</li>
               <li>Zorg voor goede belichting</li>
               <li>Zorg dat je gezicht duidelijk zichtbaar is</li>
@@ -634,7 +634,7 @@ const ProfileSetup = () => {
             </ul>
             <Button 
               onClick={() => setShowVerificationPrompt(false)}
-              className="mt-2"
+              className="mt-2 text-sm sm:text-base"
             >
               Nieuwe foto uploaden
             </Button>
