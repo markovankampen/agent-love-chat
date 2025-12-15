@@ -111,7 +111,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">AI Hulp</h3>
               <p className="text-muted-foreground">
-                Onze slimme AI Matchmaker bouwt in een 1 op 1 gesprek een persoonlijkheidsprofiel op en gaat op zoek naar een perfecte match.
+                Onze slimme AI Matchmaker bouwt in een 1 op 1 gesprek een persoonlijkheidsprofiel en analyseert je persoonlijke foto om zo een perfecte match te vinden.
               </p>
             </div>
             
