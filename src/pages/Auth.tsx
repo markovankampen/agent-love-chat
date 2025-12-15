@@ -134,8 +134,8 @@ const Auth = () => {
             {isLogin ? "Inloggen" : "Registreren"}
           </h1>
           <p className="text-muted-foreground mt-2">
-            {isLogin
-              ? "Log in om verder te gaan met Agent Flori"
+          {isLogin
+              ? "Log in om verder te gaan met Matchmaker Flori"
               : "Maak een account aan om te beginnen"}
           </p>
         </div>

@@ -390,9 +390,26 @@ const ProfileSetup = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="photo" className="text-sm text-muted-foreground">
-              NB: je foto wordt alleen gebruikt ter check of je jezelf goed beschrijft, de foto wordt verder aan niemand getoond. Upload een foto met je gezicht duidelijk zichtbaar.
+            <Label htmlFor="photo" className="font-medium">
+              Profielfoto <span className="text-destructive">*</span>
             </Label>
+            <div className="p-3 bg-muted/50 rounded-lg border border-border/50 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                <strong>Jouw foto is privé</strong> – deze wordt aan niemand getoond maar is wel belangrijk voor een potentiële match.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong>Foto vereisten:</strong>
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                <li>Duidelijke selfie met je gezicht goed zichtbaar</li>
+                <li>Kijk recht in de camera</li>
+                <li>Goede belichting (niet te donker)</li>
+                <li>Alleen jij op de foto</li>
+              </ul>
+              <p className="text-sm text-primary font-medium">
+                💡 Tip: Een live selfie werkt het beste!
+              </p>
+            </div>
             <div className="flex flex-col gap-4">
               {previewUrl && (
                 <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
