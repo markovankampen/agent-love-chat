@@ -285,7 +285,7 @@ const Chat = () => {
 
               <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-glow">
                 <AvatarFallback className="bg-gradient-romantic text-white font-semibold">
-                  AF
+                  MF
                 </AvatarFallback>
               </Avatar>
               <div>
