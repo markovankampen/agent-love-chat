@@ -119,9 +119,21 @@ const Index = () => {
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="w-8 h-8 text-primary fill-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Blind Matches</h3>
+              <h3 className="text-xl font-semibold mb-3">Matchen</h3>
               <p className="text-muted-foreground">
-                We maken matches gebaseerd op de overeenkomsten die blijken uit de chats en elkaars foto. De foto's worden nooit gedeeld, niemand krijgt deze te zien, ook niet met een eventuele match. We gebruiken de foto's alleen voor verificatie en matching.
+                We maken matches gebaseerd op de chats en foto's. De chats en foto's worden nooit gedeeld, ook niet bij een eventuele match. Privacy staat voorop!
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-center mt-8">
+            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in max-w-md" style={{ animationDelay: "0.3s" }}>
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Blind Date</h3>
+              <p className="text-muted-foreground">
+                Heb je een match? Je krijgt van ons een e-mail met daarbij een voorstel voor een drankje bij een lokale ondernemer met je match. Een echte blind date! Vind je dit nog te spannend? Dan kan je er ook voor kiezen eerst telefoonnummers met elkaar uit te wisselen.
               </p>
             </div>
           </div>
@@ -131,12 +143,9 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-20 bg-primary w-full">
         <div className="w-full px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
             Klaar om een date te vinden die bij je past?
           </h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Schrijf je in en laat onze Matchmaker je helpen aan een echte connectie.
-          </p>
           <Button 
             size="lg" 
             className="bg-white text-primary hover:bg-white/90 transition-opacity text-lg px-8 py-6"
