@@ -94,8 +94,8 @@ const Index = () => {
             Hoe het werkt
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in flex flex-col">
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="w-8 h-8 text-primary" />
               </div>
@@ -105,7 +105,7 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in" style={{ animationDelay: "0.1s" }}>
+            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in flex flex-col" style={{ animationDelay: "0.1s" }}>
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="w-8 h-8 text-primary" />
               </div>
@@ -115,7 +115,7 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in flex flex-col" style={{ animationDelay: "0.2s" }}>
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="w-8 h-8 text-primary fill-primary" />
               </div>
@@ -124,10 +124,8 @@ const Index = () => {
                 We maken matches gebaseerd op de chats en foto's. De chats en foto's worden nooit gedeeld, ook niet bij een eventuele match. Privacy staat voorop!
               </p>
             </div>
-          </div>
-          
-          <div className="flex justify-center mt-8">
-            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in max-w-md" style={{ animationDelay: "0.3s" }}>
+            
+            <div className="text-center p-6 rounded-2xl bg-card border animate-fade-in flex flex-col" style={{ animationDelay: "0.3s" }}>
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="w-8 h-8 text-primary" />
               </div>
