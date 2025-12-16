@@ -187,7 +187,7 @@ const Chat = () => {
           <ul className="space-y-1.5 ml-4">
             <li className="flex items-start gap-2">
               <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Ik stel je persoonlijke vragen over jezelf en je ideale date</span>
+              <span>Ik stel je persoonlijke vragen over jezelf en je ideale partner</span>
             </li>
             <li className="flex items-start gap-2">
               <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
@@ -213,6 +213,10 @@ const Chat = () => {
             <li className="flex items-start gap-2">
               <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <span>Er zijn geen foute antwoorden - gewoon jouw antwoorden!</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <span>Bij een match sturen we jou en je date een mail om een afspraak in te plannen</span>
             </li>
           </ul>
         </div>
