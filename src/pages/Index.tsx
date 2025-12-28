@@ -3,20 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Sparkles } from "lucide-react";
-import romantic3 from "@/assets/romantic-3.jpg";
-import romantic4 from "@/assets/romantic-4.jpg";
-import romantic5 from "@/assets/romantic-5.jpg";
-import romantic6 from "@/assets/romantic-6.jpg";
-import romantic7 from "@/assets/romantic-7.jpg";
-import romantic8 from "@/assets/romantic-8.jpg";
-import romanticMature1 from "@/assets/romantic-mature-1.jpg";
-import romanticMature2 from "@/assets/romantic-mature-2.jpg";
+import couplePub from "@/assets/couple-pub.jpg";
+import coupleForest from "@/assets/couple-forest.jpg";
+import coupleRestaurant from "@/assets/couple-restaurant.jpg";
+import coupleBench from "@/assets/couple-bench.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const romanticImages = [romantic3, romanticMature1, romantic4, romanticMature2, romantic7, romantic5, romantic6, romantic8];
+  const romanticImages = [couplePub, coupleForest, coupleRestaurant, coupleBench];
 
   useEffect(() => {
     const checkAuth = async () => {
