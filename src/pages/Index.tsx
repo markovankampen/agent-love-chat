@@ -7,12 +7,13 @@ import couplePub from "@/assets/couple-pub.jpg";
 import coupleForest from "@/assets/couple-forest.jpg";
 import coupleRestaurant from "@/assets/couple-restaurant.jpg";
 import coupleBench from "@/assets/couple-bench.jpg";
+import coupleCoast from "@/assets/couple-coast.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const romanticImages = [couplePub, coupleForest, coupleRestaurant, coupleBench];
+  const romanticImages = [couplePub, coupleForest, coupleRestaurant, coupleBench, coupleCoast];
 
   useEffect(() => {
     const checkAuth = async () => {
