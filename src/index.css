@@ -118,3 +118,8 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom fonts */
+.font-caveat {
+  font-family: 'Caveat', cursive;
+}
