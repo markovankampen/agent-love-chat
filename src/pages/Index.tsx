@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { 
+  SelfieIcon, 
+  ChatPhoneIcon, 
+  MatchEnvelopesIcon, 
+  DancingPersonIcon,
+  LogoHeart,
+  DecorativeSwirl
+} from "@/components/icons/HowItWorksIcons";
 
 // Import saved images
 import girlfriendsCouch from "@/assets/girlfriends-couch.jpg";
@@ -40,7 +47,7 @@ const Index = () => {
       {/* Top Bar */}
       <div className="bg-foreground text-background py-2 px-4 text-center text-sm">
         <span className="inline-flex items-center gap-2">
-          <Heart className="w-4 h-4 fill-primary text-primary" />
+          <span className="w-4 h-4"><LogoHeart /></span>
           indebuurt ontmoet is een initiatief van{" "}
           <a href="https://indebuurt.nl" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary transition-colors">
             indebuurt.nl
@@ -79,11 +86,8 @@ const Index = () => {
             <div className="text-center md:text-left order-1 md:order-2">
               {/* Heart Icon */}
               <div className="flex justify-center md:justify-start mb-6">
-                <div className="relative">
-                  <Heart className="w-16 h-16 text-primary fill-primary" />
-                  <div className="absolute -top-1 -right-1 w-4 h-4">
-                    <Heart className="w-full h-full text-primary fill-primary animate-pulse" />
-                  </div>
+                <div className="w-20 h-24">
+                  <LogoHeart />
                 </div>
               </div>
 
@@ -135,20 +139,8 @@ const Index = () => {
             {/* Step 1 */}
             <div className="text-center">
               <div className="mb-6 flex justify-center">
-                <div className="relative">
-                  {/* Hand-drawn style illustration placeholder */}
-                  <div className="w-24 h-24 flex items-center justify-center">
-                    <svg viewBox="0 0 100 100" className="w-full h-full">
-                      <circle cx="50" cy="45" r="25" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                      <path d="M40 40 Q45 35, 50 40 Q55 35, 60 40" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                      <circle cx="42" cy="42" r="2" fill="hsl(var(--foreground))" />
-                      <circle cx="58" cy="42" r="2" fill="hsl(var(--foreground))" />
-                      <path d="M45 52 Q50 56, 55 52" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                      <path d="M30 70 L35 55 M70 70 L65 55" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                      <path d="M75 25 Q80 15, 85 20" stroke="hsl(var(--primary))" strokeWidth="2" fill="none" />
-                      <circle cx="88" cy="18" r="3" fill="hsl(var(--primary))" />
-                    </svg>
-                  </div>
+                <div className="w-28 h-28">
+                  <SelfieIcon />
                 </div>
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
@@ -163,13 +155,8 @@ const Index = () => {
             {/* Step 2 */}
             <div className="text-center">
               <div className="mb-6 flex justify-center">
-                <div className="w-24 h-24 flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    <rect x="25" y="30" width="50" height="45" rx="5" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                    <path d="M30 40 L70 40 M30 50 L60 50 M30 60 L55 60" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-                    <path d="M50 20 L50 10" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                    <circle cx="50" cy="8" r="3" fill="hsl(var(--primary))" />
-                  </svg>
+                <div className="w-24 h-24">
+                  <ChatPhoneIcon />
                 </div>
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
@@ -184,13 +171,8 @@ const Index = () => {
             {/* Step 3 */}
             <div className="text-center">
               <div className="mb-6 flex justify-center">
-                <div className="w-24 h-24 flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    <path d="M30 50 L40 40 L50 50 L60 40 L70 50 L60 60 L50 50 L40 60 Z" 
-                      fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                    <circle cx="50" cy="35" r="4" fill="hsl(var(--primary))" />
-                    <path d="M20 70 Q35 80, 50 75 Q65 80, 80 70" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" strokeDasharray="3 3" />
-                  </svg>
+                <div className="w-28 h-24">
+                  <MatchEnvelopesIcon />
                 </div>
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
@@ -205,15 +187,8 @@ const Index = () => {
             {/* Step 4 */}
             <div className="text-center">
               <div className="mb-6 flex justify-center">
-                <div className="w-24 h-24 flex items-center justify-center">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    <path d="M30 60 L40 50 M60 50 L70 60" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                    <circle cx="35" cy="35" r="12" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                    <circle cx="65" cy="35" r="12" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                    <path d="M45 75 Q50 80, 55 75" stroke="hsl(var(--foreground))" strokeWidth="2" />
-                    <path d="M48 25 Q52 18, 56 25" stroke="hsl(var(--primary))" strokeWidth="2" fill="none" />
-                    <circle cx="52" cy="16" r="4" fill="hsl(var(--primary))" />
-                  </svg>
+                <div className="w-24 h-28">
+                  <DancingPersonIcon />
                 </div>
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">
@@ -232,7 +207,9 @@ const Index = () => {
       <section className="py-16 md:py-24 bg-background">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="mb-6 flex justify-center">
-            <Heart className="w-12 h-12 text-primary fill-primary" />
+            <div className="w-16 h-20">
+              <LogoHeart />
+            </div>
           </div>
           
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
@@ -256,8 +233,8 @@ const Index = () => {
       {/* Footer */}
       <footer className="py-8 px-4 text-center border-t border-border">
         <div className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Heart className="w-8 h-8 text-primary fill-primary" />
+          <div className="w-12 h-14">
+            <LogoHeart />
           </div>
           <p className="text-sm text-muted-foreground">
             <span className="text-primary font-semibold">indebuurt</span>
