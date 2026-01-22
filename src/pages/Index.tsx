@@ -19,6 +19,7 @@ import wineGlasses from "@/assets/illustrations/wine-glasses.png";
 import waveLine from "@/assets/illustrations/wave-line.png";
 import rocketLove from "@/assets/illustrations/rocket-love.png";
 import brokenHeart from "@/assets/illustrations/broken-heart.png";
+import selfieHeart from "@/assets/illustrations/selfie-heart.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -195,9 +196,9 @@ const Index = () => {
               </div>
               <div className="flex justify-center md:justify-start items-center order-1 md:order-2 relative">
                 <img 
-                  src={rocketLove} 
+                  src={selfieHeart} 
                   alt="" 
-                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
+                  className="w-28 h-28 md:w-36 md:h-36 object-contain"
                 />
                 <div className="absolute top-0 right-8 md:right-auto md:left-20 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
                   1
