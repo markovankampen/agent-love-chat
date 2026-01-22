@@ -11,13 +11,13 @@ import elderlyCoupleWalking from "@/assets/elderly-couple-walking.jpg";
 import coupleTerraceCoffee from "@/assets/couple-terrace-coffee.jpg";
 
 // Import illustrations
-import rainbowIllustration from "@/assets/illustrations/rainbow.png";
 import heartRedGlow from "@/assets/illustrations/heart-red-glow.png";
 import cupidBow from "@/assets/illustrations/cupid-bow.png";
 import aiHeartChip from "@/assets/illustrations/ai-heart-chip.png";
 import floatingHearts from "@/assets/illustrations/floating-hearts.png";
 import wineGlasses from "@/assets/illustrations/wine-glasses.png";
 import waveLine from "@/assets/illustrations/wave-line.png";
+import rocketLove from "@/assets/illustrations/rocket-love.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -62,12 +62,12 @@ const Index = () => {
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Hero Content - Left Side */}
             <div className="text-center md:text-left order-2 md:order-1">
-              {/* Dancing Person Illustration */}
+              {/* Rocket Love Illustration - represents excitement/action */}
               <div className="flex justify-center md:justify-start mb-4">
                 <img 
-                  src={rainbowIllustration} 
+                  src={rocketLove} 
                   alt="" 
-                  className="w-32 h-32 md:w-40 md:h-40 object-contain"
+                  className="w-36 h-36 md:w-44 md:h-44 object-contain"
                 />
               </div>
 
@@ -196,7 +196,7 @@ const Index = () => {
                 <img 
                   src={cupidBow} 
                   alt="" 
-                  className="w-28 h-28 md:w-36 md:h-36 object-contain"
+                  className="w-32 h-20 md:w-40 md:h-24 object-contain"
                 />
                 <div className="absolute -top-2 right-4 md:right-auto md:left-28 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
                   1
