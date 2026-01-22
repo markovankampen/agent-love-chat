@@ -18,6 +18,7 @@ import floatingHearts from "@/assets/illustrations/floating-hearts.png";
 import wineGlasses from "@/assets/illustrations/wine-glasses.png";
 import waveLine from "@/assets/illustrations/wave-line.png";
 import rocketLove from "@/assets/illustrations/rocket-love.png";
+import brokenHeart from "@/assets/illustrations/broken-heart.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -62,12 +63,12 @@ const Index = () => {
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Hero Content - Left Side */}
             <div className="text-center md:text-left order-2 md:order-1">
-              {/* Rocket Love Illustration - represents excitement/action */}
+              {/* Cupid Bow Illustration - jumping person with bow and hearts */}
               <div className="flex justify-center md:justify-start mb-4">
                 <img 
-                  src={rocketLove} 
+                  src={cupidBow} 
                   alt="" 
-                  className="w-36 h-36 md:w-44 md:h-44 object-contain"
+                  className="w-40 h-40 md:w-48 md:h-48 object-contain"
                 />
               </div>
 
@@ -194,11 +195,11 @@ const Index = () => {
               </div>
               <div className="flex justify-center md:justify-start items-center order-1 md:order-2 relative">
                 <img 
-                  src={cupidBow} 
+                  src={rocketLove} 
                   alt="" 
-                  className="w-32 h-20 md:w-40 md:h-24 object-contain"
+                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
                 />
-                <div className="absolute -top-2 right-4 md:right-auto md:left-28 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
+                <div className="absolute top-0 right-8 md:right-auto md:left-20 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
                   1
                 </div>
               </div>
@@ -242,9 +243,9 @@ const Index = () => {
                 <img 
                   src={floatingHearts} 
                   alt="" 
-                  className="w-28 h-28 md:w-36 md:h-36 object-contain"
+                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
                 />
-                <div className="absolute -top-2 right-4 md:right-auto md:left-28 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
+                <div className="absolute top-0 right-8 md:right-auto md:left-20 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
                   3
                 </div>
               </div>
