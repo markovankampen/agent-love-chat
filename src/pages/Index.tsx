@@ -2,21 +2,22 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { 
-  SelfieIcon, 
-  ChatPhoneIcon, 
-  MatchEnvelopesIcon, 
-  DancingPersonIcon,
-  LogoHeart,
-  DecorativeSwirl
-} from "@/components/icons/HowItWorksIcons";
 
-// Import saved images
+// Import saved hero images
 import girlfriendsCouch from "@/assets/girlfriends-couch.jpg";
 import coupleDancing from "@/assets/couple-dancing.jpg";
 import coupleCafeBook from "@/assets/couple-cafe-book.jpg";
 import elderlyCoupleWalking from "@/assets/elderly-couple-walking.jpg";
 import coupleTerraceCoffee from "@/assets/couple-terrace-coffee.jpg";
+
+// Import illustrations
+import rainbowIllustration from "@/assets/illustrations/rainbow.png";
+import heartRedGlow from "@/assets/illustrations/heart-red-glow.png";
+import cupidBow from "@/assets/illustrations/cupid-bow.png";
+import aiHeartChip from "@/assets/illustrations/ai-heart-chip.png";
+import floatingHearts from "@/assets/illustrations/floating-hearts.png";
+import wineGlasses from "@/assets/illustrations/wine-glasses.png";
+import waveLine from "@/assets/illustrations/wave-line.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -43,11 +44,11 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Top Bar */}
       <div className="bg-foreground text-background py-2 px-4 text-center text-sm">
         <span className="inline-flex items-center gap-2">
-          <span className="w-4 h-4"><LogoHeart /></span>
+          <img src={heartRedGlow} alt="" className="w-4 h-4 object-contain" />
           indebuurt ontmoet is een initiatief van{" "}
           <a href="https://indebuurt.nl" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary transition-colors">
             indebuurt.nl
@@ -56,12 +57,47 @@ const Index = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="py-12 md:py-20 px-4 md:px-8">
+      <section className="py-8 md:py-16 px-4 md:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-            {/* Hero Image */}
-            <div className="relative order-2 md:order-1">
-              <div className="relative rounded-3xl overflow-hidden aspect-[4/5] max-w-md mx-auto md:mx-0">
+            {/* Hero Content - Left Side */}
+            <div className="text-center md:text-left order-2 md:order-1">
+              {/* Dancing Person Illustration */}
+              <div className="flex justify-center md:justify-start mb-4">
+                <img 
+                  src={rainbowIllustration} 
+                  alt="" 
+                  className="w-32 h-32 md:w-40 md:h-40 object-contain"
+                />
+              </div>
+
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 leading-tight">
+                Flori<br />verbindt!
+              </h1>
+
+              <p className="text-base md:text-lg text-muted-foreground mb-6 max-w-md">
+                Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
+              </p>
+
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-6 py-5 rounded-full"
+                onClick={() => navigate("/auth")}
+              >
+                Login en start direct
+              </Button>
+
+              {/* Handwritten tagline */}
+              <div className="mt-6">
+                <p className="font-caveat text-2xl md:text-3xl text-foreground italic">
+                  Helemaal gratis én anoniem
+                </p>
+              </div>
+            </div>
+
+            {/* Hero Image - Right Side */}
+            <div className="relative order-1 md:order-2">
+              <div className="relative rounded-3xl overflow-hidden aspect-[4/5] max-w-sm mx-auto">
                 {heroImages.map((image, index) => (
                   <img
                     key={index}
@@ -73,156 +109,187 @@ const Index = () => {
                   />
                 ))}
               </div>
-              {/* Decorative elements */}
-              <div className="absolute -top-4 -right-4 w-24 h-24 opacity-80 pointer-events-none hidden md:block">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <path d="M50 10 C60 20, 80 30, 85 50 C90 70, 70 90, 50 95 C30 90, 10 70, 15 50 C20 30, 40 20, 50 10" 
-                    fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" strokeDasharray="4 4" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Hero Content */}
-            <div className="text-center md:text-left order-1 md:order-2">
-              {/* Heart Icon */}
-              <div className="flex justify-center md:justify-start mb-6">
-                <div className="w-20 h-24">
-                  <LogoHeart />
-                </div>
-              </div>
-
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
-                Flori<br />verbindt!
-              </h1>
-
-              <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg">
-                Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
-              </p>
-
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 rounded-full"
-                onClick={() => navigate("/auth")}
-              >
-                Login en start direct
-              </Button>
-
-              {/* Handwritten tagline */}
-              <div className="mt-8 flex items-center justify-center md:justify-start gap-4">
-                <p className="font-caveat text-2xl md:text-3xl text-foreground italic">
-                  Helemaal gratis én anoniem
-                </p>
-                {/* Small decorative dots */}
-                <div className="flex flex-col gap-1">
-                  <div className="w-2 h-2 rounded-full bg-foreground"></div>
-                  <div className="w-2 h-2 rounded-full border border-primary"></div>
-                  <div className="w-2 h-2 text-primary">
-                    <svg viewBox="0 0 10 10" className="w-full h-full">
-                      <path d="M2 5 L5 2 L8 5 L5 8 Z" fill="none" stroke="currentColor" strokeWidth="1" />
-                    </svg>
-                  </div>
-                </div>
+              {/* Image dots indicator */}
+              <div className="flex justify-center gap-2 mt-4">
+                {heroImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      currentImageIndex === index ? "bg-foreground" : "bg-muted-foreground/30"
+                    }`}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-16 md:py-24 bg-secondary/30">
-        <div className="max-w-6xl mx-auto px-4 md:px-8">
+      {/* Decorative dots */}
+      <div className="flex items-center gap-2 px-8 py-4">
+        <div className="w-2 h-2 rounded-full bg-foreground"></div>
+        <div className="w-2 h-2 rounded-full border border-primary"></div>
+        <div className="w-3 h-3 text-primary">
+          <svg viewBox="0 0 10 10" className="w-full h-full">
+            <path d="M2 5 L5 2 L8 5 L5 8 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Heart Separator */}
+      <div className="flex justify-center py-4">
+        <img src={heartRedGlow} alt="" className="w-12 h-12 object-contain" />
+      </div>
+
+      {/* Samen op avontuur Section */}
+      <section className="py-12 md:py-16 px-4 md:px-8 bg-secondary/30">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
+            Samen op<br />avontuur met Flori
+          </h2>
+          
+          <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            Ontmoet Flori. De AI matchmaker die jouw verhaal gebruikt om die ene echte klik te vinden. Geen oppervlakkige matches maar een echte connectie. Via een speels gesprek leert Flori je voorkeuren kennen en zoekt achter de schermen naar die ene match die bij je past. Zo wordt daten verrassend, verdiepend en persoonlijk zonder die vervelende vlakke berichtjes of eindeloos geswipe.
+          </p>
+          
+          <Button
+            size="lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-6 py-5 rounded-full"
+            onClick={() => navigate("/auth")}
+          >
+            Login en start direct
+          </Button>
+        </div>
+      </section>
+
+      {/* De route Section */}
+      <section className="py-16 md:py-24 px-4 md:px-8 relative">
+        <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-foreground mb-16">
-            Hoe het werkt
+            De route
           </h2>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Step 1 */}
-            <div className="text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="w-28 h-28">
-                  <SelfieIcon />
-                </div>
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Login en<br />maak een selfie
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Je selfie blijft anoniem! We gebruiken deze om jouw uitstraling vast te leggen, zodat Flori kan zoeken naar mensen die passen bij wat jij aantrekkelijk vindt.
-              </p>
-              <p className="font-caveat text-lg text-foreground italic">Privacy staat voorop!</p>
+          {/* Steps with curved path */}
+          <div className="relative">
+            {/* Wave line decoration - visible on larger screens */}
+            <div className="hidden md:block absolute left-1/2 top-0 h-full w-px">
+              <img 
+                src={waveLine} 
+                alt="" 
+                className="absolute left-1/2 -translate-x-1/2 w-4 h-full object-contain opacity-30"
+              />
             </div>
 
-            {/* Step 2 */}
-            <div className="text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="w-24 h-24">
-                  <ChatPhoneIcon />
+            {/* Step 1 - Right aligned illustration */}
+            <div className="grid md:grid-cols-2 gap-8 items-center mb-16">
+              <div className="text-center md:text-right order-2 md:order-1">
+                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+                  Login en<br />maak een selfie
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 max-w-xs ml-auto">
+                  Je selfie blijft anoniem! We gebruiken deze om jouw uitstraling vast te leggen, zodat Flori kan zoeken naar mensen die passen bij wat jij aantrekkelijk vindt.
+                </p>
+                <p className="font-caveat text-xl text-primary italic">Privacy staat voorop!</p>
+              </div>
+              <div className="flex justify-center md:justify-start items-center order-1 md:order-2 relative">
+                <img 
+                  src={cupidBow} 
+                  alt="" 
+                  className="w-28 h-28 md:w-36 md:h-36 object-contain"
+                />
+                <div className="absolute -top-2 right-4 md:right-auto md:left-28 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
+                  1
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Chat met onze<br />speelse AI bot Flori
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Chat met Flori, onze speelse AI matchmaker. Vertel over jezelf, wat je leuk vindt, wat je belangrijk vindt in een ander én wat jou uniek maakt. Flori analyseert jouw antwoorden en bouwt daarmee jouw persoonlijke profiel op.
-              </p>
-              <p className="font-caveat text-lg text-foreground italic">Slim en verrassend</p>
             </div>
 
-            {/* Step 3 */}
-            <div className="text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="w-28 h-24">
-                  <MatchEnvelopesIcon />
+            {/* Step 2 - Left aligned illustration */}
+            <div className="grid md:grid-cols-2 gap-8 items-center mb-16">
+              <div className="flex justify-center md:justify-end items-center relative">
+                <img 
+                  src={aiHeartChip} 
+                  alt="" 
+                  className="w-28 h-28 md:w-36 md:h-36 object-contain"
+                />
+                <div className="absolute -top-2 left-4 md:left-auto md:right-28 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
+                  2
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Jouw perfecte<br />match wordt gezocht
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Jij leeft je leven. Flori zoekt jouw match. Achter de schermen wordt jouw profiel vergeleken met anderen op zoek naar die ene onverwachte klik. Je hoeft alleen maar te wachten tot het moment daar is. Altijd met respect voor jouw privacy.
-              </p>
-              <p className="font-caveat text-lg text-foreground italic">Flori gaat voor je aan het werk</p>
+              <div className="text-center md:text-left">
+                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+                  Chat met onze<br />speelse AI bot Flori
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 max-w-xs">
+                  Chat met Flori, onze speelse AI matchmaker. Vertel over jezelf, wat je leuk vindt, wat je belangrijk vindt in een ander en wat jou uniek maakt. Flori analyseert jouw antwoorden en bouwt daarmee jouw persoonlijke profiel op.
+                </p>
+                <p className="font-caveat text-xl text-primary italic">Slim en verrassend</p>
+              </div>
             </div>
 
-            {/* Step 4 */}
-            <div className="text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="w-24 h-28">
-                  <DancingPersonIcon />
+            {/* Step 3 - Right aligned illustration */}
+            <div className="grid md:grid-cols-2 gap-8 items-center mb-16">
+              <div className="text-center md:text-right order-2 md:order-1">
+                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+                  Jouw perfecte<br />match wordt gezocht
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 max-w-xs ml-auto">
+                  Jij leeft je leven. Flori zoekt jouw match. Achter de schermen wordt jouw profiel vergeleken met anderen op zoek naar die ene onverwachte klik. Je hoeft alleen maar te wachten tot het moment daar is. Altijd met respect voor jouw privacy.
+                </p>
+                <p className="font-caveat text-xl text-primary italic">Flori gaat voor je aan het werk</p>
+              </div>
+              <div className="flex justify-center md:justify-start items-center order-1 md:order-2 relative">
+                <img 
+                  src={floatingHearts} 
+                  alt="" 
+                  className="w-28 h-28 md:w-36 md:h-36 object-contain"
+                />
+                <div className="absolute -top-2 right-4 md:right-auto md:left-28 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
+                  3
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">
-                Een match!<br />Ga het avontuur aan
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Is er een match dan ontvang je een uitnodiging voor een drankje bij een leuke lokale plek: een echte blind date. Vind je dat een stap te ver dan kun je natuurlijk eerst contactgegevens uitwisselen en elkaar rustig leren kennen.
-              </p>
-              <p className="font-caveat text-lg text-foreground italic">Gaan jullie voor de blind date?</p>
+            </div>
+
+            {/* Step 4 - Left aligned illustration */}
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="flex justify-center md:justify-end items-center relative">
+                <img 
+                  src={wineGlasses} 
+                  alt="" 
+                  className="w-28 h-28 md:w-36 md:h-36 object-contain"
+                />
+                <div className="absolute -top-2 left-4 md:left-auto md:right-28 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
+                  4
+                </div>
+              </div>
+              <div className="text-center md:text-left">
+                <h3 className="text-xl md:text-2xl font-bold text-foreground mb-3">
+                  Een match!<br />Ga het avontuur aan
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 max-w-xs">
+                  Is er een match dan ontvang je een uitnodiging voor een drankje bij een leuke lokale plek: een echte blind date. Vind je dat een stap te ver dan kun je natuurlijk eerst contactgegevens uitwisselen en elkaar rustig leren kennen.
+                </p>
+                <p className="font-caveat text-xl text-primary italic">Gaan jullie voor de blind date?</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 md:py-24 bg-background">
+      <section className="py-16 md:py-24 bg-secondary/30">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="w-16 h-20">
-              <LogoHeart />
-            </div>
-          </div>
-          
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
             Jouw volgende ontmoeting<br />begint hier met Flori
           </h2>
           
-          <p className="text-lg text-muted-foreground mb-8">
+          <p className="text-base md:text-lg text-muted-foreground mb-8">
             Stap aan boord en vind jouw ideale match
           </p>
           
           <Button
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 rounded-full"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-6 py-5 rounded-full"
             onClick={() => navigate("/auth")}
           >
             Login en start direct
@@ -231,15 +298,18 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 text-center border-t border-border">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-14">
-            <LogoHeart />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            <span className="text-primary font-semibold">indebuurt</span>
+      <footer className="py-12 px-4 text-center">
+        {/* Decorative wave */}
+        <div className="flex justify-start mb-8 px-8">
+          <img src={waveLine} alt="" className="w-24 h-8 object-contain opacity-50" />
+        </div>
+        
+        <div className="flex flex-col items-center gap-2">
+          <img src={heartRedGlow} alt="" className="w-14 h-14 object-contain" />
+          <p className="text-sm">
+            <span className="text-primary font-bold">indebuurt</span>
             <br />
-            ontmoet
+            <span className="text-foreground">ontmoet</span>
           </p>
         </div>
       </footer>
