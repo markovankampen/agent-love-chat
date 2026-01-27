@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, User, Loader2, Trash2, Save } from "lucide-react";
+import { ArrowLeft, User, Loader2, Trash2, Save, Bell, Heart, Mail } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,12 @@ interface Profile {
   eye_color: string | null;
 }
 
+interface NotificationSettings {
+  match_notifications: boolean;
+  update_notifications: boolean;
+  email_notifications: boolean;
+}
+
 const Account = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,11 +45,17 @@ const Account = () => {
   const [deleting, setDeleting] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [username, setUsername] = useState("");
+  const [notifications, setNotifications] = useState<NotificationSettings>({
+    match_notifications: true,
+    update_notifications: true,
+    email_notifications: true,
+  });
+  const [savingNotifications, setSavingNotifications] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
@@ -51,24 +64,33 @@ const Account = () => {
           return;
         }
 
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
+        // Fetch profile and notification settings in parallel
+        const [profileResult, notificationResult] = await Promise.all([
+          supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+          supabase.from("notification_settings").select("*").eq("user_id", user.id).maybeSingle(),
+        ]);
 
-        if (error) throw error;
+        if (profileResult.error) throw profileResult.error;
 
-        if (data) {
-          setProfile(data);
-          setFirstName(data.first_name || "");
-          setUsername(data.username || "");
+        if (profileResult.data) {
+          setProfile(profileResult.data);
+          setFirstName(profileResult.data.first_name || "");
+          setUsername(profileResult.data.username || "");
+        }
+
+        // If notification settings exist, use them; otherwise use defaults
+        if (notificationResult.data) {
+          setNotifications({
+            match_notifications: notificationResult.data.match_notifications,
+            update_notifications: notificationResult.data.update_notifications,
+            email_notifications: notificationResult.data.email_notifications,
+          });
         }
       } catch (error: any) {
-        console.error("Error fetching profile:", error);
+        console.error("Error fetching data:", error);
         toast({
           title: "Fout",
-          description: "Kon profiel niet laden",
+          description: "Kon gegevens niet laden",
           variant: "destructive",
         });
       } finally {
@@ -76,7 +98,7 @@ const Account = () => {
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, [navigate, toast]);
 
   const handleSave = async () => {
@@ -126,6 +148,45 @@ const Account = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleNotificationChange = async (
+    key: keyof NotificationSettings,
+    value: boolean
+  ) => {
+    if (!profile) return;
+
+    const newSettings = { ...notifications, [key]: value };
+    setNotifications(newSettings);
+    setSavingNotifications(true);
+
+    try {
+      // Upsert notification settings
+      const { error } = await supabase
+        .from("notification_settings")
+        .upsert({
+          user_id: profile.id,
+          ...newSettings,
+        }, { onConflict: "user_id" });
+
+      if (error) throw error;
+
+      toast({
+        title: "Opgeslagen",
+        description: "Notificatie-instellingen bijgewerkt",
+      });
+    } catch (error: any) {
+      console.error("Error saving notification settings:", error);
+      // Revert on error
+      setNotifications(notifications);
+      toast({
+        title: "Fout",
+        description: "Kon instellingen niet opslaan",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNotifications(false);
     }
   };
 
@@ -180,7 +241,7 @@ const Account = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/chat")}
+            onClick={() => navigate("/home")}
             className="shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -279,6 +340,85 @@ const Account = () => {
               </>
             )}
           </Button>
+        </Card>
+
+        {/* Notification Settings */}
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Bell className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold">Notificaties</h3>
+          </div>
+
+          <div className="space-y-4">
+            {/* Match Notifications */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Heart className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="match-notifications" className="text-sm font-medium">
+                    Match notificaties
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Ontvang een melding bij een nieuwe match
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="match-notifications"
+                checked={notifications.match_notifications}
+                onCheckedChange={(checked) =>
+                  handleNotificationChange("match_notifications", checked)
+                }
+                disabled={savingNotifications}
+              />
+            </div>
+
+            {/* Update Notifications */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="update-notifications" className="text-sm font-medium">
+                    Updates & nieuws
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Ontvang meldingen over updates en nieuws
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="update-notifications"
+                checked={notifications.update_notifications}
+                onCheckedChange={(checked) =>
+                  handleNotificationChange("update_notifications", checked)
+                }
+                disabled={savingNotifications}
+              />
+            </div>
+
+            {/* Email Notifications */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Mail className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="email-notifications" className="text-sm font-medium">
+                    E-mail notificaties
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Ontvang notificaties via e-mail
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="email-notifications"
+                checked={notifications.email_notifications}
+                onCheckedChange={(checked) =>
+                  handleNotificationChange("email_notifications", checked)
+                }
+                disabled={savingNotifications}
+              />
+            </div>
+          </div>
         </Card>
 
         {/* Danger Zone */}
