@@ -36,7 +36,7 @@ const Auth = () => {
           title: "Welkom terug!",
           description: "Je bent succesvol ingelogd.",
         });
-        navigate("/chat");
+        navigate("/home");
       } else {
         const redirectUrl = `${window.location.origin}/profile-setup`;
         const { error } = await supabase.auth.signUp({
