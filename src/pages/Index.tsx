@@ -65,9 +65,9 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Hero Content - Left Side */}
-            <div className="text-center md:text-left order-2 md:order-1">
+            <div className="text-center order-2 md:order-1">
               {/* Flori Logo Illustration */}
-              <div className="flex justify-center md:justify-start mb-4">
+              <div className="flex justify-center mb-4">
                 <img 
                   src={floriLogo} 
                   alt="Flori" 
@@ -79,7 +79,7 @@ const Index = () => {
                 Flori<br />verbindt!
               </h1>
 
-              <p className="text-base md:text-lg font-poppins text-muted-foreground mb-6 max-w-md">
+              <p className="text-base md:text-lg font-poppins text-muted-foreground mb-6 max-w-md mx-auto">
                 Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
               </p>
 
