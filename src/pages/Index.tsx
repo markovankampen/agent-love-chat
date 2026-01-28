@@ -96,8 +96,11 @@ const Index = () => {
               </div>
 
               {/* Handwritten tagline - aligned with photo slider dots */}
-              <div className="mt-6 md:mt-auto" style={{ paddingBottom: '5px' }}>
-                <p className="font-caveat text-2xl md:text-3xl text-foreground italic">
+              <div className="mt-8 md:mt-auto">
+                <p 
+                  className="font-caveat text-2xl md:text-3xl text-foreground"
+                  style={{ transform: 'rotate(-2deg)' }}
+                >
                   Helemaal gratis én anoniem
                 </p>
               </div>
