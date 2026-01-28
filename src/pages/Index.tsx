@@ -63,10 +63,10 @@ const Index = () => {
       {/* Hero Section */}
       <section className="py-8 md:py-16 px-4 md:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12">
+          <div className="flex flex-col md:flex-row gap-8 md:gap-12">
             {/* Hero Content - Left Side */}
-            <div className="text-center order-2 md:order-1 flex flex-col justify-between">
-              <div>
+            <div className="text-center order-2 md:order-1 flex-1 flex flex-col justify-between md:max-w-md">
+              <div className="flex-1 flex flex-col justify-start">
                 {/* Flori Logo Illustration */}
                 <div className="flex justify-center mb-4">
                   <img 
@@ -96,7 +96,7 @@ const Index = () => {
               </div>
 
               {/* Handwritten tagline - aligned with photo slider dots */}
-              <div className="mt-6 md:mt-0">
+              <div className="mt-6 md:mt-auto md:pb-4">
                 <p className="font-caveat text-2xl md:text-3xl text-foreground italic">
                   Helemaal gratis én anoniem
                 </p>
@@ -104,8 +104,8 @@ const Index = () => {
             </div>
 
             {/* Hero Image - Right Side */}
-            <div className="relative order-1 md:order-2">
-              <div className="relative rounded-3xl overflow-hidden aspect-[4/5] max-w-sm mx-auto w-full">
+            <div className="relative order-1 md:order-2 flex-1 flex justify-center md:justify-end">
+              <div className="relative rounded-3xl overflow-hidden w-full max-w-sm" style={{ aspectRatio: '4/5' }}>
                 {heroImages.map((image, index) => (
                   <img
                     key={index}
