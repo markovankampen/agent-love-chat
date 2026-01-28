@@ -134,13 +134,13 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Heart Separator */}
-      <div className="flex justify-center py-4">
-        <img src={heartRedGlow} alt="" className="w-12 h-12 object-contain" />
-      </div>
-
-      {/* Samen op avontuur Section */}
-      <section className="py-12 md:py-16 px-4 md:px-8 bg-secondary/30">
+      {/* Samen op avontuur Section with heart overlapping the border */}
+      <section className="relative bg-primary/10 pt-16 pb-12 md:pt-20 md:pb-16 px-4 md:px-8">
+        {/* Heart positioned to overlap the top border */}
+        <div className="absolute left-1/2 -translate-x-1/2 -top-6 md:-top-8">
+          <img src={heartRedGlow} alt="" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+        </div>
+        
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
             Samen op<br />avontuur met Flori
