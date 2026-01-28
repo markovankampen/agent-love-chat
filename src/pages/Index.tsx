@@ -96,7 +96,7 @@ const Index = () => {
               </div>
 
               {/* Handwritten tagline - aligned with photo slider dots */}
-              <div className="mt-12 md:mt-auto">
+              <div className="md:mt-auto" style={{ marginTop: '15px' }}>
                 <p 
                   className="font-caveat text-2xl md:text-3xl text-foreground"
                   style={{ transform: 'rotate(-2deg)' }}
