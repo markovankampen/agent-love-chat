@@ -66,21 +66,21 @@ const Index = () => {
           <div className="flex flex-col md:flex-row gap-8 md:gap-12">
             {/* Hero Content - Left Side */}
             <div className="text-center order-2 md:order-1 flex-1 flex flex-col justify-between md:max-w-md">
-              <div className="flex-1 flex flex-col justify-start">
+              <div className="flex flex-col justify-start">
                 {/* Flori Logo Illustration */}
-                <div className="flex justify-center mb-4">
+                <div className="flex justify-center mb-2">
                   <img 
                     src={floriLogo} 
                     alt="Flori" 
-                    className="w-40 h-40 md:w-48 md:h-48 object-contain"
+                    className="w-36 h-36 md:w-44 md:h-44 object-contain"
                   />
                 </div>
 
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 leading-tight">
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-2 leading-tight">
                   Flori<br />verbindt!
                 </h1>
 
-                <p className="text-base md:text-lg text-muted-foreground mb-6 max-w-md mx-auto">
+                <p className="text-base md:text-lg text-muted-foreground mb-4 max-w-md mx-auto">
                   Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
                 </p>
 
@@ -96,7 +96,7 @@ const Index = () => {
               </div>
 
               {/* Handwritten tagline - aligned with photo slider dots */}
-              <div className="mt-6 md:mt-auto md:pb-4">
+              <div className="mt-6 md:mt-auto" style={{ paddingBottom: '5px' }}>
                 <p className="font-caveat text-2xl md:text-3xl text-foreground italic">
                   Helemaal gratis én anoniem
                 </p>
