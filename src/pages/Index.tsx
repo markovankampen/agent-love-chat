@@ -63,38 +63,40 @@ const Index = () => {
       {/* Hero Section */}
       <section className="py-8 md:py-16 px-4 md:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12">
             {/* Hero Content - Left Side */}
-            <div className="text-center order-2 md:order-1 flex flex-col">
-              {/* Flori Logo Illustration */}
-              <div className="flex justify-center mb-4">
-                <img 
-                  src={floriLogo} 
-                  alt="Flori" 
-                  className="w-40 h-40 md:w-48 md:h-48 object-contain"
-                />
-              </div>
-
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 leading-tight">
-                Flori<br />verbindt!
-              </h1>
-
-              <p className="text-base md:text-lg text-muted-foreground mb-6 max-w-md mx-auto">
-                Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
-              </p>
-
+            <div className="text-center order-2 md:order-1 flex flex-col justify-between">
               <div>
-                <Button
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-6 py-5 rounded-full"
-                  onClick={() => navigate("/auth")}
-                >
-                  Login en start direct
-                </Button>
+                {/* Flori Logo Illustration */}
+                <div className="flex justify-center mb-4">
+                  <img 
+                    src={floriLogo} 
+                    alt="Flori" 
+                    className="w-40 h-40 md:w-48 md:h-48 object-contain"
+                  />
+                </div>
+
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 leading-tight">
+                  Flori<br />verbindt!
+                </h1>
+
+                <p className="text-base md:text-lg text-muted-foreground mb-6 max-w-md mx-auto">
+                  Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
+                </p>
+
+                <div>
+                  <Button
+                    size="lg"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-6 py-5 rounded-full"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Login en start direct
+                  </Button>
+                </div>
               </div>
 
-              {/* Handwritten tagline - aligned with photo slider */}
-              <div className="mt-6">
+              {/* Handwritten tagline - aligned with photo slider dots */}
+              <div className="mt-6 md:mt-0">
                 <p className="font-caveat text-2xl md:text-3xl text-foreground italic">
                   Helemaal gratis én anoniem
                 </p>
@@ -102,7 +104,7 @@ const Index = () => {
             </div>
 
             {/* Hero Image - Right Side */}
-            <div className="relative order-1 md:order-2 flex flex-col">
+            <div className="relative order-1 md:order-2">
               <div className="relative rounded-3xl overflow-hidden aspect-[4/5] max-w-sm mx-auto w-full">
                 {heroImages.map((image, index) => (
                   <img
@@ -114,7 +116,7 @@ const Index = () => {
                     }`}
                   />
                 ))}
-                {/* Image dots indicator - inside photo */}
+                {/* Image dots indicator - inside photo at bottom */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                   {heroImages.map((_, index) => (
                     <button
