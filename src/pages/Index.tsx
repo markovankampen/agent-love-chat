@@ -63,9 +63,9 @@ const Index = () => {
       {/* Hero Section */}
       <section className="py-8 md:py-16 px-4 md:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
             {/* Hero Content - Left Side */}
-            <div className="text-center order-2 md:order-1">
+            <div className="text-center order-2 md:order-1 flex flex-col">
               {/* Flori Logo Illustration */}
               <div className="flex justify-center mb-4">
                 <img 
@@ -75,23 +75,25 @@ const Index = () => {
                 />
               </div>
 
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-cherry text-foreground mb-4 leading-tight">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 leading-tight">
                 Flori<br />verbindt!
               </h1>
 
-              <p className="text-base md:text-lg font-poppins text-muted-foreground mb-6 max-w-md mx-auto">
+              <p className="text-base md:text-lg text-muted-foreground mb-6 max-w-md mx-auto">
                 Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
               </p>
 
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-6 py-5 rounded-full"
-                onClick={() => navigate("/auth")}
-              >
-                Login en start direct
-              </Button>
+              <div>
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-base px-6 py-5 rounded-full"
+                  onClick={() => navigate("/auth")}
+                >
+                  Login en start direct
+                </Button>
+              </div>
 
-              {/* Handwritten tagline */}
+              {/* Handwritten tagline - aligned with photo slider */}
               <div className="mt-6">
                 <p className="font-caveat text-2xl md:text-3xl text-foreground italic">
                   Helemaal gratis én anoniem
@@ -100,8 +102,8 @@ const Index = () => {
             </div>
 
             {/* Hero Image - Right Side */}
-            <div className="relative order-1 md:order-2">
-              <div className="relative rounded-3xl overflow-hidden aspect-[4/5] max-w-sm mx-auto">
+            <div className="relative order-1 md:order-2 flex flex-col">
+              <div className="relative rounded-3xl overflow-hidden aspect-[4/5] max-w-sm mx-auto w-full">
                 {heroImages.map((image, index) => (
                   <img
                     key={index}
@@ -112,34 +114,23 @@ const Index = () => {
                     }`}
                   />
                 ))}
-              </div>
-              {/* Image dots indicator */}
-              <div className="flex justify-center gap-2 mt-4">
-                {heroImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      currentImageIndex === index ? "bg-foreground" : "bg-muted-foreground/30"
-                    }`}
-                  />
-                ))}
+                {/* Image dots indicator - inside photo */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {heroImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        currentImageIndex === index ? "bg-white" : "bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-
-      {/* Decorative dots */}
-      <div className="flex items-center gap-2 px-8 py-4">
-        <div className="w-2 h-2 rounded-full bg-foreground"></div>
-        <div className="w-2 h-2 rounded-full border border-primary"></div>
-        <div className="w-3 h-3 text-primary">
-          <svg viewBox="0 0 10 10" className="w-full h-full">
-            <path d="M2 5 L5 2 L8 5 L5 8 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        </div>
-      </div>
 
       {/* Heart Separator */}
       <div className="flex justify-center py-4">
