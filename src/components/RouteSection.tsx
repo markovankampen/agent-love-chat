@@ -13,27 +13,36 @@ const RouteSection = () => {
 
         {/* Steps container with curved path */}
         <div className="relative">
-          {/* SVG curved path connecting the dots - Desktop */}
+          {/* SVG curved path - Simple S-curve with 2 bends */}
           <svg
-            className="absolute left-1/2 -translate-x-1/2 top-0 w-[300px] h-full pointer-events-none hidden md:block"
-            viewBox="0 0 300 1100"
+            className="absolute left-1/2 -translate-x-1/2 top-0 w-[400px] h-full pointer-events-none hidden md:block"
+            viewBox="0 0 400 1200"
             preserveAspectRatio="xMidYMin meet"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M150 20 
-                 Q150 40, 180 80
-                 Q220 140, 200 200
-                 Q180 260, 100 280
-                 Q40 300, 60 360
-                 Q80 420, 150 460
-                 Q220 500, 200 560
-                 Q180 620, 100 660
-                 Q40 700, 60 760
-                 Q80 820, 150 860
-                 Q200 890, 150 940
-                 Q100 990, 100 1040"
+              d="M200 40
+                 C200 100, 320 150, 320 280
+                 C320 450, 80 500, 80 680
+                 C80 860, 200 900, 200 1100"
+              stroke="hsl(0, 84%, 60%)"
+              strokeWidth="5"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </svg>
+
+          {/* Mobile line - straight with slight curve */}
+          <svg
+            className="absolute left-1/2 -translate-x-1/2 top-0 w-[60px] h-full pointer-events-none md:hidden"
+            viewBox="0 0 60 1000"
+            preserveAspectRatio="xMidYMin meet"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M30 20 C30 250, 45 350, 30 500 C15 650, 45 750, 30 980"
               stroke="hsl(0, 84%, 60%)"
               strokeWidth="4"
               strokeLinecap="round"
@@ -42,10 +51,10 @@ const RouteSection = () => {
           </svg>
 
           {/* Step 1 */}
-          <div className="relative mb-20 md:mb-28">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-0">
+          <div className="relative mb-16 md:mb-24">
+            <div className="flex flex-col md:flex-row items-center gap-6">
               {/* Text - Left side */}
-              <div className="flex-1 text-center md:text-right md:pr-8 order-2 md:order-1">
+              <div className="flex-1 text-center md:text-right order-2 md:order-1">
                 <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2">
                   Login en<br />maak een selfie
                 </h3>
@@ -57,41 +66,42 @@ const RouteSection = () => {
                 </p>
               </div>
 
-              {/* Number dot - Center */}
-              <div className="w-10 h-10 md:w-11 md:h-11 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 z-10 order-1 md:order-2">
-                1
-              </div>
-
-              {/* Image - Right side */}
-              <div className="flex-1 flex justify-center md:justify-start md:pl-8 order-3">
+              {/* Number + Image - Right side */}
+              <div className="flex items-center gap-4 order-1 md:order-2">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg md:text-xl flex-shrink-0 z-10">
+                  1
+                </div>
                 <img
                   src={selfieHeart}
                   alt=""
-                  className="w-28 h-28 md:w-32 md:h-32 object-contain"
+                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
                 />
               </div>
             </div>
           </div>
 
           {/* Step 2 */}
-          <div className="relative mb-20 md:mb-28">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-0">
+          <div className="relative mb-16 md:mb-24">
+            <div className="flex flex-col md:flex-row items-center gap-6">
               {/* Image - Left side */}
-              <div className="flex-1 flex justify-center md:justify-end md:pr-8 order-1">
+              <div className="flex items-center gap-4 order-1 md:order-1 md:flex-row-reverse md:flex-1 md:justify-start">
                 <img
                   src={chatBubbleHeart}
                   alt=""
-                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
+                  className="w-20 h-20 md:w-24 md:h-24 object-contain"
                 />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg md:text-xl flex-shrink-0 z-10 md:hidden">
+                  2
+                </div>
               </div>
 
-              {/* Number dot - Center */}
-              <div className="w-10 h-10 md:w-11 md:h-11 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 z-10 order-2">
+              {/* Number - Center (desktop only) */}
+              <div className="hidden md:flex w-12 h-12 bg-foreground text-background rounded-full items-center justify-center font-bold text-xl flex-shrink-0 z-10">
                 2
               </div>
 
               {/* Text - Right side */}
-              <div className="flex-1 text-center md:text-left md:pl-8 order-3">
+              <div className="flex-1 text-center md:text-left order-2">
                 <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2">
                   Chat met onze<br />speelse AI bot Flori
                 </h3>
@@ -106,10 +116,10 @@ const RouteSection = () => {
           </div>
 
           {/* Step 3 */}
-          <div className="relative mb-20 md:mb-28">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-0">
+          <div className="relative mb-16 md:mb-24">
+            <div className="flex flex-col md:flex-row items-center gap-6">
               {/* Text - Left side */}
-              <div className="flex-1 text-center md:text-right md:pr-8 order-2 md:order-1">
+              <div className="flex-1 text-center md:text-right order-2 md:order-1">
                 <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2">
                   Jouw perfecte<br />match wordt gezocht
                 </h3>
@@ -121,41 +131,45 @@ const RouteSection = () => {
                 </p>
               </div>
 
-              {/* Number dot - Center */}
-              <div className="w-10 h-10 md:w-11 md:h-11 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 z-10 order-1 md:order-2">
-                3
-              </div>
-
-              {/* Image - Right side */}
-              <div className="flex-1 flex justify-center md:justify-start md:pl-8 order-3">
+              {/* Number + Image - Right side */}
+              <div className="flex items-center gap-4 order-1 md:order-2">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg md:text-xl flex-shrink-0 z-10 md:hidden">
+                  3
+                </div>
                 <img
                   src={aiHeartChip}
                   alt=""
-                  className="w-28 h-28 md:w-32 md:h-32 object-contain"
+                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
                 />
+                <div className="hidden md:flex w-12 h-12 bg-foreground text-background rounded-full items-center justify-center font-bold text-xl flex-shrink-0 z-10">
+                  3
+                </div>
               </div>
             </div>
           </div>
 
           {/* Step 4 */}
           <div className="relative">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-0">
+            <div className="flex flex-col md:flex-row items-center gap-6">
               {/* Image - Left side */}
-              <div className="flex-1 flex justify-center md:justify-end md:pr-8 order-1">
+              <div className="flex items-center gap-4 order-1 md:order-1 md:flex-row-reverse md:flex-1 md:justify-start">
                 <img
                   src={matchCelebration}
                   alt=""
-                  className="w-28 h-28 md:w-32 md:h-32 object-contain"
+                  className="w-24 h-24 md:w-28 md:h-28 object-contain"
                 />
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg md:text-xl flex-shrink-0 z-10 md:hidden">
+                  4
+                </div>
               </div>
 
-              {/* Number dot - Center */}
-              <div className="w-10 h-10 md:w-11 md:h-11 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 z-10 order-2">
+              {/* Number - Center (desktop only) */}
+              <div className="hidden md:flex w-12 h-12 bg-foreground text-background rounded-full items-center justify-center font-bold text-xl flex-shrink-0 z-10">
                 4
               </div>
 
               {/* Text - Right side */}
-              <div className="flex-1 text-center md:text-left md:pl-8 order-3">
+              <div className="flex-1 text-center md:text-left order-2">
                 <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2">
                   Een match!<br />Ga het avontuur aan
                 </h3>
