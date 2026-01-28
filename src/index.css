@@ -18,10 +18,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 220 15% 20%;
 
-    /* Vibrant indebuurt red */
-    --primary: 352 100% 50%;
+    /* Vibrant indebuurt purple */
+    --primary: 245 85% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 352 100% 60%;
+    --primary-glow: 245 85% 70%;
 
     /* Light neutral grey */
     --secondary: 220 10% 96%;
@@ -31,8 +31,8 @@ All colors MUST be HSL.
     --muted: 220 10% 94%;
     --muted-foreground: 220 10% 45%;
 
-    /* Red accent */
-    --accent: 352 100% 50%;
+    /* Purple accent */
+    --accent: 245 85% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
@@ -40,7 +40,7 @@ All colors MUST be HSL.
 
     --border: 220 10% 90%;
     --input: 220 10% 90%;
-    --ring: 352 100% 50%;
+    --ring: 245 85% 60%;
 
     --radius: 0.5rem;
 
@@ -50,16 +50,16 @@ All colors MUST be HSL.
 
     /* Shadows */
     --shadow-soft: 220 15% 85%;
-    --shadow-glow: 352 100% 85%;
+    --shadow-glow: 245 85% 85%;
 
     --sidebar-background: 0 0% 99%;
     --sidebar-foreground: 220 15% 20%;
-    --sidebar-primary: 352 100% 50%;
+    --sidebar-primary: 245 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 10% 95%;
     --sidebar-accent-foreground: 220 15% 20%;
     --sidebar-border: 220 10% 90%;
-    --sidebar-ring: 352 100% 50%;
+    --sidebar-ring: 245 85% 60%;
   }
 
   .dark {
@@ -72,9 +72,9 @@ All colors MUST be HSL.
     --popover: 220 15% 10%;
     --popover-foreground: 220 10% 95%;
 
-    --primary: 352 100% 50%;
+    --primary: 245 85% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 352 100% 60%;
+    --primary-glow: 245 85% 70%;
 
     --secondary: 220 12% 18%;
     --secondary-foreground: 220 10% 95%;
@@ -82,7 +82,7 @@ All colors MUST be HSL.
     --muted: 220 12% 15%;
     --muted-foreground: 220 10% 55%;
 
-    --accent: 352 100% 50%;
+    --accent: 245 85% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
@@ -90,22 +90,22 @@ All colors MUST be HSL.
 
     --border: 220 12% 18%;
     --input: 220 12% 18%;
-    --ring: 352 100% 50%;
+    --ring: 245 85% 60%;
 
     --glass-bg: 220 15% 10% / 0.9;
     --glass-border: 220 12% 22%;
 
     --shadow-soft: 220 15% 5%;
-    --shadow-glow: 352 100% 35%;
+    --shadow-glow: 245 85% 35%;
 
     --sidebar-background: 220 15% 10%;
     --sidebar-foreground: 220 10% 95%;
-    --sidebar-primary: 352 100% 50%;
+    --sidebar-primary: 245 85% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 12% 15%;
     --sidebar-accent-foreground: 220 10% 95%;
     --sidebar-border: 220 12% 18%;
-    --sidebar-ring: 352 100% 50%;
+    --sidebar-ring: 245 85% 60%;
   }
 }
 
@@ -122,4 +122,12 @@ All colors MUST be HSL.
 /* Custom fonts */
 .font-caveat {
   font-family: 'Caveat', cursive;
+}
+
+.font-cherry {
+  font-family: 'cherry-blossoms-wide', serif;
+}
+
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
 }

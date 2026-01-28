@@ -21,6 +21,7 @@ import waveLine from "@/assets/illustrations/wave-line.png";
 import rocketLove from "@/assets/illustrations/rocket-love.png";
 import brokenHeart from "@/assets/illustrations/broken-heart.png";
 import selfieHeart from "@/assets/illustrations/selfie-heart.png";
+import floriLogo from "@/assets/flori-logo.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -65,20 +66,20 @@ const Index = () => {
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
             {/* Hero Content - Left Side */}
             <div className="text-center md:text-left order-2 md:order-1">
-              {/* Cupid Bow Illustration - jumping person with bow and hearts */}
+              {/* Flori Logo Illustration */}
               <div className="flex justify-center md:justify-start mb-4">
                 <img 
-                  src={cupidBow} 
-                  alt="" 
+                  src={floriLogo} 
+                  alt="Flori" 
                   className="w-40 h-40 md:w-48 md:h-48 object-contain"
                 />
               </div>
 
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-4 leading-tight">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-cherry text-foreground mb-4 leading-tight">
                 Flori<br />verbindt!
               </h1>
 
-              <p className="text-base md:text-lg text-muted-foreground mb-6 max-w-md">
+              <p className="text-base md:text-lg font-poppins text-muted-foreground mb-6 max-w-md">
                 Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
               </p>
 
