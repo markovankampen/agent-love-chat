@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageCircle, User, LogOut } from "lucide-react";
+import Footer from "@/components/Footer";
 import heartRedGlow from "@/assets/illustrations/heart-red-glow.png";
 
 const Home = () => {
@@ -131,6 +132,8 @@ const Home = () => {
           </Card>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };

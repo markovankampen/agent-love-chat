@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowLeft, User, Loader2, Trash2, Save, Bell, Heart, Mail } from "lucide-react";
+import Footer from "@/components/Footer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -460,6 +461,8 @@ const Account = () => {
             </AlertDialogContent>
           </AlertDialog>
         </Card>
+
+        <Footer />
       </div>
     </div>
   );

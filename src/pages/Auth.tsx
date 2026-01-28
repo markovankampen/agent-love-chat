@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, UserCircle } from "lucide-react";
+import Footer from "@/components/Footer";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -124,114 +125,117 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-2 sm:p-4">
-      <Card className="w-full max-w-md p-4 sm:p-8 space-y-4 sm:space-y-6">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-3 sm:mb-4">
-            <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-primary fill-primary" />
+    <div className="min-h-screen flex flex-col bg-muted/30">
+      <div className="flex-1 flex items-center justify-center p-2 sm:p-4">
+        <Card className="w-full max-w-md p-4 sm:p-8 space-y-4 sm:space-y-6">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-3 sm:mb-4">
+              <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-primary fill-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              {isLogin ? "Inloggen" : "Registreren"}
+            </h1>
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+            {isLogin
+                ? "Log in om verder te gaan met Matchmaker Flori"
+                : "Maak een account aan om te beginnen"}
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold">
-            {isLogin ? "Inloggen" : "Registreren"}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-          {isLogin
-              ? "Log in om verder te gaan met Matchmaker Flori"
-              : "Maak een account aan om te beginnen"}
-          </p>
-        </div>
 
-        <form onSubmit={handleAuth} className="space-y-4">
-          {!isLogin && (
+          <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="username">Gebruikersnaam</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Jouw naam"
+                  required
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="username">Gebruikersnaam</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Jouw naam"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jouw@email.nl"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Wachtwoord</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={loading}
+            >
+              {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
+            </Button>
+          </form>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Of</span>
+            </div>
+          </div>
+
+          {showGuestInput && (
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="guestEmail">Email voor gast account</Label>
+              <Input
+                id="guestEmail"
+                type="email"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                placeholder="jouw@email.nl"
                 required
               />
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="jouw@email.nl"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">Wachtwoord</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
           <Button
-            type="submit"
-            className="w-full bg-primary hover:bg-primary/90"
+            onClick={handleGuestLogin}
+            variant="outline"
+            className="w-full"
             disabled={loading}
           >
-            {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
+            <UserCircle className="mr-2 h-4 w-4" />
+            {showGuestInput ? "Bevestig & doorgaan" : "Doorgaan als gast"}
           </Button>
-        </form>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border"></div>
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              {isLogin
+                ? "Nog geen account? Registreer hier"
+                : "Heb je al een account? Log in"}
+            </button>
           </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Of</span>
-          </div>
-        </div>
-
-        {showGuestInput && (
-          <div className="space-y-2 mb-4">
-            <Label htmlFor="guestEmail">Email voor gast account</Label>
-            <Input
-              id="guestEmail"
-              type="email"
-              value={guestEmail}
-              onChange={(e) => setGuestEmail(e.target.value)}
-              placeholder="jouw@email.nl"
-              required
-            />
-          </div>
-        )}
-
-        <Button
-          onClick={handleGuestLogin}
-          variant="outline"
-          className="w-full"
-          disabled={loading}
-        >
-          <UserCircle className="mr-2 h-4 w-4" />
-          {showGuestInput ? "Bevestig & doorgaan" : "Doorgaan als gast"}
-        </Button>
-
-        <div className="text-center mt-4">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            {isLogin
-              ? "Nog geen account? Registreer hier"
-              : "Heb je al een account? Log in"}
-          </button>
-        </div>
-      </Card>
+        </Card>
+      </div>
+      <Footer />
     </div>
   );
 };

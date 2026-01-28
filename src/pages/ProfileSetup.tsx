@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Camera, AlertCircle, X, Upload } from "lucide-react";
+import Footer from "@/components/Footer";
 import {
   Dialog,
   DialogContent,
@@ -426,8 +427,9 @@ const ProfileSetup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-3 py-6 sm:p-4">
-      <Card className="w-full max-w-md p-4 sm:p-8 space-y-4 sm:space-y-6">
+    <div className="min-h-screen flex flex-col bg-muted/30">
+      <div className="flex-1 flex items-center justify-center px-3 py-6 sm:p-4">
+        <Card className="w-full max-w-md p-4 sm:p-8 space-y-4 sm:space-y-6">
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-2 sm:mb-4">
             <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
@@ -554,6 +556,7 @@ const ProfileSetup = () => {
           </Button>
         </form>
       </Card>
+      </div>
 
       {/* Camera Dialog */}
       <Dialog open={showCamera} onOpenChange={(open) => { if (!open) stopCamera(); }}>
@@ -641,6 +644,8 @@ const ProfileSetup = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Footer />
     </div>
   );
 };

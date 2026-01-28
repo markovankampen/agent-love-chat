@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import Footer from "@/components/Footer";
 
 const Verify = () => {
   const navigate = useNavigate();
@@ -47,35 +48,38 @@ const Verify = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md p-8 space-y-6">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-            <Heart className="w-8 h-8 text-primary fill-primary" />
+    <div className="min-h-screen flex flex-col bg-muted/30">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8 space-y-6">
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+              <Heart className="w-8 h-8 text-primary fill-primary" />
+            </div>
+            <h1 className="text-3xl font-bold">Bijna klaar!</h1>
+            <p className="text-muted-foreground">
+              Je account is aangemaakt. Check je inbox voor de verificatie email en klik op de link om je profiel in te stellen.
+            </p>
+            <Button 
+              onClick={checkVerification}
+              disabled={isChecking}
+              className="mt-4"
+            >
+              {isChecking ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Controleren...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Controleer verificatie
+                </>
+              )}
+            </Button>
           </div>
-          <h1 className="text-3xl font-bold">Bijna klaar!</h1>
-          <p className="text-muted-foreground">
-            Je account is aangemaakt. Check je inbox voor de verificatie email en klik op de link om je profiel in te stellen.
-          </p>
-          <Button 
-            onClick={checkVerification}
-            disabled={isChecking}
-            className="mt-4"
-          >
-            {isChecking ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Controleren...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Controleer verificatie
-              </>
-            )}
-          </Button>
-        </div>
-      </Card>
+        </Card>
+      </div>
+      <Footer />
     </div>
   );
 };
