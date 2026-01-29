@@ -114,6 +114,7 @@ export type Database = {
           first_name: string | null
           hair_color: string | null
           id: string
+          phone_number: string | null
           photo_url: string | null
           updated_at: string | null
           username: string | null
@@ -128,6 +129,7 @@ export type Database = {
           first_name?: string | null
           hair_color?: string | null
           id: string
+          phone_number?: string | null
           photo_url?: string | null
           updated_at?: string | null
           username?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           first_name?: string | null
           hair_color?: string | null
           id?: string
+          phone_number?: string | null
           photo_url?: string | null
           updated_at?: string | null
           username?: string | null
