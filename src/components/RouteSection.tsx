@@ -12,21 +12,22 @@ const RouteSection = () => {
         </h2>
 
         {/* Desktop layout with absolute positioning */}
-        <div className="hidden md:block relative" style={{ height: '1400px' }}>
-          {/* SVG curved path - smooth S-curve */}
+        <div className="hidden md:block relative" style={{ height: '1500px' }}>
+          {/* SVG curved path - smooth S-curve through the number badges */}
           <svg
             className="absolute left-1/2 -translate-x-1/2 top-0 w-full h-full pointer-events-none"
-            viewBox="0 0 800 1400"
+            viewBox="0 0 800 1500"
             preserveAspectRatio="xMidYMin meet"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
               d="M400 0
-                 C400 100, 550 150, 550 250
-                 C550 400, 250 500, 250 700
-                 C250 900, 550 1000, 550 1150
-                 C550 1300, 400 1350, 400 1400"
+                 L400 80
+                 C400 150, 580 200, 580 320
+                 C580 480, 220 580, 220 780
+                 C220 980, 580 1080, 580 1250
+                 C580 1400, 400 1450, 400 1500"
               stroke="hsl(0, 84%, 60%)"
               strokeWidth="5"
               strokeLinecap="round"
@@ -34,10 +35,10 @@ const RouteSection = () => {
             />
           </svg>
 
-          {/* Step 1 - Text LEFT, Number CENTER-RIGHT, Image RIGHT */}
-          <div className="absolute" style={{ top: '40px', left: '0', right: '0' }}>
-            {/* Text block - LEFT side */}
-            <div className="absolute text-left" style={{ left: '60px', top: '0', width: '280px' }}>
+          {/* Step 1 - At first curve (right peak) - Text LEFT, Badge on line, Image RIGHT */}
+          <div className="absolute" style={{ top: '80px', left: '0', right: '0' }}>
+            {/* Text block - LEFT side, center-aligned */}
+            <div className="absolute text-center" style={{ left: '40px', top: '0', width: '300px' }}>
               <h3 className="text-2xl font-bold text-foreground mb-3 leading-tight">
                 Login en<br />maak een selfie
               </h3>
@@ -49,43 +50,43 @@ const RouteSection = () => {
               </p>
             </div>
 
-            {/* Number badge - on the line */}
-            <div className="absolute" style={{ left: '50%', transform: 'translateX(30px)', top: '20px' }}>
-              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl">
+            {/* Number badge - ON the line at right curve */}
+            <div className="absolute" style={{ left: '50%', transform: 'translateX(80px)', top: '50px' }}>
+              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl z-10 relative">
                 1
               </div>
             </div>
 
             {/* Illustration - RIGHT side */}
-            <div className="absolute" style={{ right: '80px', top: '-20px' }}>
+            <div className="absolute" style={{ right: '40px', top: '-10px' }}>
               <img
                 src={selfieHeart}
                 alt=""
-                className="w-28 h-28 object-contain"
+                className="w-32 h-32 object-contain"
               />
             </div>
           </div>
 
-          {/* Step 2 - Image LEFT, Number CENTER-LEFT, Text RIGHT */}
-          <div className="absolute" style={{ top: '340px', left: '0', right: '0' }}>
+          {/* Step 2 - At left curve - Image LEFT, Badge on line, Text RIGHT */}
+          <div className="absolute" style={{ top: '420px', left: '0', right: '0' }}>
             {/* Illustration - LEFT side */}
-            <div className="absolute" style={{ left: '100px', top: '-30px' }}>
+            <div className="absolute" style={{ left: '40px', top: '-20px' }}>
               <img
                 src={chatBubbleHeart}
                 alt=""
-                className="w-24 h-24 object-contain"
+                className="w-28 h-28 object-contain"
               />
             </div>
 
-            {/* Number badge - on the line */}
-            <div className="absolute" style={{ left: '50%', transform: 'translateX(-70px)', top: '60px' }}>
-              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl">
+            {/* Number badge - ON the line at left curve */}
+            <div className="absolute" style={{ left: '50%', transform: 'translateX(-100px)', top: '50px' }}>
+              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl z-10 relative">
                 2
               </div>
             </div>
 
-            {/* Text block - RIGHT side */}
-            <div className="absolute text-left" style={{ right: '60px', top: '0', width: '300px' }}>
+            {/* Text block - RIGHT side, center-aligned */}
+            <div className="absolute text-center" style={{ right: '40px', top: '0', width: '320px' }}>
               <h3 className="text-2xl font-bold text-foreground mb-3 leading-tight">
                 Chat met onze<br />speelse AI bot Flori
               </h3>
@@ -98,10 +99,10 @@ const RouteSection = () => {
             </div>
           </div>
 
-          {/* Step 3 - Text LEFT, Number CENTER-RIGHT, Image RIGHT */}
-          <div className="absolute" style={{ top: '700px', left: '0', right: '0' }}>
-            {/* Text block - LEFT side */}
-            <div className="absolute text-left" style={{ left: '60px', top: '0', width: '280px' }}>
+          {/* Step 3 - At right curve - Text LEFT, Badge on line, Image RIGHT */}
+          <div className="absolute" style={{ top: '780px', left: '0', right: '0' }}>
+            {/* Text block - LEFT side, center-aligned */}
+            <div className="absolute text-center" style={{ left: '40px', top: '0', width: '300px' }}>
               <h3 className="text-2xl font-bold text-foreground mb-3 leading-tight">
                 Jouw perfecte<br />match wordt gezocht
               </h3>
@@ -113,43 +114,43 @@ const RouteSection = () => {
               </p>
             </div>
 
-            {/* Number badge - on the line */}
-            <div className="absolute" style={{ left: '50%', transform: 'translateX(30px)', top: '80px' }}>
-              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl">
+            {/* Number badge - ON the line at right curve */}
+            <div className="absolute" style={{ left: '50%', transform: 'translateX(80px)', top: '80px' }}>
+              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl z-10 relative">
                 3
               </div>
             </div>
 
             {/* Illustration - RIGHT side */}
-            <div className="absolute" style={{ right: '80px', top: '0' }}>
+            <div className="absolute" style={{ right: '40px', top: '10px' }}>
               <img
                 src={aiHeartChip}
                 alt=""
-                className="w-28 h-28 object-contain"
+                className="w-32 h-32 object-contain"
               />
             </div>
           </div>
 
-          {/* Step 4 - Image LEFT, Number CENTER-LEFT, Text RIGHT */}
-          <div className="absolute" style={{ top: '1050px', left: '0', right: '0' }}>
+          {/* Step 4 - At final left curve - Image LEFT, Badge on line, Text RIGHT */}
+          <div className="absolute" style={{ top: '1150px', left: '0', right: '0' }}>
             {/* Illustration - LEFT side */}
-            <div className="absolute" style={{ left: '80px', top: '0' }}>
+            <div className="absolute" style={{ left: '40px', top: '0' }}>
               <img
                 src={matchCelebration}
                 alt=""
-                className="w-28 h-28 object-contain"
+                className="w-32 h-32 object-contain"
               />
             </div>
 
-            {/* Number badge - on the line */}
-            <div className="absolute" style={{ left: '50%', transform: 'translateX(-70px)', top: '50px' }}>
-              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl">
+            {/* Number badge - ON the line at left curve */}
+            <div className="absolute" style={{ left: '50%', transform: 'translateX(-100px)', top: '50px' }}>
+              <div className="w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-xl z-10 relative">
                 4
               </div>
             </div>
 
-            {/* Text block - RIGHT side */}
-            <div className="absolute text-left" style={{ right: '60px', top: '0', width: '300px' }}>
+            {/* Text block - RIGHT side, center-aligned */}
+            <div className="absolute text-center" style={{ right: '40px', top: '0', width: '320px' }}>
               <h3 className="text-2xl font-bold text-foreground mb-3 leading-tight">
                 Een match!<br />Ga het avontuur aan
               </h3>
