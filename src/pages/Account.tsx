@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, User, Loader2, Trash2, Save, Bell, Heart, Mail } from "lucide-react";
+import { ArrowLeft, User, Loader2, Trash2, Save, Bell, Heart, Mail, Phone } from "lucide-react";
 import Footer from "@/components/Footer";
 import {
   AlertDialog,
@@ -31,6 +31,7 @@ interface Profile {
   photo_url: string | null;
   hair_color: string | null;
   eye_color: string | null;
+  phone_number: string | null;
 }
 
 interface NotificationSettings {
@@ -46,6 +47,7 @@ const Account = () => {
   const [deleting, setDeleting] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [username, setUsername] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [notifications, setNotifications] = useState<NotificationSettings>({
     match_notifications: true,
     update_notifications: true,
@@ -77,6 +79,7 @@ const Account = () => {
           setProfile(profileResult.data);
           setFirstName(profileResult.data.first_name || "");
           setUsername(profileResult.data.username || "");
+          setPhoneNumber(profileResult.data.phone_number || "");
         }
 
         // If notification settings exist, use them; otherwise use defaults
@@ -107,6 +110,7 @@ const Account = () => {
 
     const trimmedFirstName = firstName.trim();
     const trimmedUsername = username.trim();
+    const trimmedPhoneNumber = phoneNumber.trim();
 
     if (!trimmedFirstName) {
       toast({
@@ -125,6 +129,7 @@ const Account = () => {
         .update({
           first_name: trimmedFirstName,
           username: trimmedUsername || null,
+          phone_number: trimmedPhoneNumber || null,
         })
         .eq("id", profile.id);
 
@@ -134,6 +139,7 @@ const Account = () => {
         ...profile,
         first_name: trimmedFirstName,
         username: trimmedUsername || null,
+        phone_number: trimmedPhoneNumber || null,
       });
 
       toast({
@@ -290,6 +296,22 @@ const Account = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Je gebruikersnaam"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  Telefoonnummer
+                </div>
+              </Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+31 6 12345678"
               />
             </div>
 
