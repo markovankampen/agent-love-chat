@@ -26,12 +26,22 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) throw error;
+
+        // Check if email is verified
+        if (!data.user?.email_confirmed_at) {
+          toast({
+            title: "Email niet geverifieerd",
+            description: "Controleer je inbox en verifieer je email om door te gaan.",
+          });
+          navigate("/verify");
+          return;
+        }
 
         toast({
           title: "Welkom terug!",
