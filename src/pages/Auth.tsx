@@ -49,7 +49,7 @@ const Auth = () => {
         });
         navigate("/home");
       } else {
-        const redirectUrl = `${window.location.origin}/profile-setup`;
+        const redirectUrl = `${window.location.origin}/verify`;
         const { error } = await supabase.auth.signUp({
           email,
           password,

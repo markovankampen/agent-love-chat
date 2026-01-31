@@ -73,7 +73,8 @@ Deno.serve(async (req) => {
     console.log('Sending verification email to:', user.email)
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const verificationLink = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=email&redirect_to=${redirect_to}`
+    // Ensure redirect_to goes back to /verify page which will then redirect to profile-setup
+    const verificationLink = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=email&redirect_to=${encodeURIComponent(redirect_to)}`
 
     const html = generateVerificationEmail(user.email, verificationLink)
 
