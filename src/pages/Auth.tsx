@@ -63,6 +63,8 @@ const Auth = () => {
 
         if (error) throw error;
 
+        // Store credentials temporarily for verification polling
+        sessionStorage.setItem('pendingVerification', JSON.stringify({ email, password }));
         navigate("/verify");
       }
     } catch (error: any) {
