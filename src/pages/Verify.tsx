@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, RefreshCw } from "lucide-react";
+import { Heart, RefreshCw, CheckCircle, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,71 +11,146 @@ const Verify = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isChecking, setIsChecking] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const hasRedirectedRef = useRef(false);
 
-  const checkVerification = async () => {
+  const checkVerification = async (showToast = true) => {
+    if (hasRedirectedRef.current) return;
+    
     setIsChecking(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email_confirmed_at) {
-        navigate("/profile-setup");
-      } else {
+      // Force refresh the session to get latest user data
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError) {
+        // If refresh fails, try getting current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email_confirmed_at) {
+          hasRedirectedRef.current = true;
+          setIsVerified(true);
+          toast({
+            title: "Email geverifieerd! ✓",
+            description: "Je wordt doorgestuurd naar je profiel...",
+          });
+          setTimeout(() => navigate("/profile-setup"), 1500);
+          return;
+        }
+      } else if (session?.user?.email_confirmed_at) {
+        hasRedirectedRef.current = true;
+        setIsVerified(true);
+        toast({
+          title: "Email geverifieerd! ✓",
+          description: "Je wordt doorgestuurd naar je profiel...",
+        });
+        setTimeout(() => navigate("/profile-setup"), 1500);
+        return;
+      }
+      
+      if (showToast) {
         toast({
           title: "Nog niet geverifieerd",
           description: "Check je inbox en klik op de verificatie link in de email.",
         });
       }
     } catch (error) {
-      toast({
-        title: "Fout bij controleren",
-        description: "Probeer het opnieuw.",
-        variant: "destructive",
-      });
+      if (showToast) {
+        toast({
+          title: "Fout bij controleren",
+          description: "Probeer het opnieuw.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsChecking(false);
     }
   };
 
   useEffect(() => {
+    // Check immediately on mount
+    checkVerification(false);
+    
+    // Set up polling every 3 seconds to check verification status
+    pollingRef.current = setInterval(() => {
+      checkVerification(false);
+    }, 3000);
+
+    // Listen for auth state changes (e.g., when user clicks link in same browser)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-        navigate("/profile-setup");
+      console.log('Auth state change:', event, session?.user?.email_confirmed_at);
+      
+      if (hasRedirectedRef.current) return;
+      
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') && session?.user?.email_confirmed_at) {
+        hasRedirectedRef.current = true;
+        setIsVerified(true);
+        toast({
+          title: "Email geverifieerd! ✓",
+          description: "Je wordt doorgestuurd naar je profiel...",
+        });
+        setTimeout(() => navigate("/profile-setup"), 1500);
       }
     });
 
-    checkVerification();
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    return () => {
+      subscription.unsubscribe();
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-8 space-y-6">
           <div className="text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-              <Heart className="w-8 h-8 text-primary fill-primary" />
-            </div>
-            <h1 className="text-3xl font-bold">Bijna klaar!</h1>
-            <p className="text-muted-foreground">
-              Je account is aangemaakt. Check je inbox voor de verificatie email en klik op de link om je profiel in te stellen.
-            </p>
-            <Button 
-              onClick={checkVerification}
-              disabled={isChecking}
-              className="mt-4"
-            >
-              {isChecking ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Controleren...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Controleer verificatie
-                </>
-              )}
-            </Button>
+            {isVerified ? (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h1 className="text-3xl font-bold text-green-600">Geverifieerd!</h1>
+                <p className="text-muted-foreground">
+                  Je email is succesvol geverifieerd. Je wordt doorgestuurd...
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                  <Mail className="w-8 h-8 text-primary" />
+                </div>
+                <h1 className="text-3xl font-bold">Check je inbox</h1>
+                <p className="text-muted-foreground">
+                  We hebben een verificatie email gestuurd. Klik op de link in de email om door te gaan.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>Wachten op verificatie...</span>
+                </div>
+                <Button 
+                  onClick={() => checkVerification(true)}
+                  disabled={isChecking}
+                  variant="outline"
+                  className="mt-4"
+                >
+                  {isChecking ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Controleren...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Handmatig controleren
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Geen email ontvangen? Check je spam folder.
+                </p>
+              </>
+            )}
           </div>
         </Card>
       </div>
