@@ -35,13 +35,82 @@ const Chat = () => {
         return;
       }
 
-      const welcomeMessage: Message = {
-        id: "welcome",
-        role: "agent",
-        content: "Hoi! 👋 Ik ben Matchmaker Flori van {{IN_DE_BUURT_LINK}}. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
+      // Load existing conversation from database
+      const { data: existingMessages, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error loading messages:", error);
+      }
+
+      // Check if we should reset the conversation
+      let shouldReset = false;
+      
+      if (existingMessages && existingMessages.length > 0) {
+        // Check for conversation completion (look for completion indicators)
+        const lastAgentMessage = [...existingMessages].reverse().find(m => m.role === "agent");
+        const isConversationComplete = lastAgentMessage?.content?.toLowerCase().includes("bedankt voor het invullen") ||
+          lastAgentMessage?.content?.toLowerCase().includes("we gaan voor je op zoek") ||
+          lastAgentMessage?.content?.toLowerCase().includes("het gesprek stopt hier");
+        
+        if (isConversationComplete) {
+          // Check if 10 minutes have passed since the last message
+          const lastMessage = existingMessages[existingMessages.length - 1];
+          const lastMessageTime = new Date(lastMessage.created_at).getTime();
+          const tenMinutesInMs = 10 * 60 * 1000;
+          const timeSinceLastMessage = Date.now() - lastMessageTime;
+          
+          if (timeSinceLastMessage >= tenMinutesInMs) {
+            shouldReset = true;
+          }
+        }
+      }
+
+      if (shouldReset) {
+        // Clear old messages from database
+        await supabase
+          .from("conversations")
+          .delete()
+          .eq("user_id", user.id);
+      }
+
+      if (!shouldReset && existingMessages && existingMessages.length > 0) {
+        // Load existing messages
+        const loadedMessages: Message[] = existingMessages.map(msg => ({
+          id: msg.id,
+          role: msg.role as "user" | "agent",
+          content: msg.content,
+          timestamp: new Date(msg.created_at!),
+        }));
+        
+        // Add welcome message at the start if not present
+        const hasWelcome = loadedMessages.some(m => m.id === "welcome" || 
+          m.content.includes("Ik ben Matchmaker Flori"));
+        
+        if (!hasWelcome) {
+          const welcomeMessage: Message = {
+            id: "welcome",
+            role: "agent",
+            content: "Hoi! 👋 Ik ben Matchmaker Flori van {{IN_DE_BUURT_LINK}}. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
+            timestamp: new Date(loadedMessages[0]?.timestamp.getTime() - 1000 || Date.now()),
+          };
+          setMessages([welcomeMessage, ...loadedMessages]);
+        } else {
+          setMessages(loadedMessages);
+        }
+      } else {
+        // Show welcome message for new conversation
+        const welcomeMessage: Message = {
+          id: "welcome",
+          role: "agent",
+          content: "Hoi! 👋 Ik ben Matchmaker Flori van {{IN_DE_BUURT_LINK}}. Ik zou je graag enkele leuke en luchtige vragen willen stellen over jou en jouw ideale date, die mij helpen om voor jou op zoek te gaan naar een match! Zullen we beginnen?",
+          timestamp: new Date(),
+        };
+        setMessages([welcomeMessage]);
+      }
 
       setIsLoading(false);
     };
@@ -49,6 +118,10 @@ const Chat = () => {
     initChat();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        // Clear messages on sign out
+        setMessages([]);
+      }
       if (!session) {
         navigate("/auth");
       }
