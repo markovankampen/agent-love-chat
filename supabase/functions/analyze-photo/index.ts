@@ -130,8 +130,8 @@ serve(async (req) => {
       const faceArea = faceWidth * faceHeight;
       
       // If face is too small (likely not a selfie but a distant photo), reject
-      // Typical selfie has face area > 5% of image
-      if (faceWidth < 100 || faceHeight < 100) {
+      // Lower threshold to 50x50 to allow more valid selfies while filtering very distant faces
+      if (faceWidth < 50 || faceHeight < 50) {
         console.log('Face too small - width:', faceWidth, 'height:', faceHeight);
         return new Response(
           JSON.stringify({ 
