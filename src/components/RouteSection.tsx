@@ -15,7 +15,7 @@ const RouteSection = () => {
         <div className="hidden md:block relative" style={{ height: "1500px" }}>
           {/* SVG curved path - S-curve matching the image exactly */}
           <svg
-            className="absolute left-0 top-0 w-full h-full pointer-events-none"
+            className="absolute left-0 top-0 w-full h-full pointer-events-none "
             viewBox="0 0 800 1500"
             preserveAspectRatio="xMidYMin meet"
             fill="none"
