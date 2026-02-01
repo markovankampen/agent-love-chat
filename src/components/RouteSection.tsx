@@ -52,7 +52,7 @@ const RouteSection = () => {
             </div>
 
             {/* Number badge - ON the curve */}
-            <div className="absolute" style={{ left: "50%", transform: "translateX(50px)", top: "70px" }}>
+            <div className="absolute" style={{ left: "50%", transform: "translateX(50px)", top: "0px" }}>
               <div className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg">
                 1
               </div>
