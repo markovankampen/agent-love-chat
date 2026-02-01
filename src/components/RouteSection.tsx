@@ -11,147 +11,151 @@ const RouteSection = () => {
           De route
         </h2>
 
-        {/* Desktop layout with absolute positioning */}
-        <div className="hidden md:block relative" style={{ height: "1500px" }}>
-          {/* SVG curved path - S-curve matching the image exactly */}
+        {/* Desktop layout with curved path */}
+        <div className="hidden md:block relative" style={{ height: "1300px" }}>
+          {/* SVG curved path - smooth S-curve down the center */}
+          {/* className="absolute left-0 top-0 w-full h-full pointer-events-none" */}
           <svg
-            className="absolute left-0 top-0 w-full h-full pointer-events-none"
-            viewBox="0 0 800 1500"
-            preserveAspectRatio="xMidYMin meet"
-            fill="none"
+            className="absolute -left-20 top-0 w-full h-[1250px] pointer-events-none"
+            viewBox="0 0 400 1200"
             xmlns="http://www.w3.org/2000/svg"
+            fill="none"
           >
             <path
-              d="M400 50
-       C400 50, 550 150, 550 250
-       C550 350, 250 450, 250 600
-       C250 750, 550 850, 550 1000
-       C550 1150, 400 1250, 400 1350
-       L400 1450"
-              stroke="hsl(0, 84%, 60%)"
-              strokeWidth="4"
-              strokeLinecap="round"
-              fill="none"
-              transform="translate(800, 0) scale(-1, 1)"
+              d="
+      M270 40
+      C300 150, 300 280, 220 360
+      C120 460, 20 530, 220 700
+      C330 780, 420 880, 220 1050
+      C60 1170, 290 1580, 160 1220
+    "
+              stroke="#ef4444"
+              stroke-width="6"
+              stroke-linecap="round"
             />
           </svg>
 
-          {/* Step 1 - Text LEFT, Badge CENTER-RIGHT, Image RIGHT */}
-          <div className="absolute" style={{ top: "10px", left: "0", right: "0" }}>
+          {/* Step 1 - Text LEFT, Number on curve, Icon RIGHT */}
+          <div className="absolute" style={{ top: "0px", left: "0", right: "0" }}>
             {/* Text block - LEFT side */}
-            <div className="absolute" style={{ left: "10px", top: "60px", width: "240px" }}>
-              <h3 className="text-xxl font-bold text-foreground mb-2 leading-tight">
+            <div className="absolute" style={{ left: "120px", top: "0px", width: "280px" }}>
+              <h3 className="text-[25px] font-semibold text-black mb-2 leading-tight font-sans text-center ">
                 Login en
                 <br />
                 maak een selfie
               </h3>
-              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+              <p className="text-xs text-black -mb-1 leading-relaxed text-center">
                 Je selfie blijft anoniem! We gebruiken deze om jouw uitstraling vast te leggen, zodat Flori kan zoeken
                 naar mensen die passen bij wat jij aantrekkelijk vindt.
               </p>
-              <p className="font-caveat text-base text-primary italic">Privacy staat voorop!</p>
+              <p className="font-caveat text-[#2e2e2e] font-semibold text-2xl text-primary italic text-center">Privacy staat voorop!</p>
             </div>
 
             {/* Number badge - ON the curve */}
-            <div className="absolute" style={{ left: "40%", transform: "translateX(50px)", top: "0px" }}>
-              <div className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg">
+            <div className="absolute" style={{ left: "49.5%", transform: "translateX(-20px)", top: "30px" }}>
+              <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-xl relative z-10">
                 1
               </div>
             </div>
 
             {/* Illustration - RIGHT side */}
-            <div className="absolute" style={{ right: "80px", top: "40px" }}>
-              <img src={selfieHeart} alt="" className="w-24 h-24 object-contain" />
+            <div className="absolute" style={{ right: "280px", top: "-20px" }}>
+              <img
+                src={selfieHeart}
+                alt=""
+                className="w-32 h-32 object-contain"
+                style={{ transform: "scaleX(-1)" }} // this mirrors the image
+              />
             </div>
           </div>
 
-          {/* Step 2 - Image LEFT, Badge CENTER-LEFT, Text RIGHT */}
-          <div className="absolute" style={{ top: "360px", left: "0", right: "0" }}>
+          {/* Step 2 - Icon LEFT, Number on curve, Text RIGHT */}
+          <div className="absolute" style={{ top: "320px", left: "0", right: "0" }}>
             {/* Illustration - LEFT side */}
-            <div className="absolute" style={{ left: "80px", top: "40px" }}>
-              <img src={chatBubbleHeart} alt="" className="w-24 h-24 object-contain" />
+            <div className="absolute" style={{ left: "190px", top: "50px" }}>
+              <img src={chatBubbleHeart} alt="" className="w-32 h-32 object-contain" />
             </div>
 
             {/* Number badge - ON the curve */}
-            <div className="absolute" style={{ left: "50%", transform: "translateX(-180px)", top: "70px" }}>
-              <div className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg">
+            <div className="absolute" style={{ left: "47.8%", transform: "translateX(-180px)", top: "190px" }}>
+              <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-xl relative z-10">
                 2
               </div>
             </div>
 
             {/* Text block - RIGHT side */}
-            <div className="absolute" style={{ right: "50px", top: "40px", width: "260px" }}>
-              <h3 className="text-xl font-bold text-foreground mb-2 leading-tight">
+            <div className="absolute" style={{ right: "270px", top: "110px", width: "300px" }}>
+              <h3 className="text-[25px] font-semibold text-black mb-2 leading-tight font-sans text-center">
                 Chat met onze
                 <br />
                 speelse AI bot Flori
               </h3>
-              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+              <p className="text-xs text-black -mb-1 leading-relaxed text-center">
                 Chat met Flori, onze speelse AI matchmaker. Vertel over jezelf, wat je leuk vindt, wat je belangrijk
                 vindt in een ander en wat jou uniek maakt. Flori analyseert jouw antwoorden en bouwt daarmee jouw
                 persoonlijke profiel op.
               </p>
-              <p className="font-caveat text-base text-primary italic">Slim en verrassend</p>
+              <p className="font-caveat text-[#2e2e2e] font-semibold text-2xl text-primary italic text-center">Slim en verrassend</p>
             </div>
           </div>
 
-          {/* Step 3 - Text LEFT, Badge CENTER-RIGHT, Image RIGHT */}
-          <div className="absolute" style={{ top: "720px", left: "0", right: "0" }}>
+          {/* Step 3 - Text LEFT, Number on curve, Icon RIGHT */}
+          <div className="absolute" style={{ top: "660px", left: "0", right: "0" }}>
             {/* Text block - LEFT side */}
-            <div className="absolute" style={{ left: "50px", top: "40px", width: "240px" }}>
-              <h3 className="text-xl font-bold text-foreground mb-2 leading-tight">
+            <div className="absolute" style={{ left: "150px", top: "140px", width: "280px" }}>
+              <h3 className="text-[25px] font-semibold text-black mb-2 leading-tight font-sans text-center">
                 Jouw perfecte
                 <br />
                 match wordt gezocht
               </h3>
-              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+              <p className="text-xs text-black -mb-1 leading-relaxed text-center">
                 Jij leeft je leven. Flori zoekt jouw match. Achter de schermen wordt jouw profiel vergeleken met anderen
                 op zoek naar die ene onverwachte klik. Je hoeft alleen maar te wachten tot het moment daar is. Altijd
                 met respect voor jouw privacy.
               </p>
-              <p className="font-caveat text-base text-primary italic">Flori gaat voor je aan het werk</p>
+              <p className="font-caveat text-[#2e2e2e] font-semibold text-2xl text-primary italic text-center">Flori gaat voor je aan het werk</p>
             </div>
 
             {/* Number badge - ON the curve */}
-            <div className="absolute" style={{ left: "50%", transform: "translateX(50px)", top: "70px" }}>
-              <div className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg">
+            <div className="absolute" style={{ left: "43.5%", transform: "translateX(100px)", top: "220px" }}>
+              <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-xl relative z-10">
                 3
               </div>
             </div>
 
             {/* Illustration - RIGHT side */}
-            <div className="absolute" style={{ right: "80px", top: "50px" }}>
-              <img src={aiHeartChip} alt="" className="w-24 h-24 object-contain" />
+            <div className="absolute" style={{ right: "230px", top: "100px" }}>
+              <img src={aiHeartChip} alt="" className="w-32 h-32 object-contain" style={{ transform: "rotate(-20deg)" }} />
             </div>
           </div>
 
-          {/* Step 4 - Image LEFT, Badge CENTER-LEFT, Text RIGHT */}
-          <div className="absolute" style={{ top: "1080px", left: "0", right: "0" }}>
+          {/* Step 4 - Icon LEFT, Number on curve, Text RIGHT */}
+          <div className="absolute" style={{ top: "1000px", left: "0", right: "0" }}>
             {/* Illustration - LEFT side */}
-            <div className="absolute" style={{ left: "80px", top: "60px" }}>
-              <img src={matchCelebration} alt="" className="w-24 h-24 object-contain" />
+            <div className="absolute" style={{ left: "180px", top: "210px" }}>
+              <img src={matchCelebration} alt="" className="w-32 h-32 object-contain" />
             </div>
 
             {/* Number badge - ON the curve */}
-            <div className="absolute" style={{ left: "50%", transform: "translateX(-180px)", top: "80px" }}>
-              <div className="w-11 h-11 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg">
+            <div className="absolute" style={{ left: "54%", transform: "translateX(-180px)", top: "230px" }}>
+              <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-xl relative z-10">
                 4
               </div>
             </div>
 
             {/* Text block - RIGHT side */}
-            <div className="absolute" style={{ right: "50px", top: "50px", width: "260px" }}>
-              <h3 className="text-xl font-bold text-foreground mb-2 leading-tight">
+            <div className="absolute" style={{ right: "220px", top: "170px", width: "300px" }}>
+              <h3 className="text-[25px] font-semibold text-black mb-2 leading-tight font-sans text-center">
                 Een match!
                 <br />
                 Ga het avontuur aan
               </h3>
-              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+              <p className="text-xs text-black -mb-1 leading-relaxed text-center">
                 Is er een match dan ontvang je een uitnodiging voor een drankje bij een leuke lokale plek: een echte
                 blind date. Vind je dat een stap te ver dan kun je natuurlijk eerst contactgegevens uitwisselen en
                 elkaar rustig leren kennen.
               </p>
-              <p className="font-caveat text-base text-primary italic">Gaan jullie voor de blind date?</p>
+              <p className="font-caveat text-[#2e2e2e] font-semibold text-2xl text-primary italic text-center">Gaan jullie voor de blind date?</p>
             </div>
           </div>
         </div>
