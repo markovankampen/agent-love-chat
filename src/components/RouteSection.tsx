@@ -5,7 +5,7 @@ import matchCelebration from "@/assets/illustrations/match-celebration.png";
 
 const RouteSection = () => {
   return (
-    <section className="py-16 md:py-24 px-4 md:px-8 relative overflow-hidden">
+    <section className="py-16 md:py-24 px-4 md:px-8 relative overflow-hidden mb-20">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-foreground mb-16 md:mb-20">
           De route

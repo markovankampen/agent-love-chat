@@ -6,23 +6,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import heartRedGlow from "@/assets/illustrations/heart-red-glow.png";
 
 const Footer = () => {
   const [showTerms, setShowTerms] = useState(false);
 
   return (
     <>
-      <footer className="py-8 px-4">
+      <footer className="py-8 px-4 mt-16">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-6">
-          {/* Logo */}
-          <div className="flex flex-col items-center gap-2">
-            <img src={heartRedGlow} alt="" className="w-10 h-10 object-contain" />
-            <p className="text-sm">
-              <span className="text-primary font-bold">indebuurt</span>
-              <span className="text-foreground"> ontmoet</span>
-            </p>
-          </div>
           
           {/* Footer links */}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
