@@ -38,8 +38,8 @@ const RouteSection = () => {
           {/* Step 1 - Text LEFT, Badge CENTER-RIGHT, Image RIGHT */}
           <div className="absolute" style={{ top: "10px", left: "0", right: "0" }}>
             {/* Text block - LEFT side */}
-            <div className="absolute" style={{ left: "30px", top: "60px", width: "240px" }}>
-              <h3 className="text-xl font-bold text-foreground mb-2 leading-tight">
+            <div className="absolute" style={{ left: "10px", top: "60px", width: "240px" }}>
+              <h3 className="text-xxl font-bold text-foreground mb-2 leading-tight">
                 Login en
                 <br />
                 maak een selfie
