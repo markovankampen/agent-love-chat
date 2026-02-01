@@ -12,7 +12,7 @@ const RouteSection = () => {
         </h2>
 
         {/* Desktop layout with absolute positioning */}
-        <div className="hidden md:block relative" style={{ height: "1500px" }}>
+        <div className="hidden md:block relative" style={{ height: "1900px" }}>
           {/* SVG curved path - S-curve matching the image exactly */}
           <svg
             className="absolute left-0 top-0 w-full h-full pointer-events-none"
