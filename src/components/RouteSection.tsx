@@ -12,7 +12,7 @@ const RouteSection = () => {
         </h2>
 
         {/* Desktop layout with absolute positioning */}
-        <div className="hidden md:block relative" style={{ height: "1900px" }}>
+        <div className="hidden md:block relative" style={{ height: "1500px" }}>
           {/* SVG curved path - S-curve matching the image exactly */}
           <svg
             className="absolute left-0 top-0 w-full h-full pointer-events-none"
@@ -36,9 +36,9 @@ const RouteSection = () => {
           </svg>
 
           {/* Step 1 - Text LEFT, Badge CENTER-RIGHT, Image RIGHT */}
-          <div className="absolute" style={{ top: "30px", left: "0", right: "0" }}>
+          <div className="absolute" style={{ top: "10px", left: "0", right: "0" }}>
             {/* Text block - LEFT side */}
-            <div className="absolute" style={{ left: "50px", top: "60px", width: "240px" }}>
+            <div className="absolute" style={{ left: "30px", top: "60px", width: "240px" }}>
               <h3 className="text-xl font-bold text-foreground mb-2 leading-tight">
                 Login en
                 <br />
