@@ -375,7 +375,7 @@ const ProfileSetup = () => {
       });
 
       setTimeout(() => {
-        navigate("/chat");
+        navigate("/home");
       }, 1500);
 
     } catch (error: any) {

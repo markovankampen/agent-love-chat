@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, User, Loader2, Trash2, Save, Bell, Heart, Mail, Phone } from "lucide-react";
+import { ArrowLeft, User, Trash2, Bell, Heart, Mail, Phone } from "lucide-react";
 import Footer from "@/components/Footer";
 import {
   AlertDialog,
@@ -67,7 +67,6 @@ const Account = () => {
           return;
         }
 
-        // Fetch profile and notification settings in parallel
         const [profileResult, notificationResult] = await Promise.all([
           supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
           supabase.from("notification_settings").select("*").eq("user_id", user.id).maybeSingle(),
@@ -82,7 +81,6 @@ const Account = () => {
           setPhoneNumber(profileResult.data.phone_number || "");
         }
 
-        // If notification settings exist, use them; otherwise use defaults
         if (notificationResult.data) {
           setNotifications({
             match_notifications: notificationResult.data.match_notifications,
@@ -169,7 +167,6 @@ const Account = () => {
     setSavingNotifications(true);
 
     try {
-      // Upsert notification settings
       const { error } = await supabase
         .from("notification_settings")
         .upsert({
@@ -185,7 +182,6 @@ const Account = () => {
       });
     } catch (error: any) {
       console.error("Error saving notification settings:", error);
-      // Revert on error
       setNotifications(notifications);
       toast({
         title: "Fout",
@@ -201,7 +197,6 @@ const Account = () => {
     setDeleting(true);
 
     try {
-      // Sign out first
       await supabase.auth.signOut();
 
       toast({
@@ -235,7 +230,8 @@ const Account = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        {/* Simple spinner using CSS only - no icon component */}
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -243,7 +239,6 @@ const Account = () => {
   return (
     <div className="min-h-screen bg-muted/30 px-3 py-6 sm:p-6">
       <div className="max-w-lg mx-auto space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -256,9 +251,7 @@ const Account = () => {
           <h1 className="text-2xl font-bold">Mijn Account</h1>
         </div>
 
-        {/* Profile Card */}
         <Card className="p-6 space-y-6">
-          {/* Avatar Section */}
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
               {profile?.photo_url ? (
@@ -277,7 +270,6 @@ const Account = () => {
             </div>
           </div>
 
-          {/* Editable Fields */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">Voornaam</Label>
@@ -315,7 +307,6 @@ const Account = () => {
               />
             </div>
 
-            {/* Read-only Fields */}
             <div className="space-y-2">
               <Label>Email</Label>
               <Input value={profile?.email || ""} disabled className="bg-muted" />
@@ -345,27 +336,23 @@ const Account = () => {
             )}
           </div>
 
-          {/* Save Button */}
+          {/* Save Button - TEXT ONLY, NO ICON */}
           <Button
             onClick={handleSave}
             disabled={saving}
             className="w-full"
           >
             {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <span className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 Opslaan...
-              </>
+              </span>
             ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Wijzigingen opslaan
-              </>
+              "Wijzigingen opslaan"
             )}
           </Button>
         </Card>
 
-        {/* Notification Settings */}
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Bell className="w-5 h-5 text-primary" />
@@ -373,7 +360,6 @@ const Account = () => {
           </div>
 
           <div className="space-y-4">
-            {/* Match Notifications */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Heart className="w-5 h-5 text-muted-foreground" />
@@ -396,7 +382,6 @@ const Account = () => {
               />
             </div>
 
-            {/* Update Notifications */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Bell className="w-5 h-5 text-muted-foreground" />
@@ -419,7 +404,6 @@ const Account = () => {
               />
             </div>
 
-            {/* Email Notifications */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-muted-foreground" />
@@ -444,7 +428,6 @@ const Account = () => {
           </div>
         </Card>
 
-        {/* Danger Zone */}
         <Card className="p-6 border-destructive/50">
           <h3 className="text-lg font-semibold text-destructive mb-2">
             Gevaarzone
@@ -477,7 +460,14 @@ const Account = () => {
                   disabled={deleting}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {deleting ? "Verwijderen..." : "Ja, verwijder mijn account"}
+                  {deleting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      Verwijderen...
+                    </span>
+                  ) : (
+                    "Ja, verwijder mijn account"
+                  )}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
