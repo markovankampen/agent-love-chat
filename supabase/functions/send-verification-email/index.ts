@@ -93,10 +93,14 @@ Deno.serve(async (req) => {
     console.log("Token hash:", token_hash);
     console.log("Redirect to:", redirect_to);
 
-    // Build verification link - point to frontend /verify with token
-    // This ensures same-tab verification instead of opening new tab
-    const frontendUrl = redirect_to.split("/verify")[0]; // Extract base URL from redirect_to
-    const verificationLink = `${frontendUrl}/verify?token=${token_hash}&type=signup`;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (!supabaseUrl) {
+      console.error("SUPABASE_URL not configured!");
+      throw new Error("Supabase URL not configured");
+    }
+
+    // Build verification link
+    const verificationLink = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=signup&redirect_to=${encodeURIComponent(redirect_to)}`;
 
     console.log("Verification link generated:", verificationLink);
 
