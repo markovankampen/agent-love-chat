@@ -95,17 +95,10 @@ Deno.serve(async (req) => {
 
     // Build verification link - point to frontend /verify with token
     // This ensures same-tab verification instead of opening new tab
-<<<<<<< HEAD
-    const frontendUrl = redirect_to.split('/verify')[0] // Extract base URL from redirect_to
-    const verificationLink = `${frontendUrl}/verify?token=${token_hash}&type=signup`
-    
-    console.log('Verification link generated:', verificationLink)
-=======
     const frontendUrl = redirect_to.split("/verify")[0]; // Extract base URL from redirect_to
     const verificationLink = `${frontendUrl}/verify?token=${token_hash}&type=signup`;
 
     console.log("Verification link generated:", verificationLink);
->>>>>>> 03b03009182773d19fd219acf9c3269ea6557739
 
     const html = generateVerificationEmail(user.email, verificationLink);
 
