@@ -1,8 +1,8 @@
-import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
-import { Resend } from 'https://esm.sh/resend@4.0.0'
+import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
-const hookSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
+const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET") as string;
 
 const generateVerificationEmail = (email: string, verificationLink: string) => {
   return `
@@ -42,65 +42,107 @@ const generateVerificationEmail = (email: string, verificationLink: string) => {
         </div>
       </body>
     </html>
-  `
-}
+  `;
+};
 
 Deno.serve(async (req) => {
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+  console.log("=== Email Verification Function Started ===");
+  console.log("Method:", req.method);
+  console.log("Headers:", Object.fromEntries(req.headers));
+
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
   }
 
   try {
-    const payload = await req.text()
-    const headers = Object.fromEntries(req.headers)
-    const wh = new Webhook(hookSecret)
-    
-    const {
-      user,
-      email_data: { token_hash, redirect_to },
-    } = wh.verify(payload, headers) as {
-      user: {
-        email: string
-      }
-      email_data: {
-        token: string
-        token_hash: string
-        redirect_to: string
-        email_action_type: string
-      }
+    const payload = await req.text();
+    console.log("Raw payload received:", payload.substring(0, 200) + "...");
+
+    const headers = Object.fromEntries(req.headers);
+
+    // Check if webhook secret is configured
+    if (!hookSecret) {
+      console.error("SEND_EMAIL_HOOK_SECRET is not configured!");
+      throw new Error("Webhook secret not configured");
     }
 
-    console.log('Sending verification email to:', user.email)
+    const wh = new Webhook(hookSecret);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    // Ensure redirect_to goes back to /verify page which will then redirect to profile-setup
-    const verificationLink = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=email&redirect_to=${encodeURIComponent(redirect_to)}`
+    let verified;
+    try {
+      verified = wh.verify(payload, headers) as {
+        user: {
+          email: string;
+        };
+        email_data: {
+          token: string;
+          token_hash: string;
+          redirect_to: string;
+          email_action_type: string;
+        };
+      };
+    } catch (verifyError) {
+      console.error("Webhook verification failed:", verifyError);
+      throw new Error("Invalid webhook signature");
+    }
 
-    const html = generateVerificationEmail(user.email, verificationLink)
+    const { user, email_data } = verified;
+    const { token_hash, redirect_to } = email_data;
 
-    const { error } = await resend.emails.send({
-      from: 'Agent Love Chat <onboarding@resend.dev>',
+    console.log("Processing verification email for:", user.email);
+    console.log("Token hash:", token_hash);
+    console.log("Redirect to:", redirect_to);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (!supabaseUrl) {
+      console.error("SUPABASE_URL not configured!");
+      throw new Error("Supabase URL not configured");
+    }
+
+    // Build verification link
+    const verificationLink = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=signup&redirect_to=${encodeURIComponent(redirect_to)}`;
+
+    console.log("Verification link generated:", verificationLink);
+
+    const html = generateVerificationEmail(user.email, verificationLink);
+
+    // Check Resend API key
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      console.error("RESEND_API_KEY not configured!");
+      throw new Error("Resend API key not configured");
+    }
+
+    console.log("Sending email via Resend...");
+    const { data, error } = await resend.emails.send({
+      from: "Matchmaker Flori <onboarding@resend.dev>",
       to: [user.email],
-      subject: 'Verifieer je e-mailadres',
+      subject: "Verifieer je e-mailadres - indebuurt ontmoet",
       html,
-    })
+    });
 
     if (error) {
-      console.error('Resend error:', error)
-      throw error
+      console.error("Resend API error:", error);
+      throw error;
     }
 
-    console.log('Verification email sent successfully to:', user.email)
+    console.log("✅ Email sent successfully!");
+    console.log("Resend response:", data);
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({
+        success: true,
+        email_id: data?.id,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   } catch (error) {
-    console.error('Error sending verification email:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to send verification email'
-    const errorCode = (error as any)?.code || 'UNKNOWN_ERROR'
-    
+    console.error("❌ Error sending verification email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to send verification email";
+    const errorCode = (error as any)?.code || "UNKNOWN_ERROR";
+
     return new Response(
       JSON.stringify({
         error: {
@@ -110,8 +152,8 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
-})
+});
