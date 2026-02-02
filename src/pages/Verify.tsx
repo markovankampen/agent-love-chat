@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, RefreshCw, CheckCircle, Mail } from "lucide-react";
+import { RefreshCw, CheckCircle, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,14 +12,30 @@ const Verify = () => {
   const { toast } = useToast();
   const [isChecking, setIsChecking] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const hasRedirectedRef = useRef(false);
+
+  useEffect(() => {
+    // Get email from storage for display
+    const email = sessionStorage.getItem('pendingVerificationEmail');
+    if (email) {
+      setUserEmail(email);
+    }
+  }, []);
 
   const handleVerificationSuccess = () => {
     if (hasRedirectedRef.current) return;
     hasRedirectedRef.current = true;
     setIsVerified(true);
-    sessionStorage.removeItem('pendingVerification');
+    
+    // Clean up
+    sessionStorage.removeItem('pendingVerificationEmail');
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+    
     toast({
       title: "Email geverifieerd! ✓",
       description: "Je wordt doorgestuurd naar je profiel...",
@@ -27,42 +43,41 @@ const Verify = () => {
     setTimeout(() => navigate("/profile-setup"), 1500);
   };
 
-  const checkVerificationWithCredentials = async (showToast = true) => {
+  const checkVerification = async (showToast = true) => {
     if (hasRedirectedRef.current) return;
     
-    const pending = sessionStorage.getItem('pendingVerification');
-    if (!pending) {
-      // No stored credentials, fall back to session-based check
-      return checkVerificationWithSession(showToast);
-    }
-
     setIsChecking(true);
     try {
-      const { email, password } = JSON.parse(pending);
+      // Check current session first
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Try to sign in - this will tell us if email is verified
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        // Check if the error is about email not being confirmed
-        if (error.message.includes('Email not confirmed') || error.message.includes('not confirmed')) {
-          if (showToast) {
-            toast({
-              title: "Nog niet geverifieerd",
-              description: "Check je inbox en klik op de verificatie link in de email.",
-            });
-          }
-          return;
-        }
-        throw error;
+      if (session?.user?.email_confirmed_at) {
+        handleVerificationSuccess();
+        return;
       }
 
-      // Sign in succeeded - check if email is confirmed
-      if (data.user?.email_confirmed_at) {
+      // Try refreshing the session
+      const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+      
+      if (refreshedSession?.user?.email_confirmed_at) {
         handleVerificationSuccess();
+        return;
+      }
+
+      // Check user directly as final fallback
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user?.email_confirmed_at) {
+        handleVerificationSuccess();
+        return;
+      }
+      
+      // Still not verified
+      if (showToast) {
+        toast({
+          title: "Nog niet geverifieerd",
+          description: "Check je inbox en klik op de verificatie link in de email.",
+        });
       }
     } catch (error) {
       console.error('Verification check error:', error);
@@ -78,61 +93,24 @@ const Verify = () => {
     }
   };
 
-  const checkVerificationWithSession = async (showToast = true) => {
-    if (hasRedirectedRef.current) return;
-    
-    setIsChecking(true);
-    try {
-      // Try refreshing session first
-      const { data: { session } } = await supabase.auth.refreshSession();
-      
-      if (session?.user?.email_confirmed_at) {
-        handleVerificationSuccess();
-        return;
-      }
-
-      // Fall back to getUser
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email_confirmed_at) {
-        handleVerificationSuccess();
-        return;
-      }
-      
-      if (showToast) {
-        toast({
-          title: "Nog niet geverifieerd",
-          description: "Check je inbox en klik op de verificatie link in de email.",
-        });
-      }
-    } catch (error) {
-      if (showToast) {
-        toast({
-          title: "Fout bij controleren",
-          description: "Probeer het opnieuw.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
   useEffect(() => {
     // Check immediately on mount
-    checkVerificationWithCredentials(false);
+    checkVerification(false);
     
-    // Set up polling every 3 seconds
+    // Set up polling every 5 seconds
     pollingRef.current = setInterval(() => {
-      checkVerificationWithCredentials(false);
-    }, 3000);
+      checkVerification(false);
+    }, 5000);
 
-    // Listen for auth state changes (when user clicks link in same browser)
+    // Listen for auth state changes (when user clicks link)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state change:', event, session?.user?.email_confirmed_at);
       
       if (hasRedirectedRef.current) return;
       
-      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') && session?.user?.email_confirmed_at) {
+      // Handle successful verification
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') && 
+          session?.user?.email_confirmed_at) {
         handleVerificationSuccess();
       }
     });
@@ -167,14 +145,15 @@ const Verify = () => {
                 </div>
                 <h1 className="text-3xl font-bold">Check je inbox</h1>
                 <p className="text-muted-foreground">
-                  We hebben een verificatie email gestuurd. Klik op de link in de email om door te gaan.
+                  We hebben een verificatie email gestuurd{userEmail && ` naar ${userEmail}`}. 
+                  Klik op de link in de email om door te gaan.
                 </p>
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   <span>Wachten op verificatie...</span>
                 </div>
                 <Button 
-                  onClick={() => checkVerificationWithCredentials(true)}
+                  onClick={() => checkVerification(true)}
                   disabled={isChecking}
                   variant="outline"
                   className="mt-4"

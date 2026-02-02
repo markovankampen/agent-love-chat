@@ -39,6 +39,8 @@ const Auth = () => {
             title: "Email niet geverifieerd",
             description: "Controleer je inbox en verifieer je email om door te gaan.",
           });
+          // Store email only for display purposes
+          sessionStorage.setItem('pendingVerificationEmail', email);
           navigate("/verify");
           return;
         }
@@ -63,8 +65,14 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Store credentials temporarily for verification polling
-        sessionStorage.setItem('pendingVerification', JSON.stringify({ email, password }));
+        // Only store email for display, not credentials
+        sessionStorage.setItem('pendingVerificationEmail', email);
+
+        toast({
+          title: "Bijna klaar!",
+          description: "Check je email om je account te verifiëren.",
+        });
+
         navigate("/verify");
       }
     } catch (error: any) {
@@ -148,7 +156,7 @@ const Auth = () => {
               {isLogin ? "Inloggen" : "Registreren"}
             </h1>
             <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-            {isLogin
+              {isLogin
                 ? "Log in om verder te gaan met Matchmaker Flori"
                 : "Maak een account aan om te beginnen"}
             </p>
