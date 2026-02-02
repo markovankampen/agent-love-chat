@@ -39,19 +39,35 @@ const Auth = () => {
             title: "Email niet geverifieerd",
             description: "Controleer je inbox en verifieer je email om door te gaan.",
           });
-          // Store email only for display purposes
-          sessionStorage.setItem('pendingVerificationEmail', email);
+          // Store email for display on verification screen
+          sessionStorage.setItem("pendingVerificationEmail", email);
           navigate("/verify");
           return;
+        }
+
+        // Check if profile is complete
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, date_of_birth, photo_url")
+          .eq("id", data.user.id)
+          .single();
+
+        if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+          // Profile incomplete, go to profile setup
+          navigate("/profile-setup");
+        } else {
+          // Profile complete, go to home
+          navigate("/home");
         }
 
         toast({
           title: "Welkom terug!",
           description: "Je bent succesvol ingelogd.",
         });
-        navigate("/home");
       } else {
+        // Sign up flow - redirect to same origin for verification
         const redirectUrl = `${window.location.origin}/verify`;
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -65,8 +81,8 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Only store email for display, not credentials
-        sessionStorage.setItem('pendingVerificationEmail', email);
+        // Store email for verification screen display
+        sessionStorage.setItem("pendingVerificationEmail", email);
 
         toast({
           title: "Bijna klaar!",
@@ -152,13 +168,9 @@ const Auth = () => {
             <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-3 sm:mb-4">
               <Heart className="w-6 h-6 sm:w-8 sm:h-8 text-primary fill-primary" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              {isLogin ? "Inloggen" : "Registreren"}
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{isLogin ? "Inloggen" : "Registreren"}</h1>
             <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-              {isLogin
-                ? "Log in om verder te gaan met Matchmaker Flori"
-                : "Maak een account aan om te beginnen"}
+              {isLogin ? "Log in om verder te gaan met Matchmaker Flori" : "Maak een account aan om te beginnen"}
             </p>
           </div>
 
@@ -198,14 +210,11 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                minLength={6}
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-primary/90"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
               {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
             </Button>
           </form>
@@ -233,12 +242,7 @@ const Auth = () => {
             </div>
           )}
 
-          <Button
-            onClick={handleGuestLogin}
-            variant="outline"
-            className="w-full"
-            disabled={loading}
-          >
+          <Button onClick={handleGuestLogin} variant="outline" className="w-full" disabled={loading}>
             <UserCircle className="mr-2 h-4 w-4" />
             {showGuestInput ? "Bevestig & doorgaan" : "Doorgaan als gast"}
           </Button>
@@ -248,9 +252,7 @@ const Auth = () => {
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              {isLogin
-                ? "Nog geen account? Registreer hier"
-                : "Heb je al een account? Log in"}
+              {isLogin ? "Nog geen account? Registreer hier" : "Heb je al een account? Log in"}
             </button>
           </div>
         </Card>
