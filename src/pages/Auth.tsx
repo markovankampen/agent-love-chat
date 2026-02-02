@@ -39,35 +39,19 @@ const Auth = () => {
             title: "Email niet geverifieerd",
             description: "Controleer je inbox en verifieer je email om door te gaan.",
           });
-          // Store email for display on verification screen
+          // Store email only for display purposes
           sessionStorage.setItem('pendingVerificationEmail', email);
           navigate("/verify");
           return;
-        }
-
-        // Check if profile is complete
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, date_of_birth, photo_url')
-          .eq('id', data.user.id)
-          .single();
-
-        if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-          // Profile incomplete, go to profile setup
-          navigate("/profile-setup");
-        } else {
-          // Profile complete, go to home
-          navigate("/home");
         }
 
         toast({
           title: "Welkom terug!",
           description: "Je bent succesvol ingelogd.",
         });
+        navigate("/home");
       } else {
-        // Sign up flow - redirect to same origin for verification
         const redirectUrl = `${window.location.origin}/verify`;
-        
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -81,7 +65,7 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Store email for verification screen display
+        // Only store email for display, not credentials
         sessionStorage.setItem('pendingVerificationEmail', email);
 
         toast({
@@ -214,7 +198,6 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                minLength={6}
               />
             </div>
 
