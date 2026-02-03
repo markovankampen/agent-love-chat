@@ -1,14 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import Footer from "@/components/Footer";
 
 const Verify = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [userEmail, setUserEmail] = useState<string>("");
+  const [checking, setChecking] = useState(false);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Get email from storage for display
@@ -17,7 +21,7 @@ const Verify = () => {
       setUserEmail(email);
     }
 
-    // Check if user is already verified (in case they came back to this page)
+    // Check if user is already verified
     const checkIfAlreadyVerified = async () => {
       const {
         data: { session },
@@ -37,15 +41,129 @@ const Verify = () => {
         if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
           navigate("/profile-setup");
         } else {
-          navigate("/profile-setup");
+          navigate("/home");
         }
       }
     };
 
     checkIfAlreadyVerified();
-  }, [navigate]);
+
+    // Start polling for verification status every 2 seconds
+    const startPolling = () => {
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("Error checking session:", error);
+            return;
+          }
+
+          // If user is verified, navigate
+          if (session?.user?.email_confirmed_at) {
+            console.log("Email verified! Navigating...");
+            
+            // Clear polling
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+            }
+            
+            // Clean up
+            sessionStorage.removeItem("pendingVerificationEmail");
+            
+            // Check if profile is complete
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("first_name, date_of_birth, photo_url")
+              .eq("id", session.user.id)
+              .single();
+
+            // Show success message
+            toast({
+              title: "Email geverifieerd! ✓",
+              description: "Je wordt doorgestuurd...",
+            });
+
+            // Navigate to appropriate page
+            setTimeout(() => {
+              if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+                navigate("/profile-setup");
+              } else {
+                navigate("/home");
+              }
+            }, 500);
+          }
+        } catch (error) {
+          console.error("Error during polling:", error);
+        }
+      }, 2000); // Check every 2 seconds
+    };
+
+    startPolling();
+
+    // Cleanup on unmount
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [navigate, toast]);
+
+  const handleManualCheck = async () => {
+    setChecking(true);
+    
+    try {
+      // Refresh the session
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      
+      if (error) throw error;
+
+      if (session?.user?.email_confirmed_at) {
+        // Email is verified
+        sessionStorage.removeItem("pendingVerificationEmail");
+        
+        // Check if profile is complete
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, date_of_birth, photo_url")
+          .eq("id", session.user.id)
+          .single();
+
+        toast({
+          title: "Email geverifieerd! ✓",
+          description: "Je wordt doorgestuurd...",
+        });
+
+        setTimeout(() => {
+          if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+            navigate("/profile-setup");
+          } else {
+            navigate("/home");
+          }
+        }, 500);
+      } else {
+        toast({
+          title: "Nog niet geverifieerd",
+          description: "Klik op de link in je email om je account te verifiëren",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error checking verification:", error);
+      toast({
+        title: "Fout",
+        description: "Kon verificatie niet controleren",
+        variant: "destructive",
+      });
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const handleGoBack = () => {
+    // Clear polling
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
     navigate("/auth");
   };
 
@@ -54,8 +172,9 @@ const Verify = () => {
       <div className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-8 space-y-6">
           <div className="text-center space-y-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4 relative">
               <Mail className="w-8 h-8 text-primary" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full animate-pulse"></div>
             </div>
             <h1 className="text-3xl font-bold">Check je inbox</h1>
             <p className="text-muted-foreground">
@@ -66,13 +185,40 @@ const Verify = () => {
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 text-left">
                 <li>Open je email inbox</li>
                 <li>Klik op de verificatie link in de email</li>
-                <li>Je wordt automatisch doorgestuurd in dit venster</li>
+                <li>Deze pagina wordt automatisch bijgewerkt</li>
               </ol>
             </div>
+            
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
+                💡 Tip: Houd dit venster open. We controleren automatisch wanneer je je email verifieert.
+              </p>
+            </div>
+
             <p className="text-xs text-muted-foreground mt-4">
               Geen email ontvangen? Check je spam folder.
             </p>
-            <div className="pt-4">
+
+            <div className="pt-4 space-y-2">
+              <Button
+                onClick={handleManualCheck}
+                variant="default"
+                className="w-full"
+                disabled={checking}
+              >
+                {checking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Controleren...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Ik heb de link al geklikt
+                  </>
+                )}
+              </Button>
+              
               <Button
                 onClick={handleGoBack}
                 variant="outline"

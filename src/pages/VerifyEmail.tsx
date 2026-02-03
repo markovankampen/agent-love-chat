@@ -14,30 +14,37 @@ const VerifyEmail = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        // Get the token from URL (Supabase uses access_token and refresh_token)
-        const accessToken = searchParams.get("access_token");
-        const refreshToken = searchParams.get("refresh_token");
+        // Get the token hash from URL (this is what the email sends)
+        const tokenHash = searchParams.get("token");
         const type = searchParams.get("type");
 
-        if (!accessToken || type !== "signup") {
+        console.log("Token hash from URL:", tokenHash);
+        console.log("Type:", type);
+
+        if (!tokenHash || type !== "signup") {
           setStatus("error");
           setErrorMessage("Ongeldige verificatie link");
           return;
         }
 
-        // Set the session using the tokens from the URL
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || "",
+        // Verify the email using the token hash
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "signup",
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Verification error:", error);
+          throw error;
+        }
 
-        if (!data.user?.email_confirmed_at) {
+        if (!data.user) {
           setStatus("error");
           setErrorMessage("Email verificatie mislukt");
           return;
         }
+
+        console.log("Email verified successfully:", data.user.email);
 
         // Success - email verified
         setStatus("success");
@@ -64,7 +71,13 @@ const VerifyEmail = () => {
       } catch (error: any) {
         console.error("Verification error:", error);
         setStatus("error");
-        setErrorMessage(error.message || "Er ging iets mis bij het verifiëren");
+        
+        // Handle specific error cases
+        if (error.message?.includes("expired") || error.message?.includes("invalid")) {
+          setErrorMessage("Deze verificatie link is verlopen of ongeldig. Probeer opnieuw in te loggen.");
+        } else {
+          setErrorMessage(error.message || "Er ging iets mis bij het verifiëren");
+        }
       }
     };
 

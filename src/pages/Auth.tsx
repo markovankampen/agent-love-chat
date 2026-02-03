@@ -65,7 +65,7 @@ const Auth = () => {
           description: "Je bent succesvol ingelogd.",
         });
       } else {
-        // Sign up flow - redirect to verify-email route
+        // Sign up flow - use verify-email route for same-tab verification
         const redirectUrl = `${window.location.origin}/verify-email`;
 
         const { error } = await supabase.auth.signUp({

@@ -41,9 +41,9 @@ serve(async (req) => {
       );
     }
 
-    const { photoUrl, photoPath, userId, firstName, username, dateOfBirth } = await req.json();
+    const { photoUrl, photoPath, userId, firstName, username, phoneNumber, dateOfBirth } = await req.json();
 
-    console.log('Received data:', { userId, firstName, username, dateOfBirth, photoPath });
+    console.log('Received data:', { userId, firstName, username, phoneNumber, dateOfBirth, photoPath });
 
     const faceppApiKey = Deno.env.get('FACEPP_API_KEY');
     const faceppApiSecret = Deno.env.get('FACEPP_API_SECRET');
@@ -242,12 +242,13 @@ serve(async (req) => {
         console.error('Error storing face analysis:', analysisError);
       }
 
-      // CRITICAL FIX: Update profile with ALL fields including username and photo_url
+      // CRITICAL FIX: Update profile with ALL fields including username, phone_number, and photo_url
       console.log('Updating profile with:', {
         id: user.id,
         email: user.email,
         first_name: firstName,
         username: username,
+        phone_number: phoneNumber,
         date_of_birth: dateOfBirth,
         photo_url: permanentPhotoUrl,
       });
@@ -259,6 +260,7 @@ serve(async (req) => {
           email: user.email,
           first_name: firstName,
           username: username, // ADDED: Save username
+          phone_number: phoneNumber || null, // ADDED: Save phone number
           date_of_birth: dateOfBirth,
           photo_url: permanentPhotoUrl, // ADDED: Save photo URL
           updated_at: new Date().toISOString(),
