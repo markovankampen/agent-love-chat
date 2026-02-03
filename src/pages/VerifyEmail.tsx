@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Footer from "@/components/Footer";
 
 const VerifyEmail = () => {
@@ -11,29 +12,29 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const [countdown, setCountdown] = useState(2);
+  const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        let tokenHash = searchParams.get("token");
+        // Get token_hash from URL params
+        let tokenHash = searchParams.get("token_hash");
         let type = searchParams.get("type");
 
-        // If not in query params, check hash fragment (production behavior)
+        // Also check hash fragment for backward compatibility
         if (!tokenHash && location.hash) {
           console.log("Checking hash fragment:", location.hash);
           const hashParams = new URLSearchParams(location.hash.substring(1));
-          tokenHash = hashParams.get("token") || hashParams.get("token_hash");
+          tokenHash = hashParams.get("token_hash") || hashParams.get("token");
           type = hashParams.get("type");
 
-          // Also check for access_token and refresh_token (Supabase default format)
+          // Check for access_token (Supabase default format)
           const accessToken = hashParams.get("access_token");
           const refreshToken = hashParams.get("refresh_token");
 
           if (accessToken && refreshToken) {
-            console.log("Found access_token and refresh_token in hash");
+            console.log("Found access_token in hash - setting session");
 
-            // Set the session using the tokens from the hash
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
@@ -45,44 +46,15 @@ const VerifyEmail = () => {
             }
 
             if (!data.user?.email_confirmed_at) {
-              setStatus("error");
-              setErrorMessage("Email verificatie mislukt");
-              return;
+              throw new Error("Email verificatie mislukt");
             }
 
-            console.log("Email verified successfully via access_token:", data.user.email);
-
-            // Success - email verified
+            console.log("Email verified successfully via access_token");
             setStatus("success");
-
-            // Notify any other tabs via localStorage
-            try {
-              localStorage.setItem("email_verified", "true");
-              setTimeout(() => {
-                localStorage.removeItem("email_verified");
-              }, 100);
-            } catch (e) {
-              console.log("localStorage not available:", e);
-            }
-
-            // Clean up
             sessionStorage.removeItem("pendingVerificationEmail");
 
-            // Start countdown then ALWAYS redirect to profile-setup
-            let count = 2;
-            const timer = setInterval(() => {
-              count--;
-              setCountdown(count);
-
-              if (count <= 0) {
-                clearInterval(timer);
-
-                // ALWAYS redirect to profile-setup after email verification
-                console.log("Redirecting to /profile-setup");
-                navigate("/profile-setup", { replace: true });
-              }
-            }, 1000);
-
+            // Start countdown
+            startCountdown();
             return;
           }
         }
@@ -91,13 +63,11 @@ const VerifyEmail = () => {
         console.log("Type:", type);
 
         if (!tokenHash) {
-          setStatus("error");
-          setErrorMessage("Ongeldige verificatie link - geen token gevonden");
-          console.error("No token found in query params or hash");
-          return;
+          throw new Error("Ongeldige verificatie link - geen token gevonden");
         }
 
         // Verify the email using the token hash
+        console.log("Verifying email with token_hash...");
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: type === "signup" ? "signup" : "email",
@@ -109,43 +79,17 @@ const VerifyEmail = () => {
         }
 
         if (!data.user) {
-          setStatus("error");
-          setErrorMessage("Email verificatie mislukt");
-          return;
+          throw new Error("Email verificatie mislukt");
         }
 
         console.log("Email verified successfully:", data.user.email);
 
-        // Success - email verified
+        // Success
         setStatus("success");
-
-        // Notify any other tabs via localStorage
-        try {
-          localStorage.setItem("email_verified", "true");
-          setTimeout(() => {
-            localStorage.removeItem("email_verified");
-          }, 100);
-        } catch (e) {
-          console.log("localStorage not available:", e);
-        }
-
-        // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Start countdown then ALWAYS redirect to profile-setup
-        let count = 2;
-        const timer = setInterval(() => {
-          count--;
-          setCountdown(count);
-
-          if (count <= 0) {
-            clearInterval(timer);
-
-            // ALWAYS redirect to profile-setup after email verification
-            console.log("Redirecting to /profile-setup");
-            navigate("/profile-setup", { replace: true });
-          }
-        }, 1000);
+        // Start countdown
+        startCountdown();
       } catch (error: any) {
         console.error("Verification error:", error);
         setStatus("error");
@@ -153,9 +97,9 @@ const VerifyEmail = () => {
         // Handle specific error cases
         if (error.message?.includes("expired") || error.message?.includes("invalid")) {
           setErrorMessage("Deze verificatie link is verlopen of ongeldig. Probeer opnieuw in te loggen.");
-        } else if (error.message?.includes("already been verified")) {
+        } else if (error.message?.includes("already") && error.message?.includes("verified")) {
           setErrorMessage("Dit email adres is al geverifieerd.");
-          // If already verified, redirect to profile-setup after 2 seconds
+          // Already verified - redirect to profile setup
           setTimeout(() => {
             navigate("/profile-setup", { replace: true });
           }, 2000);
@@ -167,6 +111,24 @@ const VerifyEmail = () => {
 
     verifyEmail();
   }, [searchParams, location.hash, navigate]);
+
+  const startCountdown = () => {
+    let count = 3;
+    const timer = setInterval(() => {
+      count--;
+      setCountdown(count);
+
+      if (count <= 0) {
+        clearInterval(timer);
+        console.log("Redirecting to /profile-setup");
+        navigate("/profile-setup", { replace: true });
+      }
+    }, 1000);
+  };
+
+  const handleRetry = () => {
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
@@ -206,9 +168,11 @@ const VerifyEmail = () => {
                 </div>
                 <h1 className="text-3xl font-bold text-red-600">Verificatie mislukt</h1>
                 <p className="text-muted-foreground">{errorMessage}</p>
-                <p className="text-sm text-muted-foreground mt-4">
-                  Probeer opnieuw in te loggen of neem contact op met support als het probleem aanhoudt.
-                </p>
+                <div className="pt-4">
+                  <Button onClick={handleRetry} className="w-full">
+                    Probeer opnieuw
+                  </Button>
+                </div>
               </>
             )}
           </div>
