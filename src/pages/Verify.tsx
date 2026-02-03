@@ -29,21 +29,10 @@ const Verify = () => {
       } = await supabase.auth.getSession();
 
       if (session?.user?.email_confirmed_at) {
-        // Already verified, redirect
+        // Already verified, ALWAYS redirect to profile-setup
         sessionStorage.removeItem("pendingVerificationEmail");
-
-        // Check if profile is complete
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, date_of_birth, photo_url")
-          .eq("id", session.user.id)
-          .single();
-
-        if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-          navigate("/profile-setup", { replace: true });
-        } else {
-          navigate("/home", { replace: true });
-        }
+        console.log("Already verified, redirecting to /profile-setup");
+        navigate("/profile-setup", { replace: true });
       }
     };
 
@@ -85,7 +74,7 @@ const Verify = () => {
 
           // If user is verified, navigate
           if (session?.user?.email_confirmed_at) {
-            console.log("Email verified! Navigating...");
+            console.log("Email verified via polling! Navigating...");
 
             // Clear polling
             if (pollIntervalRef.current) {
@@ -129,26 +118,16 @@ const Verify = () => {
         return;
       }
 
-      // Check if profile is complete
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("first_name, date_of_birth, photo_url")
-        .eq("id", session.user.id)
-        .single();
-
       // Show success message
       toast({
         title: "Email geverifieerd! ✓",
-        description: "Je wordt doorgestuurd...",
+        description: "Je wordt doorgestuurd naar profiel setup...",
       });
 
-      // Navigate to appropriate page
+      // ALWAYS navigate to profile-setup after email verification
       setTimeout(() => {
-        if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-          navigate("/profile-setup", { replace: true });
-        } else {
-          navigate("/home", { replace: true });
-        }
+        console.log("Redirecting to /profile-setup");
+        navigate("/profile-setup", { replace: true });
       }, 500);
     } catch (error) {
       console.error("Error in handleVerificationComplete:", error);
@@ -214,7 +193,7 @@ const Verify = () => {
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 text-left">
                 <li>Open je email inbox</li>
                 <li>Klik op de verificatie link in de email</li>
-                <li>Je wordt automatisch doorgestuurd</li>
+                <li>Je wordt automatisch doorgestuurd naar profiel setup</li>
               </ol>
             </div>
 
