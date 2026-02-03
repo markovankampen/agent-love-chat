@@ -210,7 +210,7 @@ serve(async (req) => {
         username: username,
         phone_number: phoneNumber,
         date_of_birth: dateOfBirth,
-        photo_url: permanentPhotoUrl,
+        photo_url: photoUrl,
       });
 
       const { error: profileError } = await supabase
