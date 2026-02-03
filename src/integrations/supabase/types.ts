@@ -109,6 +109,7 @@ export type Database = {
           created_at: string | null
           date_of_birth: string | null
           email: string | null
+          email_verified: boolean | null
           eye_color: string | null
           facial_features: Json | null
           first_name: string | null
@@ -124,6 +125,7 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          email_verified?: boolean | null
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          email_verified?: boolean | null
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
@@ -156,7 +159,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_auth_hook_info: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
