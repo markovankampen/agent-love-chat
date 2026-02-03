@@ -48,6 +48,7 @@ const Account = () => {
   const [firstName, setFirstName] = useState("");
   const [username, setUsername] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<NotificationSettings>({
     match_notifications: true,
     update_notifications: true,
@@ -67,25 +68,72 @@ const Account = () => {
           return;
         }
 
-        const [profileResult, notificationResult] = await Promise.all([
-          supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-          supabase.from("notification_settings").select("*").eq("user_id", user.id).maybeSingle(),
-        ]);
+        console.log("Fetching profile for user:", user.id);
 
-        if (profileResult.error) throw profileResult.error;
+        // Fetch profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
 
-        if (profileResult.data) {
-          setProfile(profileResult.data);
-          setFirstName(profileResult.data.first_name || "");
-          setUsername(profileResult.data.username || "");
-          setPhoneNumber(profileResult.data.phone_number || "");
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          throw profileError;
         }
 
-        if (notificationResult.data) {
+        console.log("Profile data fetched:", profileData);
+
+        if (profileData) {
+          setProfile(profileData);
+          setFirstName(profileData.first_name || "");
+          setUsername(profileData.username || "");
+          setPhoneNumber(profileData.phone_number || "");
+          
+          // If photo_url exists in profile, use it
+          if (profileData.photo_url) {
+            setPhotoUrl(profileData.photo_url);
+          } else {
+            // Otherwise, try to get it from storage
+            await fetchPhotoFromStorage(user.id);
+          }
+        } else {
+          // Profile doesn't exist yet
+          console.log("No profile found, creating basic profile");
+          const { data: newProfile, error: createError } = await supabase
+            .from("profiles")
+            .insert({
+              id: user.id,
+              email: user.email,
+              username: user.user_metadata?.username || null,
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Error creating profile:", createError);
+          } else {
+            setProfile(newProfile);
+            setUsername(newProfile.username || "");
+          }
+        }
+
+        // Fetch notification settings
+        const { data: notificationData, error: notificationError } = await supabase
+          .from("notification_settings")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (notificationError) {
+          console.error("Notification settings fetch error:", notificationError);
+        }
+
+        if (notificationData) {
           setNotifications({
-            match_notifications: notificationResult.data.match_notifications,
-            update_notifications: notificationResult.data.update_notifications,
-            email_notifications: notificationResult.data.email_notifications,
+            match_notifications: notificationData.match_notifications,
+            update_notifications: notificationData.update_notifications,
+            email_notifications: notificationData.email_notifications,
           });
         }
       } catch (error: any) {
@@ -102,6 +150,43 @@ const Account = () => {
 
     fetchData();
   }, [navigate, toast]);
+
+  const fetchPhotoFromStorage = async (userId: string) => {
+    try {
+      // List all files in the user's profile photos folder
+      const { data: files, error: listError } = await supabase.storage
+        .from('profile-photos')
+        .list(userId);
+
+      if (listError) {
+        console.error("Error listing photos:", listError);
+        return;
+      }
+
+      if (files && files.length > 0) {
+        // Get the most recent photo (last in the list)
+        const latestPhoto = files[files.length - 1];
+        const photoPath = `${userId}/${latestPhoto.name}`;
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('profile-photos')
+          .getPublicUrl(photoPath);
+
+        if (urlData?.publicUrl) {
+          setPhotoUrl(urlData.publicUrl);
+          
+          // Update profile with photo URL
+          await supabase
+            .from("profiles")
+            .update({ photo_url: urlData.publicUrl })
+            .eq("id", userId);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching photo from storage:", error);
+    }
+  };
 
   const handleSave = async () => {
     if (!profile) return;
@@ -230,7 +315,6 @@ const Account = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        {/* Simple spinner using CSS only - no icon component */}
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -254,8 +338,8 @@ const Account = () => {
         <Card className="p-6 space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
-              {profile?.photo_url ? (
-                <AvatarImage src={profile.photo_url} alt="Profielfoto" />
+              {photoUrl ? (
+                <AvatarImage src={photoUrl} alt="Profielfoto" />
               ) : (
                 <AvatarFallback>
                   <User className="w-10 h-10 text-muted-foreground" />
@@ -336,7 +420,6 @@ const Account = () => {
             )}
           </div>
 
-          {/* Save Button - TEXT ONLY, NO ICON */}
           <Button
             onClick={handleSave}
             disabled={saving}
