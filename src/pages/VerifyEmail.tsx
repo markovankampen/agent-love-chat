@@ -64,7 +64,7 @@ const VerifyEmail = () => {
           if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
             navigate("/profile-setup");
           } else {
-            navigate("/home");
+            navigate("/profile-setup");
           }
         }, 1500);
 

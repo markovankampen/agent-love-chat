@@ -41,7 +41,7 @@ const Verify = () => {
         if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
           navigate("/profile-setup");
         } else {
-          navigate("/home");
+          navigate("/profile-setup");
         }
       }
     };
@@ -89,7 +89,7 @@ const Verify = () => {
               if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
                 navigate("/profile-setup");
               } else {
-                navigate("/home");
+                navigate("/profile-setup");
               }
             }, 500);
           }
@@ -138,7 +138,7 @@ const Verify = () => {
           if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
             navigate("/profile-setup");
           } else {
-            navigate("/home");
+            navigate("/profile-setup");
           }
         }, 500);
       } else {

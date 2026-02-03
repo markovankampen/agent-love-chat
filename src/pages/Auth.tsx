@@ -49,7 +49,7 @@ const Auth = () => {
           title: "Welkom terug!",
           description: "Je bent succesvol ingelogd.",
         });
-        navigate("/home");
+        navigate("/profile-setup");
       } else {
         // Sign up flow - use verify-email route for same-tab verification
         const redirectUrl = `${window.location.origin}/verify-email`;
