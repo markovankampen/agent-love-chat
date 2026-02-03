@@ -9,6 +9,13 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 
+// Generate a simple verification token
+const generateToken = () => {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+
 const generateVerificationEmail = (verificationLink: string) => {
   return `
     <!DOCTYPE html>
@@ -66,41 +73,41 @@ serve(async (req) => {
   }
 
   try {
-    const { email, redirectUrl } = await req.json();
+    const { email, userId, baseUrl } = await req.json();
 
-    if (!email) {
-      throw new Error('Email is required');
+    if (!email || !userId) {
+      throw new Error('Email and userId are required');
     }
 
-    console.log('Generating verification link for:', email);
+    console.log('Generating verification token for:', email);
 
-    // Create Supabase admin client to generate magic link
+    // Create Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') as string,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string
     );
 
-    // Generate a magic link for email verification
-    const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: email,
-      options: {
-        redirectTo: redirectUrl || `${req.headers.get('origin')}/verify-email`,
+    // Generate verification token
+    const verificationToken = generateToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+
+    // Store token in user metadata
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        verification_token: verificationToken,
+        verification_token_expires: expiresAt,
       }
     });
 
-    if (linkError) {
-      console.error('Error generating link:', linkError);
-      throw linkError;
+    if (updateError) {
+      console.error('Error storing verification token:', updateError);
+      throw updateError;
     }
 
-    const verificationLink = data.properties?.action_link;
+    // Build verification link
+    const verificationLink = `${baseUrl}/verify-email?token=${verificationToken}&user_id=${userId}`;
     
-    if (!verificationLink) {
-      throw new Error('Failed to generate verification link');
-    }
-
-    console.log('Verification link generated successfully');
+    console.log('Verification link generated');
 
     // Check Resend API key
     if (!Deno.env.get('RESEND_API_KEY')) {

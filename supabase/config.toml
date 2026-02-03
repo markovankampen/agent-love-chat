@@ -8,4 +8,6 @@ verify_jwt = true
 
 [functions.send-verification-email]
 verify_jwt = false
-# Called directly from frontend, no webhook verification needed
+
+[functions.verify-email-token]
+verify_jwt = false

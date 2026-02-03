@@ -14,29 +14,27 @@ const VerifyEmail = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        // Get the token from URL (Supabase uses access_token and refresh_token)
-        const accessToken = searchParams.get("access_token");
-        const refreshToken = searchParams.get("refresh_token");
-        const type = searchParams.get("type");
+        // Get token and user_id from URL
+        const token = searchParams.get("token");
+        const userId = searchParams.get("user_id");
 
-        if (!accessToken || type !== "signup") {
+        if (!token || !userId) {
           setStatus("error");
           setErrorMessage("Ongeldige verificatie link");
           return;
         }
 
-        // Set the session using the tokens from the URL
-        const { data, error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || "",
+        // Call the verify-email-token edge function
+        const { data, error } = await supabase.functions.invoke('verify-email-token', {
+          body: { token, userId },
         });
 
-        if (error) throw error;
+        if (error) {
+          throw new Error(error.message || 'Verification failed');
+        }
 
-        if (!data.user?.email_confirmed_at) {
-          setStatus("error");
-          setErrorMessage("Email verificatie mislukt");
-          return;
+        if (!data?.success) {
+          throw new Error(data?.error || 'Verification failed');
         }
 
         // Success - email verified
@@ -44,22 +42,19 @@ const VerifyEmail = () => {
         
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
+        sessionStorage.removeItem("pendingVerification");
 
-        // Check if profile is complete
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, date_of_birth, photo_url")
-          .eq("id", data.user.id)
-          .single();
+        // Try to sign in with stored credentials
+        const storedCredentials = sessionStorage.getItem("pendingVerification");
+        if (storedCredentials) {
+          const { email, password } = JSON.parse(storedCredentials);
+          await supabase.auth.signInWithPassword({ email, password });
+        }
 
         // Redirect after a short delay
         setTimeout(() => {
-          if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-            navigate("/profile-setup");
-          } else {
-            navigate("/home");
-          }
-        }, 1500);
+          navigate("/profile-setup");
+        }, 2000);
 
       } catch (error: any) {
         console.error("Verification error:", error);
