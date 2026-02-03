@@ -51,7 +51,6 @@ const generateVerificationEmail = (email: string, verificationLink: string) => {
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -102,12 +101,11 @@ Deno.serve(async (req) => {
 
     console.log("Processing verification email for:", user.email);
 
-    // Extract the base URL
+    // Extract base URL
     const url = new URL(redirect_to);
     const baseUrl = `${url.protocol}//${url.host}`;
 
-    // Point to /api/verify which will verify and redirect back to /verify
-    // This ensures the link opens in the same tab
+    // Link points to /api/verify
     const verificationLink = `${baseUrl}/api/verify?token_hash=${token_hash}&type=signup`;
 
     console.log("Verification link generated:", verificationLink);
