@@ -17,21 +17,21 @@ const VerifyEmail = () => {
       try {
         let tokenHash = searchParams.get("token");
         let type = searchParams.get("type");
-        
+
         // If not in query params, check hash fragment (production behavior)
         if (!tokenHash && location.hash) {
           console.log("Checking hash fragment:", location.hash);
           const hashParams = new URLSearchParams(location.hash.substring(1));
           tokenHash = hashParams.get("token") || hashParams.get("token_hash");
           type = hashParams.get("type");
-          
+
           // Also check for access_token and refresh_token (Supabase default format)
           const accessToken = hashParams.get("access_token");
           const refreshToken = hashParams.get("refresh_token");
-          
+
           if (accessToken && refreshToken) {
             console.log("Found access_token and refresh_token in hash");
-            
+
             // Set the session using the tokens from the hash
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
@@ -53,10 +53,10 @@ const VerifyEmail = () => {
 
             // Success - email verified
             setStatus("success");
-            
+
             // Set localStorage flag to notify the waiting tab
             localStorage.setItem("email_verified", "true");
-            
+
             // Clean up
             sessionStorage.removeItem("pendingVerificationEmail");
 
@@ -75,7 +75,7 @@ const VerifyEmail = () => {
                 navigate("/home");
               }
             }, 1500);
-            
+
             return;
           }
         }
@@ -111,10 +111,10 @@ const VerifyEmail = () => {
 
         // Success - email verified
         setStatus("success");
-        
+
         // Set localStorage flag to notify the waiting tab
         localStorage.setItem("email_verified", "true");
-        
+
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
@@ -133,11 +133,10 @@ const VerifyEmail = () => {
             navigate("/home");
           }
         }, 1500);
-
       } catch (error: any) {
         console.error("Verification error:", error);
         setStatus("error");
-        
+
         // Handle specific error cases
         if (error.message?.includes("expired") || error.message?.includes("invalid")) {
           setErrorMessage("Deze verificatie link is verlopen of ongeldig. Probeer opnieuw in te loggen.");
@@ -173,9 +172,7 @@ const VerifyEmail = () => {
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-green-600">Email geverifieerd! ✓</h1>
-                <p className="text-muted-foreground">
-                  Je email is succesvol geverifieerd. Je wordt doorgestuurd...
-                </p>
+                <p className="text-muted-foreground">Je email is succesvol geverifieerd. Je wordt doorgestuurd...</p>
                 <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-4">
                   <p className="text-xs text-green-800 dark:text-green-200">
                     💡 Als je het originele venster nog open hebt, wordt dat automatisch bijgewerkt.

@@ -67,9 +67,9 @@ const Auth = () => {
       } else {
         // Sign up flow - IMPORTANT: Don't use emailRedirectTo, let Supabase use default
         // This ensures tokens are passed in the URL hash which works better in production
-        
+
         console.log("Starting signup process...");
-        
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
