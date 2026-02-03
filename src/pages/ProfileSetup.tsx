@@ -8,29 +8,65 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Camera, AlertCircle, X, Upload } from "lucide-react";
 import Footer from "@/components/Footer";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // List of offensive/inappropriate names to filter
 const offensiveNames = [
-  "fuck", "shit", "ass", "bitch", "bastard", "damn", "cunt", "dick", "pussy",
-  "whore", "slut", "fag", "nigger", "nigga", "retard", "kut", "hoer", "lul",
-  "eikel", "klootzak", "kanker", "tyfus", "tering", "godverdomme", "homo",
-  "nazi", "hitler", "satan", "devil", "porn", "xxx", "sex", "cock", "penis",
-  "vagina", "anus", "dildo", "vibrator", "orgasm", "rape", "molest", "pedo",
-  "admin", "test", "fake", "anonymous", "unknown", "nobody", "null", "undefined"
+  "fuck",
+  "shit",
+  "ass",
+  "bitch",
+  "bastard",
+  "damn",
+  "cunt",
+  "dick",
+  "pussy",
+  "whore",
+  "slut",
+  "fag",
+  "nigger",
+  "nigga",
+  "retard",
+  "kut",
+  "hoer",
+  "lul",
+  "eikel",
+  "klootzak",
+  "kanker",
+  "tyfus",
+  "tering",
+  "godverdomme",
+  "homo",
+  "nazi",
+  "hitler",
+  "satan",
+  "devil",
+  "porn",
+  "xxx",
+  "sex",
+  "cock",
+  "penis",
+  "vagina",
+  "anus",
+  "dildo",
+  "vibrator",
+  "orgasm",
+  "rape",
+  "molest",
+  "pedo",
+  "admin",
+  "test",
+  "fake",
+  "anonymous",
+  "unknown",
+  "nobody",
+  "null",
+  "undefined",
 ];
 
 const isOffensiveName = (name: string): boolean => {
   const lowerName = name.toLowerCase().trim();
-  return offensiveNames.some(offensive => 
-    lowerName.includes(offensive) || lowerName === offensive
-  );
+  return offensiveNames.some((offensive) => lowerName.includes(offensive) || lowerName === offensive);
 };
 
 const isValidDateFormat = (dateStr: string): boolean => {
@@ -41,7 +77,7 @@ const isValidDateFormat = (dateStr: string): boolean => {
 
 const parseDate = (dateStr: string): Date | null => {
   if (!isValidDateFormat(dateStr)) return null;
-  const [month, day, year] = dateStr.split('/').map(Number);
+  const [month, day, year] = dateStr.split("/").map(Number);
   const date = new Date(year, month - 1, day);
   // Validate the date is real (e.g., not Feb 31)
   if (date.getMonth() !== month - 1 || date.getDate() !== day) {
@@ -53,16 +89,40 @@ const parseDate = (dateStr: string): Date | null => {
 const isAtLeast18 = (dateStr: string): boolean => {
   const birthDate = parseDate(dateStr);
   if (!birthDate) return false;
-  
+
   const today = new Date();
   const age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
   const dayDiff = today.getDate() - birthDate.getDate();
-  
+
   if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
     return age - 1 >= 18;
   }
   return age >= 18;
+};
+
+const formatPhoneNumber = (value: string): string => {
+  // Remove all non-digits
+  const digits = value.replace(/\D/g, "");
+
+  // Format as: +31 6 12345678 (Dutch format)
+  if (digits.startsWith("31")) {
+    const cleaned = digits.substring(2); // Remove country code
+    if (cleaned.length <= 1) return `+31 ${cleaned}`;
+    if (cleaned.length <= 9) return `+31 ${cleaned[0]} ${cleaned.substring(1)}`;
+    return `+31 ${cleaned[0]} ${cleaned.substring(1, 9)}`;
+  } else if (digits.startsWith("0")) {
+    const cleaned = digits.substring(1); // Remove leading 0
+    if (cleaned.length === 0) return "+31 ";
+    if (cleaned.length === 1) return `+31 ${cleaned}`;
+    if (cleaned.length <= 9) return `+31 ${cleaned[0]} ${cleaned.substring(1)}`;
+    return `+31 ${cleaned[0]} ${cleaned.substring(1, 9)}`;
+  } else {
+    if (digits.length === 0) return "";
+    if (digits.length === 1) return `+31 ${digits}`;
+    if (digits.length <= 9) return `+31 ${digits[0]} ${digits.substring(1)}`;
+    return `+31 ${digits[0]} ${digits.substring(1, 9)}`;
+  }
 };
 
 const ProfileSetup = () => {
@@ -72,6 +132,7 @@ const ProfileSetup = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
@@ -85,7 +146,9 @@ const ProfileSetup = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         navigate("/auth");
       } else {
@@ -122,7 +185,7 @@ const ProfileSetup = () => {
       });
       setCameraStream(stream);
       setShowCamera(true);
-      
+
       // Wait for the video element to be available
       setTimeout(() => {
         if (videoRef.current) {
@@ -142,7 +205,7 @@ const ProfileSetup = () => {
 
   const stopCamera = () => {
     if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
+      cameraStream.getTracks().forEach((track) => track.stop());
       setCameraStream(null);
     }
     setShowCamera(false);
@@ -167,41 +230,50 @@ const ProfileSetup = () => {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // Convert to blob and create file
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: "image/jpeg" });
-        setSelectedFile(file);
-        setPreviewUrl(canvas.toDataURL("image/jpeg"));
-        setShowVerificationPrompt(false);
-        stopCamera();
-        
-        toast({
-          title: "Foto gemaakt!",
-          description: "Je selfie is klaar voor upload",
-        });
-      }
-    }, "image/jpeg", 0.9);
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: "image/jpeg" });
+          setSelectedFile(file);
+          setPreviewUrl(canvas.toDataURL("image/jpeg"));
+          setShowVerificationPrompt(false);
+          stopCamera();
+
+          toast({
+            title: "Foto gemaakt!",
+            description: "Je selfie is klaar voor upload",
+          });
+        }
+      },
+      "image/jpeg",
+      0.9,
+    );
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/[^\d/]/g, '');
-    
+    let value = e.target.value.replace(/[^\d/]/g, "");
+
     // Auto-format with slashes
-    if (value.length === 2 && !value.includes('/')) {
-      value = value + '/';
-    } else if (value.length === 5 && value.split('/').length === 2) {
-      value = value + '/';
+    if (value.length === 2 && !value.includes("/")) {
+      value = value + "/";
+    } else if (value.length === 5 && value.split("/").length === 2) {
+      value = value + "/";
     }
-    
+
     // Limit length to mm/dd/yyyy (10 chars)
     if (value.length <= 10) {
       setDateOfBirth(value);
     }
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setPhoneNumber(formatted);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate first name
     const trimmedName = firstName.trim();
     if (!trimmedName) {
@@ -268,6 +340,17 @@ const ProfileSetup = () => {
       return;
     }
 
+    // Validate phone number (optional but must be valid if provided)
+    const trimmedPhone = phoneNumber.trim();
+    if (trimmedPhone && trimmedPhone.length < 12) {
+      toast({
+        title: "Ongeldig telefoonnummer",
+        description: "Voer een geldig Nederlands telefoonnummer in",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!selectedFile) {
       toast({
         title: "Upload een foto",
@@ -295,17 +378,17 @@ const ProfileSetup = () => {
       });
 
       // Convert date from mm/dd/yyyy to yyyy-mm-dd for storage
-      const [month, day, year] = dateOfBirth.split('/');
+      const [month, day, year] = dateOfBirth.split("/");
       const formattedDate = `${year}-${month}-${day}`;
 
       // Upload photo to storage
-      const fileExt = selectedFile.name.split('.').pop();
+      const fileExt = selectedFile.name.split(".").pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile-photos-temp')
+        .from("profile-photos-temp")
         .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
+          cacheControl: "3600",
+          upsert: false,
         });
 
       if (uploadError) {
@@ -315,13 +398,13 @@ const ProfileSetup = () => {
 
       // Generate signed URL (valid for 60 minutes)
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('profile-photos-temp')
+        .from("profile-photos-temp")
         .createSignedUrl(fileName, 3600);
 
       if (signedUrlError || !signedUrlData) {
         console.error("Signed URL error:", signedUrlError);
         // Clean up uploaded file
-        await supabase.storage.from('profile-photos-temp').remove([fileName]);
+        await supabase.storage.from("profile-photos-temp").remove([fileName]);
         throw new Error("Fout bij genereren van toegang tot foto");
       }
 
@@ -334,13 +417,14 @@ const ProfileSetup = () => {
       });
 
       // Call analyze-photo function with both URL and fileName for reliable deletion
-      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-photo', {
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-photo", {
         body: {
           photoUrl: signedUrlData.signedUrl,
           photoPath: fileName,
           userId,
           firstName: trimmedName,
           dateOfBirth: formattedDate,
+          phoneNumber: trimmedPhone || null,
         },
       });
 
@@ -354,7 +438,7 @@ const ProfileSetup = () => {
         console.error("Analysis error:", analysisError);
         // Try to extract error message from the response - it may be embedded in the message
         let errorMsg = "Fout tijdens het analyseren van de foto, upload een geldige selfie";
-        
+
         // Parse the error message which may contain JSON
         const errorMessage = analysisError.message || "";
         const jsonMatch = errorMessage.match(/\{"error":"([^"]+)"\}/);
@@ -363,7 +447,7 @@ const ProfileSetup = () => {
         } else if (analysisError.context?.error) {
           errorMsg = analysisError.context.error;
         }
-        
+
         throw new Error(errorMsg);
       }
 
@@ -377,33 +461,33 @@ const ProfileSetup = () => {
       setTimeout(() => {
         navigate("/home");
       }, 1500);
-
     } catch (error: any) {
       console.error("Error:", error);
-      
+
       // Check if it's a selfie/face-related error - show as note instead of error toast
-      const isSelfieError = error.message?.toLowerCase().includes("face") || 
-          error.message?.toLowerCase().includes("gezicht") ||
-          error.message?.toLowerCase().includes("persoon") ||
-          error.message?.toLowerCase().includes("selfie") ||
-          error.message?.toLowerCase().includes("close-up") ||
-          error.message?.toLowerCase().includes("meerdere") ||
-          error.message?.includes("No faces detected");
+      const isSelfieError =
+        error.message?.toLowerCase().includes("face") ||
+        error.message?.toLowerCase().includes("gezicht") ||
+        error.message?.toLowerCase().includes("persoon") ||
+        error.message?.toLowerCase().includes("selfie") ||
+        error.message?.toLowerCase().includes("close-up") ||
+        error.message?.toLowerCase().includes("meerdere") ||
+        error.message?.includes("No faces detected");
 
       if (isSelfieError) {
         // Show verification prompt dialog instead of error
-        const noteMessage = error.message?.includes("Upload") 
-          ? error.message 
+        const noteMessage = error.message?.includes("Upload")
+          ? error.message
           : "Upload een duidelijke selfie waarop je gezicht goed zichtbaar is en je recht in de camera kijkt.";
         setVerificationMessage(noteMessage);
         setShowVerificationPrompt(true);
         return; // Don't show error toast for selfie issues
       }
-      
+
       // Determine the most appropriate error message for other errors
       let errorTitle = "Er ging iets mis";
       let errorDescription = error.message || "Probeer het opnieuw";
-      
+
       if (error.message?.includes("timeout") || error.message?.includes("timed out")) {
         errorTitle = "Time-out";
         errorDescription = "De analyse duurde te lang. Probeer een kleinere foto";
@@ -430,136 +514,151 @@ const ProfileSetup = () => {
     <div className="min-h-screen flex flex-col bg-muted/30">
       <div className="flex-1 flex items-center justify-center px-3 py-6 sm:p-4">
         <Card className="w-full max-w-md p-4 sm:p-8 space-y-4 sm:space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-2 sm:mb-4">
-            <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Stel je profiel in</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Upload een foto en vertel ons over jezelf
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="firstName">Voornaam <span className="text-destructive">*</span></Label>
-            <Input
-              id="firstName"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Je voornaam"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dateOfBirth">Geboortedatum <span className="text-destructive">*</span></Label>
-            <Input
-              id="dateOfBirth"
-              type="text"
-              value={dateOfBirth}
-              onChange={handleDateChange}
-              placeholder="mm/dd/yyyy"
-              maxLength={10}
-              required
-            />
-            <p className="text-xs text-muted-foreground">Je moet minimaal 18 jaar oud zijn</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="photo" className="font-medium">
-              Profielfoto <span className="text-destructive">*</span>
-            </Label>
-            <div className="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 space-y-1.5 sm:space-y-2">
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                <strong>Jouw foto is privé</strong> – deze wordt aan niemand getoond maar is wel belangrijk voor een potentiële match.
-              </p>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                <strong>Foto vereisten:</strong>
-              </p>
-              <ul className="text-xs sm:text-sm text-muted-foreground list-disc list-inside space-y-0.5 sm:space-y-1">
-                <li>Duidelijke selfie met je gezicht goed zichtbaar</li>
-                <li>Kijk recht in de camera</li>
-                <li>Goede belichting (niet te donker)</li>
-                <li>Alleen jij op de foto</li>
-              </ul>
-              <p className="text-xs sm:text-sm text-primary font-medium">
-                💡 Tip: Een live selfie werkt het beste!
-              </p>
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-2 sm:mb-4">
+              <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <div className="flex flex-col gap-4">
-              {previewUrl && !showCamera && (
-                <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={previewUrl}
-                    alt="Preview"
-                    className={`w-full h-full object-cover transition-all duration-300 ${
-                      analyzing ? 'blur-md brightness-75' : ''
-                    }`}
-                  />
-                  {analyzing && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                      <p className="text-sm font-medium text-foreground">Foto wordt geanalyseerd...</p>
-                    </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Camera buttons */}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  type="button"
-                  variant="default"
-                  onClick={startCamera}
-                  disabled={analyzing || showCamera}
-                  className="flex-1 text-sm sm:text-base"
-                >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Neem live selfie
-                </Button>
-                <label className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold">Stel je profiel in</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Upload een foto en vertel ons over jezelf</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">
+                Voornaam <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Je voornaam"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth">
+                Geboortedatum <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="dateOfBirth"
+                type="text"
+                value={dateOfBirth}
+                onChange={handleDateChange}
+                placeholder="mm/dd/yyyy"
+                maxLength={10}
+                required
+              />
+              <p className="text-xs text-muted-foreground">Je moet minimaal 18 jaar oud zijn</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Telefoonnummer (optioneel)</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                placeholder="+31 6 12345678"
+                maxLength={14}
+              />
+              <p className="text-xs text-muted-foreground">Bijvoorbeeld: +31 6 12345678</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="photo" className="font-medium">
+                Profielfoto <span className="text-destructive">*</span>
+              </Label>
+              <div className="p-2.5 sm:p-3 bg-muted/50 rounded-lg border border-border/50 space-y-1.5 sm:space-y-2">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  <strong>Jouw foto is privé</strong> – deze wordt aan niemand getoond maar is wel belangrijk voor een
+                  potentiële match.
+                </p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  <strong>Foto vereisten:</strong>
+                </p>
+                <ul className="text-xs sm:text-sm text-muted-foreground list-disc list-inside space-y-0.5 sm:space-y-1">
+                  <li>Duidelijke selfie met je gezicht goed zichtbaar</li>
+                  <li>Kijk recht in de camera</li>
+                  <li>Goede belichting (niet te donker)</li>
+                  <li>Alleen jij op de foto</li>
+                </ul>
+                <p className="text-xs sm:text-sm text-primary font-medium">💡 Tip: Een live selfie werkt het beste!</p>
+              </div>
+              <div className="flex flex-col gap-4">
+                {previewUrl && !showCamera && (
+                  <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-muted">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className={`w-full h-full object-cover transition-all duration-300 ${
+                        analyzing ? "blur-md brightness-75" : ""
+                      }`}
+                    />
+                    {analyzing && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p className="text-sm font-medium text-foreground">Foto wordt geanalyseerd...</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Camera buttons */}
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     type="button"
-                    variant="outline"
-                    disabled={analyzing}
-                    className="w-full text-sm sm:text-base"
-                    asChild
+                    variant="default"
+                    onClick={startCamera}
+                    disabled={analyzing || showCamera}
+                    className="flex-1 text-sm sm:text-base"
                   >
-                    <span>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload foto
-                    </span>
+                    <Camera className="mr-2 h-4 w-4" />
+                    Neem live selfie
                   </Button>
-                  <Input
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    disabled={analyzing}
-                  />
-                </label>
+                  <label className="flex-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={analyzing}
+                      className="w-full text-sm sm:text-base"
+                      asChild
+                    >
+                      <span>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload foto
+                      </span>
+                    </Button>
+                    <Input
+                      id="photo"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      disabled={analyzing}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">Max. 10MB</p>
               </div>
-              <p className="text-xs text-muted-foreground">Max. 10MB</p>
             </div>
-          </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={uploading || analyzing || !selectedFile}
-          >
-            {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {analyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {uploading ? "Uploaden..." : analyzing ? "Analyseren..." : "Doorgaan"}
-          </Button>
-        </form>
-      </Card>
+            <Button type="submit" className="w-full" disabled={uploading || analyzing || !selectedFile}>
+              {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {analyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {uploading ? "Uploaden..." : analyzing ? "Analyseren..." : "Doorgaan"}
+            </Button>
+          </form>
+        </Card>
       </div>
 
       {/* Camera Dialog */}
-      <Dialog open={showCamera} onOpenChange={(open) => { if (!open) stopCamera(); }}>
+      <Dialog
+        open={showCamera}
+        onOpenChange={(open) => {
+          if (!open) stopCamera();
+        }}
+      >
         <DialogContent className="max-w-[95vw] sm:max-w-lg p-0 overflow-hidden">
           <DialogHeader className="p-3 sm:p-4 pb-0">
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -590,19 +689,11 @@ const ProfileSetup = () => {
             </div>
           </div>
           <div className="p-3 sm:p-4 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={stopCamera}
-              className="flex-1 text-sm sm:text-base"
-            >
+            <Button variant="outline" onClick={stopCamera} className="flex-1 text-sm sm:text-base">
               <X className="mr-1.5 sm:mr-2 h-4 w-4" />
               Annuleren
             </Button>
-            <Button
-              onClick={capturePhoto}
-              className="flex-1 text-sm sm:text-base"
-              disabled={!cameraStream}
-            >
+            <Button onClick={capturePhoto} className="flex-1 text-sm sm:text-base" disabled={!cameraStream}>
               <Camera className="mr-1.5 sm:mr-2 h-4 w-4" />
               Maak foto
             </Button>
@@ -621,24 +712,17 @@ const ProfileSetup = () => {
               </div>
               <DialogTitle className="text-base sm:text-lg">Foto verificatie mislukt</DialogTitle>
             </div>
-            <DialogDescription className="pt-2 text-xs sm:text-sm">
-              {verificationMessage}
-            </DialogDescription>
+            <DialogDescription className="pt-2 text-xs sm:text-sm">{verificationMessage}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 sm:gap-3 pt-3 sm:pt-4">
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Tips voor een goede selfie:
-            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Tips voor een goede selfie:</p>
             <ul className="text-xs sm:text-sm text-muted-foreground list-disc list-inside space-y-0.5 sm:space-y-1">
               <li>Kijk recht in de camera</li>
               <li>Zorg voor goede belichting</li>
               <li>Zorg dat je gezicht duidelijk zichtbaar is</li>
               <li>Gebruik een recente foto van jezelf</li>
             </ul>
-            <Button 
-              onClick={() => setShowVerificationPrompt(false)}
-              className="mt-2 text-sm sm:text-base"
-            >
+            <Button onClick={() => setShowVerificationPrompt(false)} className="mt-2 text-sm sm:text-base">
               Nieuwe foto uploaden
             </Button>
           </div>
