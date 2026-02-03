@@ -13,7 +13,6 @@ const Verify = () => {
   const [userEmail, setUserEmail] = useState<string>("");
   const [checking, setChecking] = useState(false);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const storageListenerRef = useRef<((e: StorageEvent) => void) | null>(null);
 
   useEffect(() => {
     // Get email from storage for display
@@ -29,7 +28,7 @@ const Verify = () => {
       } = await supabase.auth.getSession();
 
       if (session?.user?.email_confirmed_at) {
-        // Already verified, ALWAYS redirect to profile-setup
+        // Already verified, redirect to profile-setup
         sessionStorage.removeItem("pendingVerificationEmail");
         console.log("Already verified, redirecting to /profile-setup");
         navigate("/profile-setup", { replace: true });
@@ -38,37 +37,18 @@ const Verify = () => {
 
     checkIfAlreadyVerified();
 
-    // Listen for localStorage changes from other tabs (verification tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "email_verified" && e.newValue === "true") {
-        console.log("Email verification detected from another tab!");
-
-        // Clear the flag
-        try {
-          localStorage.removeItem("email_verified");
-        } catch (err) {
-          console.log("Could not clear localStorage:", err);
-        }
-
-        // Check verification and redirect
-        handleVerificationComplete();
-      }
-    };
-
-    storageListenerRef.current = handleStorageChange;
-    window.addEventListener("storage", handleStorageChange);
-
     // Start polling for verification status every 2 seconds
     const startPolling = () => {
       pollIntervalRef.current = setInterval(async () => {
         try {
+          // Refresh the session to get latest user data
           const {
             data: { session },
             error,
-          } = await supabase.auth.getSession();
+          } = await supabase.auth.refreshSession();
 
           if (error) {
-            console.error("Error checking session:", error);
+            console.error("Error refreshing session:", error);
             return;
           }
 
@@ -81,8 +61,20 @@ const Verify = () => {
               clearInterval(pollIntervalRef.current);
             }
 
-            // Handle verification complete
-            handleVerificationComplete();
+            // Clean up
+            sessionStorage.removeItem("pendingVerificationEmail");
+
+            // Show success message
+            toast({
+              title: "Email geverifieerd! ✓",
+              description: "Je wordt doorgestuurd naar profiel setup...",
+            });
+
+            // Navigate to profile setup
+            setTimeout(() => {
+              console.log("Redirecting to /profile-setup");
+              navigate("/profile-setup", { replace: true });
+            }, 500);
           }
         } catch (error) {
           console.error("Error during polling:", error);
@@ -97,42 +89,8 @@ const Verify = () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
-      if (storageListenerRef.current) {
-        window.removeEventListener("storage", storageListenerRef.current);
-      }
     };
   }, [navigate, toast]);
-
-  const handleVerificationComplete = async () => {
-    try {
-      // Clean up
-      sessionStorage.removeItem("pendingVerificationEmail");
-
-      // Get current session
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.user) {
-        console.error("No session found after verification");
-        return;
-      }
-
-      // Show success message
-      toast({
-        title: "Email geverifieerd! ✓",
-        description: "Je wordt doorgestuurd naar profiel setup...",
-      });
-
-      // ALWAYS navigate to profile-setup after email verification
-      setTimeout(() => {
-        console.log("Redirecting to /profile-setup");
-        navigate("/profile-setup", { replace: true });
-      }, 500);
-    } catch (error) {
-      console.error("Error in handleVerificationComplete:", error);
-    }
-  };
 
   const handleManualCheck = async () => {
     setChecking(true);
@@ -148,7 +106,16 @@ const Verify = () => {
 
       if (session?.user?.email_confirmed_at) {
         // Email is verified
-        handleVerificationComplete();
+        sessionStorage.removeItem("pendingVerificationEmail");
+
+        toast({
+          title: "Email geverifieerd! ✓",
+          description: "Je wordt doorgestuurd naar profiel setup...",
+        });
+
+        setTimeout(() => {
+          navigate("/profile-setup", { replace: true });
+        }, 500);
       } else {
         toast({
           title: "Nog niet geverifieerd",
@@ -193,13 +160,14 @@ const Verify = () => {
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 text-left">
                 <li>Open je email inbox</li>
                 <li>Klik op de verificatie link in de email</li>
-                <li>Je wordt automatisch doorgestuurd naar profiel setup</li>
+                <li>Deze pagina detecteert automatisch de verificatie</li>
+                <li>Je wordt doorgestuurd naar profiel setup</li>
               </ol>
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
-                💡 De verificatie link stuurt je automatisch door naar je profiel setup.
+                💡 Blijf op deze pagina. Na het klikken op de link in je email word je automatisch doorgestuurd.
               </p>
             </div>
 
