@@ -13,6 +13,7 @@ const Verify = () => {
   const [userEmail, setUserEmail] = useState<string>("");
   const [checking, setChecking] = useState(false);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const storageListenerRef = useRef<((e: StorageEvent) => void) | null>(null);
 
   useEffect(() => {
     // Get email from storage for display
@@ -30,7 +31,7 @@ const Verify = () => {
       if (session?.user?.email_confirmed_at) {
         // Already verified, redirect
         sessionStorage.removeItem("pendingVerificationEmail");
-        
+
         // Check if profile is complete
         const { data: profile } = await supabase
           .from("profiles")
@@ -41,19 +42,38 @@ const Verify = () => {
         if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
           navigate("/profile-setup");
         } else {
-          navigate("/profile-setup");
+          navigate("/home");
         }
       }
     };
 
     checkIfAlreadyVerified();
 
+    // Listen for localStorage changes from other tabs (verification tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "email_verified" && e.newValue === "true") {
+        console.log("Email verification detected from another tab!");
+
+        // Clear the flag
+        localStorage.removeItem("email_verified");
+
+        // Check verification and redirect
+        handleVerificationComplete();
+      }
+    };
+
+    storageListenerRef.current = handleStorageChange;
+    window.addEventListener("storage", handleStorageChange);
+
     // Start polling for verification status every 2 seconds
     const startPolling = () => {
       pollIntervalRef.current = setInterval(async () => {
         try {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession();
+
           if (error) {
             console.error("Error checking session:", error);
             return;
@@ -62,36 +82,14 @@ const Verify = () => {
           // If user is verified, navigate
           if (session?.user?.email_confirmed_at) {
             console.log("Email verified! Navigating...");
-            
+
             // Clear polling
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
-            
-            // Clean up
-            sessionStorage.removeItem("pendingVerificationEmail");
-            
-            // Check if profile is complete
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("first_name, date_of_birth, photo_url")
-              .eq("id", session.user.id)
-              .single();
 
-            // Show success message
-            toast({
-              title: "Email geverifieerd! ✓",
-              description: "Je wordt doorgestuurd...",
-            });
-
-            // Navigate to appropriate page
-            setTimeout(() => {
-              if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-                navigate("/profile-setup");
-              } else {
-                navigate("/profile-setup");
-              }
-            }, 500);
+            // Handle verification complete
+            handleVerificationComplete();
           }
         } catch (error) {
           console.error("Error during polling:", error);
@@ -106,41 +104,68 @@ const Verify = () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
+      if (storageListenerRef.current) {
+        window.removeEventListener("storage", storageListenerRef.current);
+      }
     };
   }, [navigate, toast]);
 
+  const handleVerificationComplete = async () => {
+    try {
+      // Clean up
+      sessionStorage.removeItem("pendingVerificationEmail");
+
+      // Get current session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        console.error("No session found after verification");
+        return;
+      }
+
+      // Check if profile is complete
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, date_of_birth, photo_url")
+        .eq("id", session.user.id)
+        .single();
+
+      // Show success message
+      toast({
+        title: "Email geverifieerd! ✓",
+        description: "Je wordt doorgestuurd...",
+      });
+
+      // Navigate to appropriate page
+      setTimeout(() => {
+        if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+          navigate("/profile-setup");
+        } else {
+          navigate("/home");
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Error in handleVerificationComplete:", error);
+    }
+  };
+
   const handleManualCheck = async () => {
     setChecking(true);
-    
+
     try {
       // Refresh the session
-      const { data: { session }, error } = await supabase.auth.refreshSession();
-      
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.refreshSession();
+
       if (error) throw error;
 
       if (session?.user?.email_confirmed_at) {
         // Email is verified
-        sessionStorage.removeItem("pendingVerificationEmail");
-        
-        // Check if profile is complete
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, date_of_birth, photo_url")
-          .eq("id", session.user.id)
-          .single();
-
-        toast({
-          title: "Email geverifieerd! ✓",
-          description: "Je wordt doorgestuurd...",
-        });
-
-        setTimeout(() => {
-          if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-            navigate("/profile-setup");
-          } else {
-            navigate("/profile-setup");
-          }
-        }, 500);
+        handleVerificationComplete();
       } else {
         toast({
           title: "Nog niet geverifieerd",
@@ -178,7 +203,7 @@ const Verify = () => {
             </div>
             <h1 className="text-3xl font-bold">Check je inbox</h1>
             <p className="text-muted-foreground">
-              We hebben een verificatie email gestuurd{userEmail && ` naar ${userEmail}`}. 
+              We hebben een verificatie email gestuurd{userEmail && ` naar ${userEmail}`}.
             </p>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
               <p className="text-sm font-medium">Volg deze stappen:</p>
@@ -188,24 +213,17 @@ const Verify = () => {
                 <li>Deze pagina wordt automatisch bijgewerkt</li>
               </ol>
             </div>
-            
+
             <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
-                💡 Tip: Houd dit venster open. We controleren automatisch wanneer je je email verifieert.
+                💡 Tip: Houd dit tabblad open. We controleren automatisch wanneer je je email verifieert.
               </p>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-4">
-              Geen email ontvangen? Check je spam folder.
-            </p>
+            <p className="text-xs text-muted-foreground mt-4">Geen email ontvangen? Check je spam folder.</p>
 
             <div className="pt-4 space-y-2">
-              <Button
-                onClick={handleManualCheck}
-                variant="default"
-                className="w-full"
-                disabled={checking}
-              >
+              <Button onClick={handleManualCheck} variant="default" className="w-full" disabled={checking}>
                 {checking ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -218,12 +236,8 @@ const Verify = () => {
                   </>
                 )}
               </Button>
-              
-              <Button
-                onClick={handleGoBack}
-                variant="outline"
-                className="w-full"
-              >
+
+              <Button onClick={handleGoBack} variant="outline" className="w-full">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Terug naar inloggen
               </Button>
