@@ -60,20 +60,17 @@ const VerifyEmail = () => {
             // Clean up
             sessionStorage.removeItem("pendingVerificationEmail");
 
-            // Check if profile is complete
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("first_name, date_of_birth, photo_url")
-              .eq("id", data.user.id)
-              .single();
-
-            // Redirect after a short delay
+            // Try to close this window/tab if it was opened from the verification email
+            // This will only work if this was opened via window.open() or target="_blank"
             setTimeout(() => {
-              if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-                navigate("/profile-setup");
-              } else {
-                navigate("/home");
-              }
+              // Try to close the window
+              window.close();
+
+              // If window.close() doesn't work (user opened link manually),
+              // redirect to /verify which will detect verification and continue
+              setTimeout(() => {
+                navigate("/verify");
+              }, 1000);
             }, 1500);
 
             return;
@@ -118,20 +115,15 @@ const VerifyEmail = () => {
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Check if profile is complete
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, date_of_birth, photo_url")
-          .eq("id", data.user.id)
-          .single();
-
-        // Redirect after a short delay
+        // Try to close this window/tab
         setTimeout(() => {
-          if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-            navigate("/profile-setup");
-          } else {
-            navigate("/home");
-          }
+          // Try to close the window
+          window.close();
+
+          // If window.close() doesn't work, redirect to /verify
+          setTimeout(() => {
+            navigate("/verify");
+          }, 1000);
         }, 1500);
       } catch (error: any) {
         console.error("Verification error:", error);
@@ -172,10 +164,10 @@ const VerifyEmail = () => {
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-green-600">Email geverifieerd! ✓</h1>
-                <p className="text-muted-foreground">Je email is succesvol geverifieerd. Je wordt doorgestuurd...</p>
+                <p className="text-muted-foreground">Je email is succesvol geverifieerd.</p>
                 <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-4">
                   <p className="text-xs text-green-800 dark:text-green-200">
-                    💡 Als je het originele venster nog open hebt, wordt dat automatisch bijgewerkt.
+                    💡 Dit venster sluit automatisch. Ga terug naar het vorige tabblad om door te gaan.
                   </p>
                 </div>
               </>
