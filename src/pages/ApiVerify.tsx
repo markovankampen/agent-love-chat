@@ -4,11 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * API Verify Route
- * This route is called when user clicks the verification link in their email.
- * It verifies the email and redirects to /verify which will detect the verification
- * and redirect to profile-setup.
- * 
- * This ensures everything happens in ONE tab.
+ * Handles email verification when user clicks link from email.
+ * After verification, signals the waiting /verify tab to close.
  */
 const ApiVerify = () => {
   const [searchParams] = useSearchParams();
@@ -36,15 +33,13 @@ const ApiVerify = () => {
 
         if (error) {
           console.error("Verification error:", error);
-          
-          // Check if already verified
+
           if (error.message?.includes("already") && error.message?.includes("verified")) {
-            // Already verified - just redirect to profile-setup
+            // Already verified - go to profile-setup
             navigate("/profile-setup", { replace: true });
             return;
           }
-          
-          // Other error - go back to verify with error
+
           navigate("/verify?error=verification_failed", { replace: true });
           return;
         }
@@ -57,16 +52,24 @@ const ApiVerify = () => {
 
         console.log("Email verified successfully!");
 
-        // Clear the pending email
+        // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Set a flag that verification just completed
+        // Signal any waiting /verify tabs to close
+        try {
+          localStorage.setItem("email_verified_close_tab", "true");
+          setTimeout(() => {
+            localStorage.removeItem("email_verified_close_tab");
+          }, 1000);
+        } catch (e) {
+          console.log("localStorage not available:", e);
+        }
+
+        // Set flag for this tab
         sessionStorage.setItem("justVerified", "true");
 
-        // Redirect to /verify which will immediately detect verification
-        // and redirect to profile-setup
+        // Redirect to /verify which will immediately redirect to /profile-setup
         navigate("/verify", { replace: true });
-
       } catch (error) {
         console.error("Unexpected error:", error);
         navigate("/verify?error=unexpected_error", { replace: true });
@@ -76,11 +79,10 @@ const ApiVerify = () => {
     handleVerification();
   }, [searchParams, navigate]);
 
-  // Show loading state while verifying
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30">
-      <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+      <div className="text-center">
+        <div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="text-muted-foreground">Email verifiëren...</p>
       </div>
     </div>
