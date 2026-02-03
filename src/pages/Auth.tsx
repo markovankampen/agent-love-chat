@@ -65,9 +65,7 @@ const Auth = () => {
           description: "Je bent succesvol ingelogd.",
         });
       } else {
-        // Sign up flow - IMPORTANT: Don't use emailRedirectTo, let Supabase use default
-        // This ensures tokens are passed in the URL hash which works better in production
-
+        // Sign up flow
         console.log("Starting signup process...");
 
         const { data, error } = await supabase.auth.signUp({
@@ -77,8 +75,8 @@ const Auth = () => {
             data: {
               username: username,
             },
-            // Don't set emailRedirectTo - let Supabase handle it automatically
-            // This will use your project's Site URL setting from Supabase dashboard
+            // emailRedirectTo is automatically set by Supabase to your Site URL
+            // The verification email will contain a link to /verify-email
           },
         });
 
@@ -97,6 +95,10 @@ const Auth = () => {
           description: "Check je email om je account te verifiëren.",
         });
 
+        // Navigate to the waiting screen
+        // User will click the link in their email
+        // The link will open /verify-email in the SAME tab (because it's a normal link)
+        // The /verify page will detect verification via polling
         navigate("/verify");
       }
     } catch (error: any) {
