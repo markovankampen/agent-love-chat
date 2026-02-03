@@ -11,7 +11,7 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(2);
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -55,19 +55,43 @@ const VerifyEmail = () => {
             // Success - email verified
             setStatus("success");
 
-            // Notify the original tab via localStorage
-            localStorage.setItem("email_verified", "true");
-
-            // Give a brief moment for the event to fire
-            setTimeout(() => {
-              localStorage.removeItem("email_verified");
-            }, 100);
+            // Notify any other tabs via localStorage
+            try {
+              localStorage.setItem("email_verified", "true");
+              setTimeout(() => {
+                localStorage.removeItem("email_verified");
+              }, 100);
+            } catch (e) {
+              console.log("localStorage not available:", e);
+            }
 
             // Clean up
             sessionStorage.removeItem("pendingVerificationEmail");
 
-            // Start countdown to close/redirect
-            startCountdown();
+            // Check if profile is complete and redirect accordingly
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("first_name, date_of_birth, photo_url")
+              .eq("id", data.user.id)
+              .single();
+
+            // Start countdown then redirect
+            let count = 2;
+            const timer = setInterval(() => {
+              count--;
+              setCountdown(count);
+
+              if (count <= 0) {
+                clearInterval(timer);
+
+                // Redirect to appropriate page based on profile completion
+                if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+                  navigate("/profile-setup", { replace: true });
+                } else {
+                  navigate("/home", { replace: true });
+                }
+              }
+            }, 1000);
 
             return;
           }
@@ -105,19 +129,43 @@ const VerifyEmail = () => {
         // Success - email verified
         setStatus("success");
 
-        // Notify the original tab via localStorage
-        localStorage.setItem("email_verified", "true");
-
-        // Give a brief moment for the event to fire
-        setTimeout(() => {
-          localStorage.removeItem("email_verified");
-        }, 100);
+        // Notify any other tabs via localStorage
+        try {
+          localStorage.setItem("email_verified", "true");
+          setTimeout(() => {
+            localStorage.removeItem("email_verified");
+          }, 100);
+        } catch (e) {
+          console.log("localStorage not available:", e);
+        }
 
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Start countdown to close/redirect
-        startCountdown();
+        // Check if profile is complete and redirect accordingly
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, date_of_birth, photo_url")
+          .eq("id", data.user.id)
+          .single();
+
+        // Start countdown then redirect
+        let count = 2;
+        const timer = setInterval(() => {
+          count--;
+          setCountdown(count);
+
+          if (count <= 0) {
+            clearInterval(timer);
+
+            // Redirect to appropriate page based on profile completion
+            if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+              navigate("/profile-setup", { replace: true });
+            } else {
+              navigate("/home", { replace: true });
+            }
+          }
+        }, 1000);
       } catch (error: any) {
         console.error("Verification error:", error);
         setStatus("error");
@@ -127,37 +175,14 @@ const VerifyEmail = () => {
           setErrorMessage("Deze verificatie link is verlopen of ongeldig. Probeer opnieuw in te loggen.");
         } else if (error.message?.includes("already been verified")) {
           setErrorMessage("Dit email adres is al geverifieerd. Log in om verder te gaan.");
+          // If already verified, redirect after 2 seconds
+          setTimeout(() => {
+            navigate("/profile-setup", { replace: true });
+          }, 2000);
         } else {
           setErrorMessage(error.message || "Er ging iets mis bij het verifiëren");
         }
       }
-    };
-
-    const startCountdown = () => {
-      let count = 3;
-      const timer = setInterval(() => {
-        count--;
-        setCountdown(count);
-
-        if (count <= 0) {
-          clearInterval(timer);
-          // Try to close the window
-          const closed = window.close();
-
-          // If close doesn't work (most browsers prevent this), redirect
-          if (!closed) {
-            // Check if we have opener (opened from another tab)
-            if (window.opener && !window.opener.closed) {
-              // Focus the opener
-              window.opener.focus();
-              window.close();
-            } else {
-              // No opener, redirect to verify page
-              navigate("/verify");
-            }
-          }
-        }
-      }, 1000);
     };
 
     verifyEmail();
@@ -186,16 +211,9 @@ const VerifyEmail = () => {
                 <h1 className="text-3xl font-bold text-green-600">Email geverifieerd! ✓</h1>
                 <p className="text-muted-foreground">Je email is succesvol geverifieerd.</p>
                 <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
-                  <p className="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">{countdown}</p>
-                  <p className="text-sm text-green-800 dark:text-green-200">
-                    💡 Dit tabblad sluit automatisch.
-                    <br />
-                    Ga terug naar het vorige tabblad om door te gaan.
-                  </p>
+                  <p className="text-4xl font-bold text-green-800 dark:text-green-200 mb-2">{countdown}</p>
+                  <p className="text-sm text-green-800 dark:text-green-200">Je wordt doorgestuurd naar je profiel...</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-4">
-                  Als dit venster niet sluit, kun je het handmatig sluiten.
-                </p>
               </>
             )}
 
