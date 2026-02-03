@@ -40,9 +40,9 @@ const Verify = () => {
           .single();
 
         if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-          navigate("/profile-setup");
+          navigate("/profile-setup", { replace: true });
         } else {
-          navigate("/home");
+          navigate("/home", { replace: true });
         }
       }
     };
@@ -55,7 +55,11 @@ const Verify = () => {
         console.log("Email verification detected from another tab!");
 
         // Clear the flag
-        localStorage.removeItem("email_verified");
+        try {
+          localStorage.removeItem("email_verified");
+        } catch (err) {
+          console.log("Could not clear localStorage:", err);
+        }
 
         // Check verification and redirect
         handleVerificationComplete();
@@ -141,9 +145,9 @@ const Verify = () => {
       // Navigate to appropriate page
       setTimeout(() => {
         if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-          navigate("/profile-setup");
+          navigate("/profile-setup", { replace: true });
         } else {
-          navigate("/home");
+          navigate("/home", { replace: true });
         }
       }, 500);
     } catch (error) {
@@ -210,13 +214,13 @@ const Verify = () => {
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 text-left">
                 <li>Open je email inbox</li>
                 <li>Klik op de verificatie link in de email</li>
-                <li>Deze pagina wordt automatisch bijgewerkt</li>
+                <li>Je wordt automatisch doorgestuurd</li>
               </ol>
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
-                💡 Tip: Houd dit tabblad open. We controleren automatisch wanneer je je email verifieert.
+                💡 De verificatie link stuurt je automatisch door naar je profiel setup.
               </p>
             </div>
 
