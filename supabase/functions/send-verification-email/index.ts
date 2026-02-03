@@ -28,14 +28,13 @@ const generateVerificationEmail = (email: string, verificationLink: string) => {
           
           <div style="margin: 32px 0;">
             <a href="${verificationLink}" 
-               target="_self"
                style="display: inline-block; padding: 12px 24px; background-color: #6366f1; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
               Verifieer E-mailadres
             </a>
           </div>
           
           <p style="color: #333; font-size: 14px; line-height: 20px; margin: 24px 0 8px 0;">
-            Of kopieer en plak deze link in je browser (gebruik dezelfde tab waar je geregistreerd hebt):
+            Of kopieer en plak deze link in je browser:
           </p>
           
           <div style="padding: 12px; background-color: #f4f4f4; border-radius: 5px; border: 1px solid #eee; word-break: break-all;">
@@ -62,7 +61,6 @@ Deno.serve(async (req) => {
 
   console.log("=== Email Verification Function Started ===");
   console.log("Method:", req.method);
-  console.log("Headers:", Object.fromEntries(req.headers));
 
   if (req.method !== "POST") {
     return new Response("Method not allowed", {
@@ -73,7 +71,7 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.text();
-    console.log("Raw payload received:", payload.substring(0, 200) + "...");
+    console.log("Raw payload received");
 
     const headers = Object.fromEntries(req.headers);
 
@@ -107,13 +105,15 @@ Deno.serve(async (req) => {
     const { token_hash, redirect_to } = email_data;
 
     console.log("Processing verification email for:", user.email);
-    console.log("Token hash:", token_hash);
-    console.log("Redirect to:", redirect_to);
 
-    // Build verification link - use the /verify-email route which will handle verification
-    // and redirect to the waiting /verify tab
-    const frontendUrl = redirect_to.split("/verify")[0]; // Extract base URL from redirect_to
-    const verificationLink = `${frontendUrl}/verify-email?token=${token_hash}&type=signup`;
+    // Extract the base URL from redirect_to
+    // This ensures it works both locally and in production
+    const url = new URL(redirect_to);
+    const baseUrl = `${url.protocol}//${url.host}`;
+
+    // Build verification link pointing to /verify-email
+    // This will be handled by the frontend router
+    const verificationLink = `${baseUrl}/verify-email?token_hash=${token_hash}&type=signup`;
 
     console.log("Verification link generated:", verificationLink);
 
