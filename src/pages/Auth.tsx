@@ -81,8 +81,9 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Store email for verification screen display
+        // Store credentials for verification polling (allows cross-device detection)
         sessionStorage.setItem("pendingVerificationEmail", email);
+        sessionStorage.setItem("pendingVerification", JSON.stringify({ email, password }));
 
         toast({
           title: "Bijna klaar!",
