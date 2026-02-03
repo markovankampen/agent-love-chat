@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
@@ -14,23 +15,85 @@ const VerifyEmail = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        // Get the token hash from URL (this is what the email sends)
-        const tokenHash = searchParams.get("token");
-        const type = searchParams.get("type");
+        let tokenHash = searchParams.get("token");
+        let type = searchParams.get("type");
+        
+        // If not in query params, check hash fragment (production behavior)
+        if (!tokenHash && location.hash) {
+          console.log("Checking hash fragment:", location.hash);
+          const hashParams = new URLSearchParams(location.hash.substring(1));
+          tokenHash = hashParams.get("token") || hashParams.get("token_hash");
+          type = hashParams.get("type");
+          
+          // Also check for access_token and refresh_token (Supabase default format)
+          const accessToken = hashParams.get("access_token");
+          const refreshToken = hashParams.get("refresh_token");
+          
+          if (accessToken && refreshToken) {
+            console.log("Found access_token and refresh_token in hash");
+            
+            // Set the session using the tokens from the hash
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) {
+              console.error("Session set error:", error);
+              throw error;
+            }
+
+            if (!data.user?.email_confirmed_at) {
+              setStatus("error");
+              setErrorMessage("Email verificatie mislukt");
+              return;
+            }
+
+            console.log("Email verified successfully via access_token:", data.user.email);
+
+            // Success - email verified
+            setStatus("success");
+            
+            // Set localStorage flag to notify the waiting tab
+            localStorage.setItem("email_verified", "true");
+            
+            // Clean up
+            sessionStorage.removeItem("pendingVerificationEmail");
+
+            // Check if profile is complete
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("first_name, date_of_birth, photo_url")
+              .eq("id", data.user.id)
+              .single();
+
+            // Redirect after a short delay
+            setTimeout(() => {
+              if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+                navigate("/profile-setup");
+              } else {
+                navigate("/home");
+              }
+            }, 1500);
+            
+            return;
+          }
+        }
 
         console.log("Token hash from URL:", tokenHash);
         console.log("Type:", type);
 
-        if (!tokenHash || type !== "signup") {
+        if (!tokenHash) {
           setStatus("error");
-          setErrorMessage("Ongeldige verificatie link");
+          setErrorMessage("Ongeldige verificatie link - geen token gevonden");
+          console.error("No token found in query params or hash");
           return;
         }
 
         // Verify the email using the token hash
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
-          type: "signup",
+          type: type === "signup" ? "signup" : "email",
         });
 
         if (error) {
@@ -49,6 +112,9 @@ const VerifyEmail = () => {
         // Success - email verified
         setStatus("success");
         
+        // Set localStorage flag to notify the waiting tab
+        localStorage.setItem("email_verified", "true");
+        
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
@@ -64,7 +130,7 @@ const VerifyEmail = () => {
           if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
             navigate("/profile-setup");
           } else {
-            navigate("/profile-setup");
+            navigate("/home");
           }
         }, 1500);
 
@@ -75,6 +141,8 @@ const VerifyEmail = () => {
         // Handle specific error cases
         if (error.message?.includes("expired") || error.message?.includes("invalid")) {
           setErrorMessage("Deze verificatie link is verlopen of ongeldig. Probeer opnieuw in te loggen.");
+        } else if (error.message?.includes("already been verified")) {
+          setErrorMessage("Dit email adres is al geverifieerd. Log in om verder te gaan.");
         } else {
           setErrorMessage(error.message || "Er ging iets mis bij het verifiëren");
         }
@@ -82,7 +150,7 @@ const VerifyEmail = () => {
     };
 
     verifyEmail();
-  }, [searchParams, navigate]);
+  }, [searchParams, location.hash, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
@@ -108,6 +176,11 @@ const VerifyEmail = () => {
                 <p className="text-muted-foreground">
                   Je email is succesvol geverifieerd. Je wordt doorgestuurd...
                 </p>
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-4">
+                  <p className="text-xs text-green-800 dark:text-green-200">
+                    💡 Als je het originele venster nog open hebt, wordt dat automatisch bijgewerkt.
+                  </p>
+                </div>
               </>
             )}
 
