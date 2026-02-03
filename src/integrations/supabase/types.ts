@@ -156,7 +156,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_auth_hook_info: { Args: never; Returns: Json }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
