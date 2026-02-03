@@ -14,8 +14,10 @@ const Home = () => {
 
   useEffect(() => {
     const checkAuthAndLoadProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         navigate("/");
         return;
@@ -24,20 +26,34 @@ const Home = () => {
       // Load profile data
       const { data: profile } = await supabase
         .from("profiles")
-        .select("username, first_name")
+        .select("username, first_name, date_of_birth, photo_url")
         .eq("id", session.user.id)
         .single();
 
       if (profile) {
+        // Check if profile is complete
+        if (!profile.first_name || !profile.date_of_birth || !profile.photo_url) {
+          // Profile incomplete - redirect to profile setup
+          console.log("Profile incomplete, redirecting to /profile-setup");
+          navigate("/profile-setup", { replace: true });
+          return;
+        }
+
         setUsername(profile.first_name || profile.username || "daar");
+      } else {
+        // No profile found - redirect to profile setup
+        navigate("/profile-setup", { replace: true });
+        return;
       }
-      
+
       setLoading(false);
     };
 
     checkAuthAndLoadProfile();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         navigate("/");
       }
@@ -67,8 +83,7 @@ const Home = () => {
           <div className="flex items-center gap-2">
             <img src={heartRedGlow} alt="" className="w-8 h-8 object-contain" />
             <span className="font-bold text-lg">
-              <span className="text-primary">indebuurt</span>{" "}
-              <span className="text-foreground">ontmoet</span>
+              <span className="text-primary">indebuurt</span> <span className="text-foreground">ontmoet</span>
             </span>
           </div>
           <Button
@@ -86,17 +101,13 @@ const Home = () => {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Hallo, {username}! 👋
-          </h1>
-          <p className="text-muted-foreground">
-            Wat wil je vandaag doen?
-          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Hallo, {username}! 👋</h1>
+          <p className="text-muted-foreground">Wat wil je vandaag doen?</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
           {/* Chat Card */}
-          <Card 
+          <Card
             className="p-8 cursor-pointer hover:shadow-lg transition-all hover:border-primary group"
             onClick={() => navigate("/chat")}
           >
@@ -104,9 +115,7 @@ const Home = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4 group-hover:bg-primary/20 transition-colors">
                 <MessageCircle className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-xl font-bold text-foreground mb-2">
-                Chat met Flori
-              </h2>
+              <h2 className="text-xl font-bold text-foreground mb-2">Chat met Flori</h2>
               <p className="text-sm text-muted-foreground">
                 Praat met onze AI matchmaker en ontdek jouw perfecte match
               </p>
@@ -114,7 +123,7 @@ const Home = () => {
           </Card>
 
           {/* Account Card */}
-          <Card 
+          <Card
             className="p-8 cursor-pointer hover:shadow-lg transition-all hover:border-primary group"
             onClick={() => navigate("/account")}
           >
@@ -122,12 +131,8 @@ const Home = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4 group-hover:bg-primary/20 transition-colors">
                 <User className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-xl font-bold text-foreground mb-2">
-                Mijn Account
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Bekijk en bewerk je profielgegevens
-              </p>
+              <h2 className="text-xl font-bold text-foreground mb-2">Mijn Account</h2>
+              <p className="text-sm text-muted-foreground">Bekijk en bewerk je profielgegevens</p>
             </div>
           </Card>
         </div>
