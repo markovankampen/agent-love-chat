@@ -11,6 +11,7 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -54,24 +55,19 @@ const VerifyEmail = () => {
             // Success - email verified
             setStatus("success");
 
-            // Set localStorage flag to notify the waiting tab
+            // Notify the original tab via localStorage
             localStorage.setItem("email_verified", "true");
+
+            // Give a brief moment for the event to fire
+            setTimeout(() => {
+              localStorage.removeItem("email_verified");
+            }, 100);
 
             // Clean up
             sessionStorage.removeItem("pendingVerificationEmail");
 
-            // Try to close this window/tab if it was opened from the verification email
-            // This will only work if this was opened via window.open() or target="_blank"
-            setTimeout(() => {
-              // Try to close the window
-              window.close();
-
-              // If window.close() doesn't work (user opened link manually),
-              // redirect to /verify which will detect verification and continue
-              setTimeout(() => {
-                navigate("/verify");
-              }, 1000);
-            }, 1500);
+            // Start countdown to close/redirect
+            startCountdown();
 
             return;
           }
@@ -109,22 +105,19 @@ const VerifyEmail = () => {
         // Success - email verified
         setStatus("success");
 
-        // Set localStorage flag to notify the waiting tab
+        // Notify the original tab via localStorage
         localStorage.setItem("email_verified", "true");
+
+        // Give a brief moment for the event to fire
+        setTimeout(() => {
+          localStorage.removeItem("email_verified");
+        }, 100);
 
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Try to close this window/tab
-        setTimeout(() => {
-          // Try to close the window
-          window.close();
-
-          // If window.close() doesn't work, redirect to /verify
-          setTimeout(() => {
-            navigate("/verify");
-          }, 1000);
-        }, 1500);
+        // Start countdown to close/redirect
+        startCountdown();
       } catch (error: any) {
         console.error("Verification error:", error);
         setStatus("error");
@@ -138,6 +131,33 @@ const VerifyEmail = () => {
           setErrorMessage(error.message || "Er ging iets mis bij het verifiëren");
         }
       }
+    };
+
+    const startCountdown = () => {
+      let count = 3;
+      const timer = setInterval(() => {
+        count--;
+        setCountdown(count);
+
+        if (count <= 0) {
+          clearInterval(timer);
+          // Try to close the window
+          const closed = window.close();
+
+          // If close doesn't work (most browsers prevent this), redirect
+          if (!closed) {
+            // Check if we have opener (opened from another tab)
+            if (window.opener && !window.opener.closed) {
+              // Focus the opener
+              window.opener.focus();
+              window.close();
+            } else {
+              // No opener, redirect to verify page
+              navigate("/verify");
+            }
+          }
+        }
+      }, 1000);
     };
 
     verifyEmail();
@@ -165,11 +185,17 @@ const VerifyEmail = () => {
                 </div>
                 <h1 className="text-3xl font-bold text-green-600">Email geverifieerd! ✓</h1>
                 <p className="text-muted-foreground">Je email is succesvol geverifieerd.</p>
-                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-4">
-                  <p className="text-xs text-green-800 dark:text-green-200">
-                    💡 Dit venster sluit automatisch. Ga terug naar het vorige tabblad om door te gaan.
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
+                  <p className="text-2xl font-bold text-green-800 dark:text-green-200 mb-2">{countdown}</p>
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    💡 Dit tabblad sluit automatisch.
+                    <br />
+                    Ga terug naar het vorige tabblad om door te gaan.
                   </p>
                 </div>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Als dit venster niet sluit, kun je het handmatig sluiten.
+                </p>
               </>
             )}
 
