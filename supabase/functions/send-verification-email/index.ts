@@ -1,13 +1,13 @@
-import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
-import { Resend } from 'https://esm.sh/resend@4.0.0'
+import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string)
-const hookSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') as string
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
+const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET") as string;
 
 const generateVerificationEmail = (email: string, verificationLink: string) => {
   return `
@@ -28,13 +28,14 @@ const generateVerificationEmail = (email: string, verificationLink: string) => {
           
           <div style="margin: 32px 0;">
             <a href="${verificationLink}" 
+               target="_self"
                style="display: inline-block; padding: 12px 24px; background-color: #6366f1; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
               Verifieer E-mailadres
             </a>
           </div>
           
           <p style="color: #333; font-size: 14px; line-height: 20px; margin: 24px 0 8px 0;">
-            Of kopieer en plak deze link in je browser:
+            Of kopieer en plak deze link in je browser (gebruik dezelfde tab waar je geregistreerd hebt):
           </p>
           
           <div style="padding: 12px; background-color: #f4f4f4; border-radius: 5px; border: 1px solid #eee; word-break: break-all;">
@@ -47,114 +48,117 @@ const generateVerificationEmail = (email: string, verificationLink: string) => {
         </div>
       </body>
     </html>
-  `
-}
+  `;
+};
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
       status: 204,
-      headers: corsHeaders 
-    })
+      headers: corsHeaders,
+    });
   }
 
-  console.log('=== Email Verification Function Started ===')
-  console.log('Method:', req.method)
-  console.log('Headers:', Object.fromEntries(req.headers))
-  
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { 
+  console.log("=== Email Verification Function Started ===");
+  console.log("Method:", req.method);
+  console.log("Headers:", Object.fromEntries(req.headers));
+
+  if (req.method !== "POST") {
+    return new Response("Method not allowed", {
       status: 405,
-      headers: corsHeaders 
-    })
+      headers: corsHeaders,
+    });
   }
 
   try {
-    const payload = await req.text()
-    console.log('Raw payload received:', payload.substring(0, 200) + '...')
-    
-    const headers = Object.fromEntries(req.headers)
-    
+    const payload = await req.text();
+    console.log("Raw payload received:", payload.substring(0, 200) + "...");
+
+    const headers = Object.fromEntries(req.headers);
+
     // Check if webhook secret is configured
     if (!hookSecret) {
-      console.error('SEND_EMAIL_HOOK_SECRET is not configured!')
-      throw new Error('Webhook secret not configured')
+      console.error("SEND_EMAIL_HOOK_SECRET is not configured!");
+      throw new Error("Webhook secret not configured");
     }
-    
-    const wh = new Webhook(hookSecret)
-    
-    let verified
+
+    const wh = new Webhook(hookSecret);
+
+    let verified;
     try {
       verified = wh.verify(payload, headers) as {
         user: {
-          email: string
-        }
+          email: string;
+        };
         email_data: {
-          token: string
-          token_hash: string
-          redirect_to: string
-          email_action_type: string
-        }
-      }
+          token: string;
+          token_hash: string;
+          redirect_to: string;
+          email_action_type: string;
+        };
+      };
     } catch (verifyError) {
-      console.error('Webhook verification failed:', verifyError)
-      throw new Error('Invalid webhook signature')
+      console.error("Webhook verification failed:", verifyError);
+      throw new Error("Invalid webhook signature");
     }
 
-    const { user, email_data } = verified
-    const { token_hash, redirect_to } = email_data
+    const { user, email_data } = verified;
+    const { token_hash, redirect_to } = email_data;
 
-    console.log('Processing verification email for:', user.email)
-    console.log('Token hash:', token_hash)
-    console.log('Redirect to:', redirect_to)
+    console.log("Processing verification email for:", user.email);
+    console.log("Token hash:", token_hash);
+    console.log("Redirect to:", redirect_to);
 
-    // Build verification link - point to frontend /verify with token
-    // This ensures same-tab verification instead of opening new tab
-    const frontendUrl = redirect_to.split('/verify')[0] // Extract base URL from redirect_to
-    const verificationLink = `${frontendUrl}/verify?token=${token_hash}&type=signup`
-    
-    console.log('Verification link generated:', verificationLink)
+    // Build verification link - use the /verify-email route which will handle verification
+    // and redirect to the waiting /verify tab
+    const frontendUrl = redirect_to.split("/verify")[0]; // Extract base URL from redirect_to
+    const verificationLink = `${frontendUrl}/verify-email?token=${token_hash}&type=signup`;
 
-    const html = generateVerificationEmail(user.email, verificationLink)
+    console.log("Verification link generated:", verificationLink);
+
+    const html = generateVerificationEmail(user.email, verificationLink);
 
     // Check Resend API key
-    if (!Deno.env.get('RESEND_API_KEY')) {
-      console.error('RESEND_API_KEY not configured!')
-      throw new Error('Resend API key not configured')
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      console.error("RESEND_API_KEY not configured!");
+      throw new Error("Resend API key not configured");
     }
 
-    console.log('Sending email via Resend...')
+    console.log("Sending email via Resend...");
     const { data, error } = await resend.emails.send({
-      from: 'Matchmaker Flori <onboarding@resend.dev>',
+      from: "Matchmaker Flori <onboarding@resend.dev>",
       to: [user.email],
-      subject: 'Verifieer je e-mailadres - indebuurt ontmoet',
+      subject: "Verifieer je e-mailadres - indebuurt ontmoet",
       html,
-    })
+    });
 
     if (error) {
-      console.error('Resend API error:', error)
-      throw error
+      console.error("Resend API error:", error);
+      throw error;
     }
 
-    console.log('✅ Email sent successfully!')
-    console.log('Resend response:', data)
+    console.log("✅ Email sent successfully!");
+    console.log("Resend response:", data);
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      email_id: data?.id 
-    }), {
-      status: 200,
-      headers: { 
-        ...corsHeaders,
-        'Content-Type': 'application/json' 
+    return new Response(
+      JSON.stringify({
+        success: true,
+        email_id: data?.id,
+      }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
       },
-    })
+    );
   } catch (error) {
-    console.error('❌ Error sending verification email:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Failed to send verification email'
-    const errorCode = (error as any)?.code || 'UNKNOWN_ERROR'
-    
+    console.error("❌ Error sending verification email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to send verification email";
+    const errorCode = (error as any)?.code || "UNKNOWN_ERROR";
+
     return new Response(
       JSON.stringify({
         error: {
@@ -164,11 +168,11 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { 
+        headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json' 
+          "Content-Type": "application/json",
         },
-      }
-    )
+      },
+    );
   }
-})
+});
