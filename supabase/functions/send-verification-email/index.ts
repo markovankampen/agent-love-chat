@@ -60,7 +60,6 @@ Deno.serve(async (req) => {
   }
 
   console.log("=== Email Verification Function Started ===");
-  console.log("Method:", req.method);
 
   if (req.method !== "POST") {
     return new Response("Method not allowed", {
@@ -71,11 +70,8 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.text();
-    console.log("Raw payload received");
-
     const headers = Object.fromEntries(req.headers);
 
-    // Check if webhook secret is configured
     if (!hookSecret) {
       console.error("SEND_EMAIL_HOOK_SECRET is not configured!");
       throw new Error("Webhook secret not configured");
@@ -106,20 +102,18 @@ Deno.serve(async (req) => {
 
     console.log("Processing verification email for:", user.email);
 
-    // Extract the base URL from redirect_to
-    // This ensures it works both locally and in production
+    // Extract the base URL
     const url = new URL(redirect_to);
     const baseUrl = `${url.protocol}//${url.host}`;
 
-    // Build verification link pointing to /verify-email
-    // This will be handled by the frontend router
-    const verificationLink = `${baseUrl}/verify-email?token_hash=${token_hash}&type=signup`;
+    // Point to /api/verify which will verify and redirect back to /verify
+    // This ensures the link opens in the same tab
+    const verificationLink = `${baseUrl}/api/verify?token_hash=${token_hash}&type=signup`;
 
     console.log("Verification link generated:", verificationLink);
 
     const html = generateVerificationEmail(user.email, verificationLink);
 
-    // Check Resend API key
     if (!Deno.env.get("RESEND_API_KEY")) {
       console.error("RESEND_API_KEY not configured!");
       throw new Error("Resend API key not configured");
@@ -139,7 +133,6 @@ Deno.serve(async (req) => {
     }
 
     console.log("✅ Email sent successfully!");
-    console.log("Resend response:", data);
 
     return new Response(
       JSON.stringify({
