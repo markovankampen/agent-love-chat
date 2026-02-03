@@ -68,14 +68,7 @@ const VerifyEmail = () => {
             // Clean up
             sessionStorage.removeItem("pendingVerificationEmail");
 
-            // Check if profile is complete and redirect accordingly
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("first_name, date_of_birth, photo_url")
-              .eq("id", data.user.id)
-              .single();
-
-            // Start countdown then redirect
+            // Start countdown then ALWAYS redirect to profile-setup
             let count = 2;
             const timer = setInterval(() => {
               count--;
@@ -84,12 +77,9 @@ const VerifyEmail = () => {
               if (count <= 0) {
                 clearInterval(timer);
 
-                // Redirect to appropriate page based on profile completion
-                if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-                  navigate("/profile-setup", { replace: true });
-                } else {
-                  navigate("/home", { replace: true });
-                }
+                // ALWAYS redirect to profile-setup after email verification
+                console.log("Redirecting to /profile-setup");
+                navigate("/profile-setup", { replace: true });
               }
             }, 1000);
 
@@ -142,14 +132,7 @@ const VerifyEmail = () => {
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Check if profile is complete and redirect accordingly
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, date_of_birth, photo_url")
-          .eq("id", data.user.id)
-          .single();
-
-        // Start countdown then redirect
+        // Start countdown then ALWAYS redirect to profile-setup
         let count = 2;
         const timer = setInterval(() => {
           count--;
@@ -158,12 +141,9 @@ const VerifyEmail = () => {
           if (count <= 0) {
             clearInterval(timer);
 
-            // Redirect to appropriate page based on profile completion
-            if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-              navigate("/profile-setup", { replace: true });
-            } else {
-              navigate("/home", { replace: true });
-            }
+            // ALWAYS redirect to profile-setup after email verification
+            console.log("Redirecting to /profile-setup");
+            navigate("/profile-setup", { replace: true });
           }
         }, 1000);
       } catch (error: any) {
@@ -174,8 +154,8 @@ const VerifyEmail = () => {
         if (error.message?.includes("expired") || error.message?.includes("invalid")) {
           setErrorMessage("Deze verificatie link is verlopen of ongeldig. Probeer opnieuw in te loggen.");
         } else if (error.message?.includes("already been verified")) {
-          setErrorMessage("Dit email adres is al geverifieerd. Log in om verder te gaan.");
-          // If already verified, redirect after 2 seconds
+          setErrorMessage("Dit email adres is al geverifieerd.");
+          // If already verified, redirect to profile-setup after 2 seconds
           setTimeout(() => {
             navigate("/profile-setup", { replace: true });
           }, 2000);
@@ -212,7 +192,9 @@ const VerifyEmail = () => {
                 <p className="text-muted-foreground">Je email is succesvol geverifieerd.</p>
                 <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
                   <p className="text-4xl font-bold text-green-800 dark:text-green-200 mb-2">{countdown}</p>
-                  <p className="text-sm text-green-800 dark:text-green-200">Je wordt doorgestuurd naar je profiel...</p>
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    Je wordt doorgestuurd naar profiel setup...
+                  </p>
                 </div>
               </>
             )}
