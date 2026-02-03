@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// List of offensive/inappropriate names to filter
 const offensiveNames = [
   "fuck", "shit", "ass", "bitch", "bastard", "damn", "cunt", "dick", "pussy",
   "whore", "slut", "fag", "nigger", "nigga", "retard", "kut", "hoer", "lul",
@@ -33,6 +34,7 @@ const isOffensiveName = (name: string): boolean => {
 };
 
 const isValidDateFormat = (dateStr: string): boolean => {
+  // Check mm/dd/yyyy format
   const regex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
   return regex.test(dateStr);
 };
@@ -41,6 +43,7 @@ const parseDate = (dateStr: string): Date | null => {
   if (!isValidDateFormat(dateStr)) return null;
   const [month, day, year] = dateStr.split('/').map(Number);
   const date = new Date(year, month - 1, day);
+  // Validate the date is real (e.g., not Feb 31)
   if (date.getMonth() !== month - 1 || date.getDate() !== day) {
     return null;
   }
@@ -68,8 +71,6 @@ const ProfileSetup = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
-  const [username, setUsername] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
@@ -89,10 +90,6 @@ const ProfileSetup = () => {
         navigate("/auth");
       } else {
         setUserId(user.id);
-        // Pre-fill username from auth metadata if available
-        if (user.user_metadata?.username) {
-          setUsername(user.user_metadata.username);
-        }
       }
     };
     checkAuth();
@@ -126,6 +123,7 @@ const ProfileSetup = () => {
       setCameraStream(stream);
       setShowCamera(true);
       
+      // Wait for the video element to be available
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -159,13 +157,16 @@ const ProfileSetup = () => {
 
     if (!context) return;
 
+    // Set canvas size to video size
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
+    // Draw the video frame to canvas (mirror it for selfie)
     context.translate(canvas.width, 0);
     context.scale(-1, 1);
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    // Convert to blob and create file
     canvas.toBlob((blob) => {
       if (blob) {
         const file = new File([blob], `selfie-${Date.now()}.jpg`, { type: "image/jpeg" });
@@ -185,12 +186,14 @@ const ProfileSetup = () => {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d/]/g, '');
     
+    // Auto-format with slashes
     if (value.length === 2 && !value.includes('/')) {
       value = value + '/';
     } else if (value.length === 5 && value.split('/').length === 2) {
       value = value + '/';
     }
     
+    // Limit length to mm/dd/yyyy (10 chars)
     if (value.length <= 10) {
       setDateOfBirth(value);
     }
@@ -200,8 +203,8 @@ const ProfileSetup = () => {
     e.preventDefault();
     
     // Validate first name
-    const trimmedFirstName = firstName.trim();
-    if (!trimmedFirstName) {
+    const trimmedName = firstName.trim();
+    if (!trimmedName) {
       toast({
         title: "Voornaam verplicht",
         description: "Vul je voornaam in om door te gaan",
@@ -210,7 +213,7 @@ const ProfileSetup = () => {
       return;
     }
 
-    if (trimmedFirstName.length < 2) {
+    if (trimmedName.length < 2) {
       toast({
         title: "Ongeldige voornaam",
         description: "Je voornaam moet minimaal 2 tekens bevatten",
@@ -219,7 +222,7 @@ const ProfileSetup = () => {
       return;
     }
 
-    if (isOffensiveName(trimmedFirstName)) {
+    if (isOffensiveName(trimmedName)) {
       toast({
         title: "Ongeldige voornaam",
         description: "Gebruik je echte voornaam",
@@ -227,29 +230,6 @@ const ProfileSetup = () => {
       });
       return;
     }
-
-    // Validate username
-    const trimmedUsername = username.trim();
-    if (!trimmedUsername) {
-      toast({
-        title: "Gebruikersnaam verplicht",
-        description: "Vul je gebruikersnaam in om door te gaan",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (trimmedUsername.length < 3) {
-      toast({
-        title: "Ongeldige gebruikersnaam",
-        description: "Je gebruikersnaam moet minimaal 3 tekens bevatten",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Phone number is optional
-    const trimmedPhoneNumber = phoneNumber.trim();
 
     // Validate date of birth
     if (!dateOfBirth) {
@@ -316,7 +296,7 @@ const ProfileSetup = () => {
 
       // Convert date from mm/dd/yyyy to yyyy-mm-dd for storage
       const [month, day, year] = dateOfBirth.split('/');
-      const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const formattedDate = `${year}-${month}-${day}`;
 
       // Upload photo to storage
       const fileExt = selectedFile.name.split('.').pop();
@@ -340,6 +320,7 @@ const ProfileSetup = () => {
 
       if (signedUrlError || !signedUrlData) {
         console.error("Signed URL error:", signedUrlError);
+        // Clean up uploaded file
         await supabase.storage.from('profile-photos-temp').remove([fileName]);
         throw new Error("Fout bij genereren van toegang tot foto");
       }
@@ -352,35 +333,29 @@ const ProfileSetup = () => {
         description: "Je foto wordt geanalyseerd. Dit kan even duren.",
       });
 
-      console.log("Sending to analyze-photo:", {
-        userId,
-        firstName: trimmedFirstName,
-        username: trimmedUsername,
-        phoneNumber: trimmedPhoneNumber || null,
-        dateOfBirth: formattedDate,
-      });
-
-      // Call analyze-photo function with ALL fields
+      // Call analyze-photo function with both URL and fileName for reliable deletion
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-photo', {
         body: {
           photoUrl: signedUrlData.signedUrl,
           photoPath: fileName,
           userId,
-          firstName: trimmedFirstName,
-          username: trimmedUsername,
-          phoneNumber: trimmedPhoneNumber || null,
+          firstName: trimmedName,
           dateOfBirth: formattedDate,
         },
       });
 
+      // Check for error in response data first (edge function returns JSON with error field)
       if (analysisData?.error) {
         throw new Error(analysisData.error);
       }
 
+      // Check for function invocation errors (400/500 responses)
       if (analysisError) {
         console.error("Analysis error:", analysisError);
+        // Try to extract error message from the response - it may be embedded in the message
         let errorMsg = "Fout tijdens het analyseren van de foto, upload een geldige selfie";
         
+        // Parse the error message which may contain JSON
         const errorMessage = analysisError.message || "";
         const jsonMatch = errorMessage.match(/\{"error":"([^"]+)"\}/);
         if (jsonMatch && jsonMatch[1]) {
@@ -406,6 +381,7 @@ const ProfileSetup = () => {
     } catch (error: any) {
       console.error("Error:", error);
       
+      // Check if it's a selfie/face-related error - show as note instead of error toast
       const isSelfieError = error.message?.toLowerCase().includes("face") || 
           error.message?.toLowerCase().includes("gezicht") ||
           error.message?.toLowerCase().includes("persoon") ||
@@ -415,14 +391,16 @@ const ProfileSetup = () => {
           error.message?.includes("No faces detected");
 
       if (isSelfieError) {
+        // Show verification prompt dialog instead of error
         const noteMessage = error.message?.includes("Upload") 
           ? error.message 
           : "Upload een duidelijke selfie waarop je gezicht goed zichtbaar is en je recht in de camera kijkt.";
         setVerificationMessage(noteMessage);
         setShowVerificationPrompt(true);
-        return;
+        return; // Don't show error toast for selfie issues
       }
       
+      // Determine the most appropriate error message for other errors
       let errorTitle = "Er ging iets mis";
       let errorDescription = error.message || "Probeer het opnieuw";
       
@@ -471,29 +449,6 @@ const ProfileSetup = () => {
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Je voornaam"
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="username">Gebruikersnaam <span className="text-destructive">*</span></Label>
-            <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Je gebruikersnaam"
-              required
-            />
-            <p className="text-xs text-muted-foreground">Minimaal 3 tekens</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phoneNumber">Telefoonnummer (optioneel)</Label>
-            <Input
-              id="phoneNumber"
-              type="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+31 6 12345678"
             />
           </div>
 
@@ -551,6 +506,7 @@ const ProfileSetup = () => {
                 </div>
               )}
               
+              {/* Camera buttons */}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   type="button"
@@ -628,6 +584,7 @@ const ProfileSetup = () => {
                 <p className="text-center text-sm text-muted-foreground">{cameraError}</p>
               </div>
             )}
+            {/* Face guide overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-36 h-48 sm:w-48 sm:h-64 border-2 border-dashed border-white/50 rounded-full" />
             </div>

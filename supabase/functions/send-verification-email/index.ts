@@ -1,5 +1,5 @@
-import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
-import { Resend } from "https://esm.sh/resend@4.0.0";
+import { Webhook } from 'https://esm.sh/standardwebhooks@1.0.0'
+import { Resend } from 'https://esm.sh/resend@4.0.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,8 +47,8 @@ const generateVerificationEmail = (email: string, verificationLink: string) => {
         </div>
       </body>
     </html>
-  `;
-};
+  `
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -71,43 +71,43 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const payload = await req.text();
-    console.log("Raw payload received:", payload.substring(0, 200) + "...");
-
-    const headers = Object.fromEntries(req.headers);
-
+    const payload = await req.text()
+    console.log('Raw payload received:', payload.substring(0, 200) + '...')
+    
+    const headers = Object.fromEntries(req.headers)
+    
     // Check if webhook secret is configured
     if (!hookSecret) {
-      console.error("SEND_EMAIL_HOOK_SECRET is not configured!");
-      throw new Error("Webhook secret not configured");
+      console.error('SEND_EMAIL_HOOK_SECRET is not configured!')
+      throw new Error('Webhook secret not configured')
     }
-
-    const wh = new Webhook(hookSecret);
-
-    let verified;
+    
+    const wh = new Webhook(hookSecret)
+    
+    let verified
     try {
       verified = wh.verify(payload, headers) as {
         user: {
-          email: string;
-        };
+          email: string
+        }
         email_data: {
-          token: string;
-          token_hash: string;
-          redirect_to: string;
-          email_action_type: string;
-        };
-      };
+          token: string
+          token_hash: string
+          redirect_to: string
+          email_action_type: string
+        }
+      }
     } catch (verifyError) {
-      console.error("Webhook verification failed:", verifyError);
-      throw new Error("Invalid webhook signature");
+      console.error('Webhook verification failed:', verifyError)
+      throw new Error('Invalid webhook signature')
     }
 
-    const { user, email_data } = verified;
-    const { token_hash, redirect_to } = email_data;
+    const { user, email_data } = verified
+    const { token_hash, redirect_to } = email_data
 
-    console.log("Processing verification email for:", user.email);
-    console.log("Token hash:", token_hash);
-    console.log("Redirect to:", redirect_to);
+    console.log('Processing verification email for:', user.email)
+    console.log('Token hash:', token_hash)
+    console.log('Redirect to:', redirect_to)
 
     // Build verification link - point to frontend /verify with token
     // This ensures same-tab verification instead of opening new tab
@@ -116,29 +116,29 @@ Deno.serve(async (req) => {
     
     console.log('Verification link generated:', verificationLink)
 
-    const html = generateVerificationEmail(user.email, verificationLink);
+    const html = generateVerificationEmail(user.email, verificationLink)
 
     // Check Resend API key
-    if (!Deno.env.get("RESEND_API_KEY")) {
-      console.error("RESEND_API_KEY not configured!");
-      throw new Error("Resend API key not configured");
+    if (!Deno.env.get('RESEND_API_KEY')) {
+      console.error('RESEND_API_KEY not configured!')
+      throw new Error('Resend API key not configured')
     }
 
-    console.log("Sending email via Resend...");
+    console.log('Sending email via Resend...')
     const { data, error } = await resend.emails.send({
-      from: "Matchmaker Flori <onboarding@resend.dev>",
+      from: 'Matchmaker Flori <onboarding@resend.dev>',
       to: [user.email],
-      subject: "Verifieer je e-mailadres - indebuurt ontmoet",
+      subject: 'Verifieer je e-mailadres - indebuurt ontmoet',
       html,
-    });
+    })
 
     if (error) {
-      console.error("Resend API error:", error);
-      throw error;
+      console.error('Resend API error:', error)
+      throw error
     }
 
-    console.log("✅ Email sent successfully!");
-    console.log("Resend response:", data);
+    console.log('✅ Email sent successfully!')
+    console.log('Resend response:', data)
 
     return new Response(JSON.stringify({ 
       success: true,
@@ -151,10 +151,10 @@ Deno.serve(async (req) => {
       },
     })
   } catch (error) {
-    console.error("❌ Error sending verification email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to send verification email";
-    const errorCode = (error as any)?.code || "UNKNOWN_ERROR";
-
+    console.error('❌ Error sending verification email:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send verification email'
+    const errorCode = (error as any)?.code || 'UNKNOWN_ERROR'
+    
     return new Response(
       JSON.stringify({
         error: {
@@ -171,4 +171,4 @@ Deno.serve(async (req) => {
       }
     )
   }
-});
+})

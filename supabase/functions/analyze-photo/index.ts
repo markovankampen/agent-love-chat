@@ -22,14 +22,8 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
-    // Create client with service role for storage operations
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Create client with user auth for profile updates
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
@@ -66,6 +60,7 @@ serve(async (req) => {
       formData.append('api_key', faceppApiKey);
       formData.append('api_secret', faceppApiSecret);
       formData.append('image_url', photoUrl);
+      // Added headpose to verify it's a selfie (person facing camera)
       formData.append('return_attributes', 'gender,age,beauty,emotion,eyestatus,skinstatus,headpose');
 
       const response = await fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
@@ -80,6 +75,7 @@ serve(async (req) => {
         const errorText = await response.text();
         console.error('Face++ API error:', response.status, errorText);
         
+        // Parse error to provide specific feedback
         let errorMessage = 'Unable to analyze photo. Please ensure the image is clear and contains a visible face.';
         if (errorText.includes('IMAGE_FILE_TOO_LARGE')) {
           errorMessage = 'Foto is te groot. Upload een kleinere foto (max 2MB) en probeer opnieuw.';
@@ -114,6 +110,7 @@ serve(async (req) => {
         );
       }
 
+      // Reject if multiple faces detected - must be a solo selfie
       if (faceppResult.faces.length > 1) {
         console.log('Multiple faces detected:', faceppResult.faces.length);
         return new Response(
@@ -128,9 +125,14 @@ serve(async (req) => {
       const attributes = face.attributes;
       const faceRectangle = face.face_rectangle;
 
+      // Calculate face size relative to image - selfies typically have face taking up significant portion
+      const imageWidth = faceppResult.image_id ? 1000 : 1000; // Face++ doesn't return image dimensions directly
       const faceWidth = faceRectangle?.width || 0;
       const faceHeight = faceRectangle?.height || 0;
+      const faceArea = faceWidth * faceHeight;
       
+      // If face is too small (likely not a selfie but a distant photo), reject
+      // Lower threshold to 50x50 to allow more valid selfies while filtering very distant faces
       if (faceWidth < 50 || faceHeight < 50) {
         console.log('Face too small - width:', faceWidth, 'height:', faceHeight);
         return new Response(
@@ -141,11 +143,13 @@ serve(async (req) => {
         );
       }
 
+      // Validate it's a proper selfie - check headpose (face should be facing camera)
       const headpose = attributes?.headpose;
       if (headpose) {
         const yawAngle = Math.abs(headpose.yaw_angle || 0);
         const pitchAngle = Math.abs(headpose.pitch_angle || 0);
         
+        // If face is turned too much (not looking at camera), reject
         if (yawAngle > 45 || pitchAngle > 30) {
           console.log('Face not facing camera - yaw:', yawAngle, 'pitch:', pitchAngle);
           return new Response(
@@ -157,10 +161,12 @@ serve(async (req) => {
         }
       }
 
+      // Calculate attractiveness score from beauty scores
       const maleScore = attributes?.beauty?.male_score || 0;
       const femaleScore = attributes?.beauty?.female_score || 0;
       const avgBeauty = (maleScore + femaleScore) / 2;
 
+      // Update analysis result
       analysisResult.attractiveness_score = Math.round(avgBeauty / 10);
       analysisResult.facial_features = {
         gender: attributes?.gender?.value || null,
@@ -176,70 +182,24 @@ serve(async (req) => {
 
       console.log('Attractiveness score calculated:', analysisResult.attractiveness_score);
 
-      // CRITICAL: Move photo from temp to permanent storage
-      let permanentPhotoUrl = null;
-      if (photoPath) {
-        try {
-          console.log('Moving photo from temp to permanent storage...');
-          
-          // Download from temp storage
-          const { data: photoData, error: downloadError } = await supabaseService.storage
-            .from('profile-photos-temp')
-            .download(photoPath);
-
-          if (downloadError) {
-            console.error('Error downloading temp photo:', downloadError);
-          } else {
-            // Upload to permanent storage
-            const permanentPath = `${userId}/profile.jpg`;
-            const { data: uploadData, error: uploadError } = await supabaseService.storage
-              .from('profile-photos')
-              .upload(permanentPath, photoData, {
-                contentType: 'image/jpeg',
-                upsert: true, // Overwrite if exists
-              });
-
-            if (uploadError) {
-              console.error('Error uploading to permanent storage:', uploadError);
-            } else {
-              // Get public URL
-              const { data: urlData } = supabaseService.storage
-                .from('profile-photos')
-                .getPublicUrl(permanentPath);
-              
-              permanentPhotoUrl = urlData.publicUrl;
-              console.log('Photo moved to permanent storage:', permanentPhotoUrl);
-            }
-          }
-
-          // Delete temp photo
-          const { error: deleteError } = await supabaseService.storage
-            .from('profile-photos-temp')
-            .remove([photoPath]);
-
-          if (deleteError) {
-            console.error('Error deleting temp photo:', deleteError);
-          } else {
-            console.log('Temp photo deleted successfully');
-          }
-        } catch (storageError) {
-          console.error('Error managing photo storage:', storageError);
-          // Continue even if storage operations fail
-        }
-      }
-
       // Store face analysis in separate table
       const { error: analysisError } = await supabase
         .from('face_analysis')
         .upsert({
           user_id: user.id,
-          photo_url: permanentPhotoUrl || photoUrl,
+          photo_url: photoUrl,
           attractiveness_score: analysisResult.attractiveness_score,
           facial_features: analysisResult.facial_features || null,
         });
 
       if (analysisError) {
         console.error('Error storing face analysis:', analysisError);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to save analysis results. Please try again.' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // CRITICAL FIX: Update profile with ALL fields including username, phone_number, and photo_url
@@ -262,8 +222,6 @@ serve(async (req) => {
           username: username, // ADDED: Save username
           phone_number: phoneNumber || null, // ADDED: Save phone number
           date_of_birth: dateOfBirth,
-          photo_url: permanentPhotoUrl, // ADDED: Save photo URL
-          updated_at: new Date().toISOString(),
         });
 
       if (profileError) {
@@ -276,8 +234,6 @@ serve(async (req) => {
         );
       }
 
-      console.log('Profile updated successfully');
-
       // Send face_rate to n8n
       const n8nWebhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
       if (n8nWebhookUrl) {
@@ -289,15 +245,34 @@ serve(async (req) => {
             body: JSON.stringify({
               face_rate: analysisResult.attractiveness_score,
               user_id: userId,
-              username: username,
-              first_name: firstName,
               timestamp: new Date().toISOString(),
             }),
           });
           console.log('Successfully sent face_rate to n8n');
         } catch (n8nError) {
           console.error('Error sending to n8n:', n8nError);
+          // Don't fail the whole request if n8n fails
         }
+      }
+
+      // Delete the temporary photo using the provided path
+      if (photoPath) {
+        try {
+          const { error: deleteError } = await supabase.storage
+            .from('profile-photos-temp')
+            .remove([photoPath]);
+
+          if (deleteError) {
+            console.error('Error deleting photo:', deleteError);
+          } else {
+            console.log('Photo deleted successfully:', photoPath);
+          }
+        } catch (deleteErr) {
+          console.error('Exception during photo deletion:', deleteErr);
+          // Don't fail the whole request if deletion fails
+        }
+      } else {
+        console.warn('No photoPath provided for cleanup');
       }
 
       return new Response(
