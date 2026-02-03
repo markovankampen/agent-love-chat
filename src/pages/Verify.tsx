@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, ArrowLeft, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +57,6 @@ const Verify = () => {
       } = await supabase.auth.getSession();
 
       if (session?.user?.email_confirmed_at) {
-        // Already verified
         console.log("Already verified, redirecting to /profile-setup");
         handleVerificationSuccess();
         return;
@@ -66,11 +65,38 @@ const Verify = () => {
 
     checkIfAlreadyVerified();
 
-    // Start polling for verification status every 2 seconds
+    // Listen for verification signal from other tabs via localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "email_verified_close_tab" && e.newValue === "true") {
+        console.log("Verification detected in another tab - closing this tab");
+
+        // Clean up
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+        }
+
+        // Try to close the tab
+        window.close();
+
+        // If window.close() doesn't work (browser blocks it), show message and redirect
+        setTimeout(() => {
+          toast({
+            title: "Email geverifieerd!",
+            description: "Je kunt dit tabblad nu sluiten.",
+            duration: 5000,
+          });
+
+          navigate("/profile-setup", { replace: true });
+        }, 500);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Start polling for verification every 2 seconds
     const startPolling = () => {
       pollIntervalRef.current = setInterval(async () => {
         try {
-          // Refresh the session to get latest user data
           const {
             data: { session },
             error,
@@ -81,11 +107,9 @@ const Verify = () => {
             return;
           }
 
-          // If user is verified, handle success
           if (session?.user?.email_confirmed_at) {
             console.log("Email verified via polling!");
 
-            // Clear polling
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
@@ -95,30 +119,26 @@ const Verify = () => {
         } catch (error) {
           console.error("Error during polling:", error);
         }
-      }, 2000); // Check every 2 seconds
+      }, 2000);
     };
 
     startPolling();
 
-    // Cleanup on unmount
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
+      window.removeEventListener("storage", handleStorageChange);
     };
-  }, [searchParams]);
+  }, [searchParams, navigate, toast]);
 
   const handleVerificationSuccess = () => {
     if (hasRedirectedRef.current) return;
     hasRedirectedRef.current = true;
 
-    // Clean up
     sessionStorage.removeItem("pendingVerificationEmail");
-
-    // Show success
     setStatus("verified");
 
-    // Start countdown
     let count = 2;
     const timer = setInterval(() => {
       count--;
@@ -133,7 +153,6 @@ const Verify = () => {
   };
 
   const handleGoBack = () => {
-    // Clear polling
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
     }
@@ -206,16 +225,15 @@ const Verify = () => {
               <p className="text-sm font-medium">Volg deze stappen:</p>
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 text-left">
                 <li>Open je email inbox</li>
-                <li>Klik op de verificatie link in de email</li>
-                <li>Deze pagina detecteert automatisch de verificatie</li>
+                <li>Klik op de verificatie link</li>
+                <li>Dit tabblad sluit automatisch</li>
                 <li>Je wordt doorgestuurd naar profiel setup</li>
               </ol>
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
-                💡 Blijf op deze pagina. De verificatie link opent in hetzelfde tabblad en je wordt automatisch
-                doorgestuurd.
+                💡 Na het klikken sluit dit tabblad automatisch. Als dit niet werkt, kun je het handmatig sluiten.
               </p>
             </div>
 
