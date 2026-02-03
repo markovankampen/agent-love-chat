@@ -33,29 +33,30 @@ const Auth = () => {
 
         if (error) throw error;
 
-        // Check if email is verified via our custom field and profile completeness
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("email_verified, first_name, date_of_birth, photo_url")
-          .eq("id", data.user.id)
-          .single();
-
-        if (!profile?.email_verified) {
+        // Check if email is verified
+        if (!data.user?.email_confirmed_at) {
           toast({
             title: "Email niet geverifieerd",
             description: "Controleer je inbox en verifieer je email om door te gaan.",
           });
+          // Store email for display on verification screen
           sessionStorage.setItem("pendingVerificationEmail", email);
-          sessionStorage.setItem("pendingVerification", JSON.stringify({ email, password }));
-          await supabase.auth.signOut();
           navigate("/verify");
           return;
         }
 
         // Check if profile is complete
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, date_of_birth, photo_url")
+          .eq("id", data.user.id)
+          .single();
+
         if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
+          // Profile incomplete, go to profile setup
           navigate("/profile-setup");
         } else {
+          // Profile complete, go to home
           navigate("/home");
         }
 
@@ -64,11 +65,12 @@ const Auth = () => {
           description: "Je bent succesvol ingelogd.",
         });
       } else {
-        // Sign up flow - create account (auto-confirmed, we handle verification ourselves)
+        // Sign up flow - create account first
         const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
+            emailRedirectTo: `${window.location.origin}/verify-email`,
             data: {
               username: username,
             },
@@ -77,39 +79,32 @@ const Auth = () => {
 
         if (error) throw error;
 
-        if (!signUpData.user) {
-          throw new Error('Failed to create account');
-        }
-
         // Send custom verification email via Resend
         const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
           body: {
             email,
-            userId: signUpData.user.id,
-            baseUrl: window.location.origin,
+            redirectUrl: `${window.location.origin}/verify-email`,
           },
         });
 
         if (emailError) {
           console.error('Failed to send verification email:', emailError);
+          // Don't throw - account is created, just email failed
           toast({
             title: "Account aangemaakt",
             description: "Er was een probleem met het versturen van de verificatie email. Probeer later opnieuw.",
             variant: "destructive",
           });
-        } else {
-          toast({
-            title: "Bijna klaar!",
-            description: "Check je email om je account te verifiëren.",
-          });
         }
 
-        // Store credentials for verification polling
+        // Store credentials for verification polling (allows cross-device detection)
         sessionStorage.setItem("pendingVerificationEmail", email);
         sessionStorage.setItem("pendingVerification", JSON.stringify({ email, password }));
 
-        // Sign out since we need email verification first
-        await supabase.auth.signOut();
+        toast({
+          title: "Bijna klaar!",
+          description: "Check je email om je account te verifiëren.",
+        });
 
         navigate("/verify");
       }

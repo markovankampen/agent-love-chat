@@ -109,7 +109,6 @@ export type Database = {
           created_at: string | null
           date_of_birth: string | null
           email: string | null
-          email_verified: boolean | null
           eye_color: string | null
           facial_features: Json | null
           first_name: string | null
@@ -125,7 +124,6 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
-          email_verified?: boolean | null
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
@@ -141,7 +139,6 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
-          email_verified?: boolean | null
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
