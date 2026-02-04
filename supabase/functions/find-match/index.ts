@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 // Minimum score threshold - matches below this won't be sent
-// Lowered for testing - set to 50 in production
-const MIN_MATCH_SCORE = 25;
+// Minimum score threshold - matches below this won't be sent
+const MIN_MATCH_SCORE = 50;
 
 // Maximum candidates to evaluate (for performance)
 const MAX_CANDIDATES = 20;
