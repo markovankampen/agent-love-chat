@@ -67,11 +67,12 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Extract JWT token from Authorization header
     const token = authHeader.replace("Bearer ", "");
 
-    // Create client and verify the JWT token
+    // Create client to verify the JWT token
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
     const {
       data: { user },
@@ -82,6 +83,9 @@ serve(async (req) => {
       console.error("Auth error:", userError);
       throw new Error("Unauthorized");
     }
+
+    // Create service role client for saving agent messages (bypasses RLS)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log("Authenticated user:", user.id);
 
@@ -156,8 +160,8 @@ serve(async (req) => {
         agentContent = responseText;
       }
 
-      // Save agent response to database
-      const { data: agentMsgData, error: agentMsgError } = await supabaseClient
+      // Save agent response to database using admin client (bypasses RLS)
+      const { data: agentMsgData, error: agentMsgError } = await supabaseAdmin
         .from("conversations")
         .insert({
           user_id: user.id,
@@ -200,7 +204,8 @@ serve(async (req) => {
         // Timeout occurred
         const fallbackContent = "Sorry, het duurt wat langer dan verwacht. Kun je je vraag nog eens proberen? 🙏";
 
-        const { data: agentMsgData } = await supabaseClient
+        // Save fallback message using admin client (bypasses RLS)
+        const { data: agentMsgData } = await supabaseAdmin
           .from("conversations")
           .insert({
             user_id: user.id,
