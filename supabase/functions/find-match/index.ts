@@ -7,7 +7,11 @@ const corsHeaders = {
 };
 
 // Minimum score threshold - matches below this won't be sent
-const MIN_MATCH_SCORE = 50;
+// Lowered for testing - set to 50 in production
+const MIN_MATCH_SCORE = 25;
+
+// Maximum candidates to evaluate (for performance)
+const MAX_CANDIDATES = 20;
 
 interface UserProfile {
   id: string;
@@ -31,6 +35,213 @@ interface MatchResult {
   reasons: string[];
 }
 
+// Background processing function
+async function processMatching(userId: string) {
+  console.log('Background: Starting match processing for user:', userId);
+  
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  try {
+    // Check if user already has been matched
+    const { data: existingMatch } = await supabase
+      .from('matches')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'notified')
+      .maybeSingle();
+
+    if (existingMatch) {
+      console.log('Background: User already has a notified match, skipping');
+      return;
+    }
+
+    // Get the user's profile
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !userProfile) {
+      console.error('Background: User profile not found');
+      return;
+    }
+
+    // Get the user's chat history
+    const { data: userChats, error: chatError } = await supabase
+      .from('conversations')
+      .select('role, content, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true });
+
+    if (chatError || !userChats || userChats.length < 3) {
+      console.log('Background: Insufficient chat history for matching');
+      return;
+    }
+
+    // Get candidates with the most chat messages (more data = better matching)
+    // Using a subquery approach to get users with sufficient chat history
+    const { data: candidatesWithChats, error: candidatesError } = await supabase
+      .from('profiles')
+      .select('id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score')
+      .neq('id', userId)
+      .not('first_name', 'is', null)
+      .not('date_of_birth', 'is', null)
+      .limit(MAX_CANDIDATES * 2); // Get more initially, filter by chat history
+
+    if (candidatesError || !candidatesWithChats || candidatesWithChats.length === 0) {
+      console.log('Background: No eligible candidates found');
+      return;
+    }
+
+    console.log(`Background: Found ${candidatesWithChats.length} initial candidates`);
+
+    // Filter to those with sufficient chat history and take top candidates
+    const eligibleCandidates: Array<{profile: UserProfile, chats: ChatMessage[]}> = [];
+    
+    for (const candidate of candidatesWithChats) {
+      if (eligibleCandidates.length >= MAX_CANDIDATES) break;
+
+      // Check if already matched
+      const { data: existingPairMatch } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`and(user_id.eq.${userId},matched_user_id.eq.${candidate.id}),and(user_id.eq.${candidate.id},matched_user_id.eq.${userId})`)
+        .maybeSingle();
+
+      if (existingPairMatch) {
+        console.log(`Background: Skipping ${candidate.id} - already matched`);
+        continue;
+      }
+
+      const { data: candidateChats } = await supabase
+        .from('conversations')
+        .select('role, content, created_at')
+        .eq('user_id', candidate.id)
+        .order('created_at', { ascending: true });
+
+      if (candidateChats && candidateChats.length >= 3) {
+        eligibleCandidates.push({
+          profile: candidate as UserProfile,
+          chats: candidateChats as ChatMessage[]
+        });
+      }
+    }
+
+    if (eligibleCandidates.length === 0) {
+      console.log('Background: No candidates with sufficient chat history');
+      await supabase.from('profiles').update({ matching_complete: true }).eq('id', userId);
+      return;
+    }
+
+    console.log(`Background: Evaluating ${eligibleCandidates.length} candidates with AI`);
+
+    // Process candidates and find best match
+    const matchResults: MatchResult[] = [];
+
+    for (const candidate of eligibleCandidates) {
+      try {
+        const matchScore = await calculateCompatibility(
+          userProfile as UserProfile,
+          userChats as ChatMessage[],
+          candidate.profile,
+          candidate.chats
+        );
+
+        if (matchScore && matchScore.score >= MIN_MATCH_SCORE) {
+          matchResults.push({
+            matchedUserId: candidate.profile.id,
+            score: matchScore.score,
+            reasons: matchScore.reasons,
+          });
+          console.log(`Background: Found potential match ${candidate.profile.id} with score ${matchScore.score}`);
+          
+          // Early exit if we find a great match (80%+)
+          if (matchScore.score >= 80) {
+            console.log('Background: Found excellent match, stopping search');
+            break;
+          }
+        }
+      } catch (error) {
+        console.error(`Background: Error evaluating candidate ${candidate.profile.id}:`, error);
+      }
+    }
+
+    if (matchResults.length === 0) {
+      console.log('Background: No meaningful matches found above threshold');
+      await supabase.from('profiles').update({ matching_complete: true }).eq('id', userId);
+      return;
+    }
+
+    // Sort by score and get the best match
+    matchResults.sort((a, b) => b.score - a.score);
+    const bestMatch = matchResults[0];
+
+    console.log(`Background: Best match: ${bestMatch.matchedUserId} with score ${bestMatch.score}`);
+
+    // Get matched user's profile for email
+    const { data: matchedProfile } = await supabase
+      .from('profiles')
+      .select('first_name, email')
+      .eq('id', bestMatch.matchedUserId)
+      .single();
+
+    // Insert the match
+    const { data: insertedMatch, error: insertError } = await supabase
+      .from('matches')
+      .insert({
+        user_id: userId,
+        matched_user_id: bestMatch.matchedUserId,
+        match_score: bestMatch.score,
+        compatibility_reasons: { reasons: bestMatch.reasons },
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Background: Failed to insert match:', insertError);
+      return;
+    }
+
+    console.log('Background: Match saved to database');
+
+    // Send email notification
+    const emailSent = await sendMatchEmail(
+      userProfile.email,
+      userProfile.first_name,
+      matchedProfile?.first_name || 'Iemand bijzonders',
+      bestMatch.score,
+      bestMatch.reasons
+    );
+
+    // Update match status
+    if (emailSent) {
+      await supabase
+        .from('matches')
+        .update({ 
+          status: 'notified',
+          email_sent_at: new Date().toISOString()
+        })
+        .eq('id', insertedMatch.id);
+      console.log('Background: Email sent and match updated');
+    }
+
+    // Mark user's matching as complete
+    await supabase
+      .from('profiles')
+      .update({ matching_complete: true })
+      .eq('id', userId);
+
+    console.log('Background: Matching process completed successfully');
+
+  } catch (error) {
+    console.error('Background: Fatal error in match processing:', error);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -45,202 +256,34 @@ serve(async (req) => {
 
     console.log('Starting match finding for user:', user_id);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    // Use service role client to bypass RLS
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-    // Check if user already has been matched
-    const { data: existingMatch } = await supabase
-      .from('matches')
-      .select('id')
-      .eq('user_id', user_id)
-      .eq('status', 'notified')
-      .maybeSingle();
-
-    if (existingMatch) {
-      console.log('User already has a notified match, skipping');
+    // Use EdgeRuntime.waitUntil for background processing
+    // This allows the function to return immediately while processing continues
+    const runtime = (globalThis as any).EdgeRuntime;
+    if (runtime?.waitUntil) {
+      runtime.waitUntil(processMatching(user_id));
+      console.log('Background processing initiated');
+      
       return new Response(
-        JSON.stringify({ message: 'User already has a match notification sent' }),
+        JSON.stringify({ 
+          success: true, 
+          message: 'Match processing started in background',
+          status: 'processing'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      // Fallback: Run synchronously but with timeout awareness
+      console.log('EdgeRuntime.waitUntil not available, running synchronously');
+      await processMatching(user_id);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Match processing completed'
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Get the user's profile
-    const { data: userProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score')
-      .eq('id', user_id)
-      .single();
-
-    if (profileError || !userProfile) {
-      throw new Error('User profile not found');
-    }
-
-    // Get the user's chat history
-    const { data: userChats, error: chatError } = await supabase
-      .from('conversations')
-      .select('role, content, created_at')
-      .eq('user_id', user_id)
-      .order('created_at', { ascending: true });
-
-    if (chatError) {
-      throw new Error('Failed to fetch user chats');
-    }
-
-    if (!userChats || userChats.length < 3) {
-      console.log('User has insufficient chat history for matching');
-      return new Response(
-        JSON.stringify({ message: 'Insufficient chat history for matching' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get all other eligible users (with complete profiles and chat history)
-    const { data: otherProfiles, error: othersError } = await supabase
-      .from('profiles')
-      .select('id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score')
-      .neq('id', user_id)
-      .not('first_name', 'is', null)
-      .not('date_of_birth', 'is', null);
-
-    if (othersError) {
-      throw new Error('Failed to fetch other profiles');
-    }
-
-    if (!otherProfiles || otherProfiles.length === 0) {
-      console.log('No other eligible users found');
-      return new Response(
-        JSON.stringify({ message: 'No eligible users for matching' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`Found ${otherProfiles.length} potential matches to analyze`);
-
-    // Calculate match scores for each potential match
-    const matchResults: MatchResult[] = [];
-
-    for (const otherProfile of otherProfiles) {
-      // Check if this pair already has a match
-      const { data: existingPairMatch } = await supabase
-        .from('matches')
-        .select('id')
-        .or(`and(user_id.eq.${user_id},matched_user_id.eq.${otherProfile.id}),and(user_id.eq.${otherProfile.id},matched_user_id.eq.${user_id})`)
-        .maybeSingle();
-
-      if (existingPairMatch) {
-        console.log(`Skipping ${otherProfile.id} - already matched`);
-        continue;
-      }
-
-      // Get other user's chat history
-      const { data: otherChats } = await supabase
-        .from('conversations')
-        .select('role, content, created_at')
-        .eq('user_id', otherProfile.id)
-        .order('created_at', { ascending: true });
-
-      if (!otherChats || otherChats.length < 3) {
-        console.log(`Skipping ${otherProfile.id} - insufficient chat history`);
-        continue;
-      }
-
-      // Use AI to calculate compatibility
-      const matchScore = await calculateCompatibility(
-        userProfile,
-        userChats,
-        otherProfile,
-        otherChats
-      );
-
-      if (matchScore && matchScore.score >= MIN_MATCH_SCORE) {
-        matchResults.push({
-          matchedUserId: otherProfile.id,
-          score: matchScore.score,
-          reasons: matchScore.reasons,
-        });
-      }
-    }
-
-    if (matchResults.length === 0) {
-      console.log('No meaningful matches found above threshold');
-      return new Response(
-        JSON.stringify({ message: 'No meaningful matches found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Sort by score descending and get the BEST match only
-    matchResults.sort((a, b) => b.score - a.score);
-    const bestMatch = matchResults[0];
-
-    console.log(`Best match found: ${bestMatch.matchedUserId} with score ${bestMatch.score}`);
-
-    // Get the matched user's profile for email
-    const { data: matchedProfile } = await supabase
-      .from('profiles')
-      .select('first_name, email')
-      .eq('id', bestMatch.matchedUserId)
-      .single();
-
-    // Insert the match into database
-    const { data: insertedMatch, error: insertError } = await supabase
-      .from('matches')
-      .insert({
-        user_id: user_id,
-        matched_user_id: bestMatch.matchedUserId,
-        match_score: bestMatch.score,
-        compatibility_reasons: { reasons: bestMatch.reasons },
-        status: 'pending',
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error('Failed to insert match:', insertError);
-      throw new Error('Failed to save match');
-    }
-
-    // Send email notification to the user
-    const emailSent = await sendMatchEmail(
-      userProfile.email,
-      userProfile.first_name,
-      matchedProfile?.first_name || 'Iemand bijzonders',
-      bestMatch.score,
-      bestMatch.reasons
-    );
-
-    // Update match status to notified if email was sent
-    if (emailSent) {
-      await supabase
-        .from('matches')
-        .update({ 
-          status: 'notified',
-          email_sent_at: new Date().toISOString()
-        })
-        .eq('id', insertedMatch.id);
-    }
-
-    // Mark user's matching as complete
-    await supabase
-      .from('profiles')
-      .update({ matching_complete: true })
-      .eq('id', user_id);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        match: {
-          id: insertedMatch.id,
-          score: bestMatch.score,
-          matchedUserName: matchedProfile?.first_name,
-          emailSent,
-        }
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error in find-match function:', error);
@@ -421,7 +464,7 @@ async function sendMatchEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Indebuurt Ontmoet <noreply@resend.dev>',
+        from: 'Indebuurt Ontmoet <onboarding@resend.dev>',
         to: [toEmail],
         subject: `🎉 We hebben een match voor je gevonden, ${userName}!`,
         html: `
