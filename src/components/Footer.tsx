@@ -42,14 +42,14 @@ const Footer = () => {
           </DialogHeader>
           <ScrollArea className="h-[60vh] pr-4">
             <div className="space-y-6 text-sm text-muted-foreground">
-              <p className="text-foreground font-medium">Matchmaker Flori – indebuurt.nl</p>
+              <p className="text-foreground font-medium">Matchmaker Flori – indebuurtontmoet.nl</p>
               <p>Datum: 28 januari 2026</p>
 
               <section className="space-y-2">
                 <h3 className="text-foreground font-semibold">1. Definities</h3>
                 <p>In deze voorwaarden wordt verstaan onder:</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li><strong>Platform:</strong> Matchmaker Flori, onderdeel van indebuurt.nl</li>
+                  <li><strong>Platform:</strong> indebuurtontmoet.nl onderdeel van indebuurt.nl</li>
                   <li><strong>Gebruiker:</strong> iedere natuurlijke persoon die gebruikmaakt van het Platform</li>
                   <li><strong>Dienst:</strong> het matchen van Gebruikers op basis van door henzelf verstrekte gegevens</li>
                   <li><strong>Persoonsgegevens:</strong> alle gegevens die herleidbaar zijn tot een individuele Gebruiker</li>
@@ -66,7 +66,7 @@ const Footer = () => {
 
               <section className="space-y-2">
                 <h3 className="text-foreground font-semibold">3. Doel van het Platform</h3>
-                <p>3.1 Matchmaker Flori biedt een digitale matchmakingdienst waarbij Gebruikers op vrijwillige basis informatie over zichzelf verstrekken.</p>
+                <p>3.1 indebuurtontmoet.nl biedt een digitale matchmakingdienst waarbij Gebruikers op vrijwillige basis informatie over zichzelf verstrekken.</p>
                 <p>3.2 Het doel is het faciliteren van passende ontmoetingen, niet het garanderen van een match of relatie.</p>
                 <p>3.3 Matchmaker Flori is geen escort-, datingbureau of bemiddelingsbureau in juridische zin, maar een digitaal matchingplatform.</p>
               </section>
@@ -133,7 +133,7 @@ const Footer = () => {
                   <li>beveiligde servers binnen de EU</li>
                   <li>logging en toegangscontrole</li>
                 </ul>
-                <p>7.2 Ondanks zorgvuldige beveiliging kan volledige veiligheid nooit worden gegarandeerd. Matchmaker Flori is niet aansprakelijk voor schade door onvoorziene datalekken, tenzij sprake is van grove nalatigheid.</p>
+                <p>7.2 Ondanks zorgvuldige beveiliging kan volledige veiligheid nooit worden gegarandeerd. indebuurtontmoet.nl is niet aansprakelijk voor schade door onvoorziene datalekken, tenzij sprake is van grove nalatigheid.</p>
               </section>
 
               <section className="space-y-2">
@@ -144,7 +144,7 @@ const Footer = () => {
 
               <section className="space-y-2">
                 <h3 className="text-foreground font-semibold">9. Aansprakelijkheid</h3>
-                <p>9.1 Matchmaker Flori is niet aansprakelijk voor:</p>
+                <p>9.1 indebuurtontmoet.nl is niet aansprakelijk voor:</p>
                 <ul className="list-disc pl-5 space-y-1">
                   <li>gedrag van andere Gebruikers</li>
                   <li>offline ontmoetingen of gevolgen daarvan</li>
@@ -161,7 +161,7 @@ const Footer = () => {
 
               <section className="space-y-2">
                 <h3 className="text-foreground font-semibold">11. Wijzigingen</h3>
-                <p>11.1 Matchmaker Flori kan deze voorwaarden wijzigen.</p>
+                <p>11.1 indebuurtontmoet.nl kan deze voorwaarden wijzigen.</p>
                 <p>11.2 Wijzigingen worden duidelijk gecommuniceerd via het Platform.</p>
                 <p>11.3 Voortgezet gebruik betekent acceptatie van de gewijzigde voorwaarden.</p>
               </section>
@@ -170,13 +170,6 @@ const Footer = () => {
                 <h3 className="text-foreground font-semibold">12. Toepasselijk recht</h3>
                 <p>12.1 Op deze voorwaarden is uitsluitend Nederlands recht van toepassing.</p>
                 <p>12.2 Geschillen worden voorgelegd aan de bevoegde rechter in Nederland.</p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="text-foreground font-semibold">13. Contact</h3>
-                <p>Matchmaker Flori – indebuurt.nl</p>
-                <p>E-mail: contact@indebuurt.nl</p>
-                <p>Privacy: privacy@indebuurt.nl</p>
               </section>
             </div>
           </ScrollArea>
