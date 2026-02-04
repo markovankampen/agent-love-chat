@@ -168,18 +168,12 @@ const Verify = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h1 className="text-3xl font-bold text-green-600">
-                <span>Email geverifieerd! ✓</span>
-              </h1>
-              <p className="text-muted-foreground">
-                <span>Je email is succesvol geverifieerd.</span>
-              </p>
+              <h1 className="text-3xl font-bold text-green-600">Email geverifieerd! ✓</h1>
+              <p className="text-muted-foreground">Je email is succesvol geverifieerd.</p>
               <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
-                <p className="text-4xl font-bold text-green-800 dark:text-green-200 mb-2">
-                  <span>{countdown}</span>
-                </p>
+                <p className="text-4xl font-bold text-green-800 dark:text-green-200 mb-2">{countdown}</p>
                 <p className="text-sm text-green-800 dark:text-green-200">
-                  <span>Je wordt doorgestuurd naar profiel setup...</span>
+                  Je wordt doorgestuurd naar profiel setup...
                 </p>
               </div>
             </div>
@@ -199,15 +193,11 @@ const Verify = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
                 <XCircle className="w-8 h-8 text-red-600" />
               </div>
-              <h1 className="text-3xl font-bold text-red-600">
-                <span>Verificatie mislukt</span>
-              </h1>
-              <p className="text-muted-foreground">
-                <span>{errorMessage}</span>
-              </p>
+              <h1 className="text-3xl font-bold text-red-600">Verificatie mislukt</h1>
+              <p className="text-muted-foreground">{errorMessage}</p>
               <div className="pt-4">
                 <Button onClick={handleGoBack} className="w-full">
-                  <span>Terug naar inloggen</span>
+                  Terug naar inloggen
                 </Button>
               </div>
             </div>
@@ -227,40 +217,32 @@ const Verify = () => {
               <Mail className="w-8 h-8 text-primary" />
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full animate-pulse"></div>
             </div>
-            <h1 className="text-3xl font-bold">
-              <span>Check je inbox</span>
-            </h1>
+            <h1 className="text-3xl font-bold">Check je inbox</h1>
             <p className="text-muted-foreground">
-              <span>We hebben een verificatie email gestuurd{userEmail && ` naar ${userEmail}`}.</span>
+              We hebben een verificatie email gestuurd{userEmail && ` naar ${userEmail}`}.
             </p>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-medium">
-                <span>Volg deze stappen:</span>
-              </p>
+              <p className="text-sm font-medium">Volg deze stappen:</p>
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 text-left">
-                <li><span>Open je email inbox</span></li>
-                <li><span>Klik op de verificatie link</span></li>
-                <li><span>Sluit het nieuwe tabblad</span></li>
-                <li><span>Dit tabblad gaat automatisch naar profiel setup</span></li>
+                <li>Open je email inbox</li>
+                <li>Klik op de verificatie link</li>
+                <li>Dit tabblad sluit automatisch</li>
+                <li>Je wordt doorgestuurd naar profiel setup</li>
               </ol>
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
-                <span>💡 Na verificatie wordt dit tabblad automatisch doorgestuurd naar profiel setup.</span>
+                💡 Na het klikken sluit dit tabblad automatisch. Als dit niet werkt, kun je het handmatig sluiten.
               </p>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-4">
-              <span>Geen email ontvangen? Check je spam folder.</span>
-            </p>
+            <p className="text-xs text-muted-foreground mt-4">Geen email ontvangen? Check je spam folder.</p>
 
             <div className="pt-4">
               <Button onClick={handleGoBack} variant="outline" className="w-full">
-                <span className="flex items-center justify-center">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  <span>Terug naar inloggen</span>
-                </span>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Terug naar inloggen
               </Button>
             </div>
           </div>
