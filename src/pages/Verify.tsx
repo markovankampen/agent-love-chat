@@ -36,14 +36,6 @@ const Verify = () => {
       return;
     }
 
-    // Check if just verified (redirected from /api/verify)
-    const justVerified = sessionStorage.getItem("justVerified");
-    if (justVerified === "true") {
-      sessionStorage.removeItem("justVerified");
-      handleVerificationSuccess();
-      return;
-    }
-
     // Get email from storage for display
     const email = sessionStorage.getItem("pendingVerificationEmail");
     if (email) {
@@ -68,26 +60,15 @@ const Verify = () => {
     // Listen for verification signal from other tabs via localStorage
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "email_verified_close_tab" && e.newValue === "true") {
-        console.log("Verification detected in another tab - closing this tab");
+        console.log("Verification detected in another tab - redirecting to profile-setup");
 
         // Clean up
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
         }
 
-        // Try to close the tab
-        window.close();
-
-        // If window.close() doesn't work (browser blocks it), show message and redirect
-        setTimeout(() => {
-          toast({
-            title: "Email geverifieerd!",
-            description: "Je kunt dit tabblad nu sluiten.",
-            duration: 5000,
-          });
-
-          navigate("/profile-setup", { replace: true });
-        }, 500);
+        // Show success message and redirect
+        handleVerificationSuccess();
       }
     };
 
@@ -102,7 +83,8 @@ const Verify = () => {
             error,
           } = await supabase.auth.refreshSession();
 
-          if (error) {
+          // Ignore session missing errors during polling - user hasn't verified yet
+          if (error && !error.message?.includes("session missing")) {
             console.error("Error refreshing session:", error);
             return;
           }
@@ -117,7 +99,8 @@ const Verify = () => {
             handleVerificationSuccess();
           }
         } catch (error) {
-          console.error("Error during polling:", error);
+          // Silently handle polling errors - they're expected before verification
+          console.log("Polling check (waiting for verification)...");
         }
       }, 2000);
     };
@@ -226,14 +209,15 @@ const Verify = () => {
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 text-left">
                 <li>Open je email inbox</li>
                 <li>Klik op de verificatie link</li>
-                <li>Dit tabblad sluit automatisch</li>
-                <li>Je wordt doorgestuurd naar profiel setup</li>
+                <li>Sluit het nieuwe tabblad dat opent</li>
+                <li>Dit tabblad stuurt je automatisch door naar profiel setup</li>
               </ol>
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
               <p className="text-xs text-blue-800 dark:text-blue-200 font-medium">
-                💡 Na het klikken sluit dit tabblad automatisch. Als dit niet werkt, kun je het handmatig sluiten.
+                💡 Na het klikken op de link wordt dit tabblad automatisch doorgestuurd. Het nieuwe tabblad kun je
+                sluiten.
               </p>
             </div>
 
