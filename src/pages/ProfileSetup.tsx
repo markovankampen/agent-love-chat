@@ -69,14 +69,15 @@ const isOffensiveName = (name: string): boolean => {
   return offensiveNames.some((offensive) => lowerName.includes(offensive) || lowerName === offensive);
 };
 
+// European date format: DD/MM/YYYY
 const isValidDateFormat = (dateStr: string): boolean => {
-  const regex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
+  const regex = /^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
   return regex.test(dateStr);
 };
 
 const parseDate = (dateStr: string): Date | null => {
   if (!isValidDateFormat(dateStr)) return null;
-  const [month, day, year] = dateStr.split("/").map(Number);
+  const [day, month, year] = dateStr.split("/").map(Number);
   const date = new Date(year, month - 1, day);
   if (date.getMonth() !== month - 1 || date.getDate() !== day) {
     return null;
@@ -163,9 +164,9 @@ const ProfileSetup = () => {
           if (profile.username) setUsername(profile.username);
           if (profile.phone_number) setPhoneNumber(profile.phone_number);
           if (profile.date_of_birth) {
-            // Convert from yyyy-mm-dd to mm/dd/yyyy for display
+            // Convert from yyyy-mm-dd to dd/mm/yyyy for display
             const [year, month, day] = profile.date_of_birth.split("-");
-            setDateOfBirth(`${month}/${day}/${year}`);
+            setDateOfBirth(`${day}/${month}/${year}`);
           }
         }
       }
@@ -336,7 +337,7 @@ const ProfileSetup = () => {
     if (!isValidDateFormat(dateOfBirth)) {
       toast({
         title: "Ongeldig datumformaat",
-        description: "Gebruik het formaat mm/dd/yyyy",
+        description: "Gebruik het formaat dd/mm/jjjj",
         variant: "destructive",
       });
       return;
@@ -397,8 +398,8 @@ const ProfileSetup = () => {
         description: "Je foto wordt geüpload naar de server",
       });
 
-      // Convert date from mm/dd/yyyy to yyyy-mm-dd
-      const [month, day, year] = dateOfBirth.split("/");
+      // Convert date from dd/mm/yyyy to yyyy-mm-dd
+      const [day, month, year] = dateOfBirth.split("/");
       const formattedDate = `${year}-${month}-${day}`;
 
       // Upload photo to storage
@@ -582,7 +583,7 @@ const ProfileSetup = () => {
                 type="text"
                 value={dateOfBirth}
                 onChange={handleDateChange}
-                placeholder="mm/dd/yyyy"
+                placeholder="dd/mm/jjjj"
                 maxLength={10}
                 required
               />
