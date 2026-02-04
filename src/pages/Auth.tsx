@@ -307,10 +307,10 @@ const Auth = () => {
             </div>
           )}
 
-          <Button onClick={handleGuestLogin} variant="outline" className="w-full" disabled={loading}>
+          {/* <Button onClick={handleGuestLogin} variant="outline" className="w-full" disabled={loading}>
             <UserCircle className="mr-2 h-4 w-4" />
             {showGuestInput ? "Bevestig & doorgaan" : "Doorgaan als gast"}
-          </Button>
+          </Button> */}
 
           <div className="text-center mt-4">
             <button
