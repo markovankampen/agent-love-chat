@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import { Mail, ArrowLeft, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,8 +12,7 @@ const Verify = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [userEmail, setUserEmail] = useState<string>("");
-  const [status, setStatus] = useState<"waiting" | "verified" | "error">("waiting");
-  const [countdown, setCountdown] = useState(2);
+  const [status, setStatus] = useState<"waiting" | "error">("waiting");
   const [errorMessage, setErrorMessage] = useState("");
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasRedirectedRef = useRef(false);
@@ -120,19 +119,10 @@ const Verify = () => {
     hasRedirectedRef.current = true;
 
     sessionStorage.removeItem("pendingVerificationEmail");
-    setStatus("verified");
-
-    let count = 2;
-    const timer = setInterval(() => {
-      count--;
-      setCountdown(count);
-
-      if (count <= 0) {
-        clearInterval(timer);
-        console.log("Redirecting to /profile-setup");
-        navigate("/profile-setup", { replace: true });
-      }
-    }, 1000);
+    
+    // Immediately redirect to profile setup - no countdown needed
+    console.log("Email verified - redirecting to /profile-setup");
+    navigate("/profile-setup", { replace: true });
   };
 
   const handleGoBack = () => {
@@ -141,31 +131,6 @@ const Verify = () => {
     }
     navigate("/auth");
   };
-
-  if (status === "verified") {
-    return (
-      <div className="min-h-screen flex flex-col bg-muted/30">
-        <div className="flex-1 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md p-8 space-y-6">
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <h1 className="text-3xl font-bold text-green-600">Email geverifieerd! ✓</h1>
-              <p className="text-muted-foreground">Je email is succesvol geverifieerd.</p>
-              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
-                <p className="text-4xl font-bold text-green-800 dark:text-green-200 mb-2">{countdown}</p>
-                <p className="text-sm text-green-800 dark:text-green-200">
-                  Je wordt doorgestuurd naar profiel setup...
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   if (status === "error") {
     return (
