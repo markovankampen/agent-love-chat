@@ -6,11 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Camera, AlertCircle, X, Upload } from "lucide-react";
+import { Camera, AlertCircle, X, Upload } from "lucide-react";
 import Footer from "@/components/Footer";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// List of offensive/inappropriate names to filter
+// Offensive names filter
 const offensiveNames = [
   "fuck",
   "shit",
@@ -70,7 +70,6 @@ const isOffensiveName = (name: string): boolean => {
 };
 
 const isValidDateFormat = (dateStr: string): boolean => {
-  // Check mm/dd/yyyy format
   const regex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12]\d|3[01])\/\d{4}$/;
   return regex.test(dateStr);
 };
@@ -79,7 +78,6 @@ const parseDate = (dateStr: string): Date | null => {
   if (!isValidDateFormat(dateStr)) return null;
   const [month, day, year] = dateStr.split("/").map(Number);
   const date = new Date(year, month - 1, day);
-  // Validate the date is real (e.g., not Feb 31)
   if (date.getMonth() !== month - 1 || date.getDate() !== day) {
     return null;
   }
@@ -102,17 +100,15 @@ const isAtLeast18 = (dateStr: string): boolean => {
 };
 
 const formatPhoneNumber = (value: string): string => {
-  // Remove all non-digits
   const digits = value.replace(/\D/g, "");
 
-  // Format as: +31 6 12345678 (Dutch format)
   if (digits.startsWith("31")) {
-    const cleaned = digits.substring(2); // Remove country code
+    const cleaned = digits.substring(2);
     if (cleaned.length <= 1) return `+31 ${cleaned}`;
     if (cleaned.length <= 9) return `+31 ${cleaned[0]} ${cleaned.substring(1)}`;
     return `+31 ${cleaned[0]} ${cleaned.substring(1, 9)}`;
   } else if (digits.startsWith("0")) {
-    const cleaned = digits.substring(1); // Remove leading 0
+    const cleaned = digits.substring(1);
     if (cleaned.length === 0) return "+31 ";
     if (cleaned.length === 1) return `+31 ${cleaned}`;
     if (cleaned.length <= 9) return `+31 ${cleaned[0]} ${cleaned.substring(1)}`;
@@ -131,6 +127,7 @@ const ProfileSetup = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
+  const [username, setUsername] = useState(""); // ✅ Added username state
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
@@ -153,6 +150,24 @@ const ProfileSetup = () => {
         navigate("/auth");
       } else {
         setUserId(user.id);
+
+        // Load existing profile data if available
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("first_name, username, phone_number, date_of_birth")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          if (profile.first_name) setFirstName(profile.first_name);
+          if (profile.username) setUsername(profile.username);
+          if (profile.phone_number) setPhoneNumber(profile.phone_number);
+          if (profile.date_of_birth) {
+            // Convert from yyyy-mm-dd to mm/dd/yyyy for display
+            const [year, month, day] = profile.date_of_birth.split("-");
+            setDateOfBirth(`${month}/${day}/${year}`);
+          }
+        }
       }
     };
     checkAuth();
@@ -186,7 +201,6 @@ const ProfileSetup = () => {
       setCameraStream(stream);
       setShowCamera(true);
 
-      // Wait for the video element to be available
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -220,16 +234,13 @@ const ProfileSetup = () => {
 
     if (!context) return;
 
-    // Set canvas size to video size
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // Draw the video frame to canvas (mirror it for selfie)
     context.translate(canvas.width, 0);
     context.scale(-1, 1);
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert to blob and create file
     canvas.toBlob(
       (blob) => {
         if (blob) {
@@ -253,14 +264,12 @@ const ProfileSetup = () => {
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d/]/g, "");
 
-    // Auto-format with slashes
     if (value.length === 2 && !value.includes("/")) {
       value = value + "/";
     } else if (value.length === 5 && value.split("/").length === 2) {
       value = value + "/";
     }
 
-    // Limit length to mm/dd/yyyy (10 chars)
     if (value.length <= 10) {
       setDateOfBirth(value);
     }
@@ -303,6 +312,17 @@ const ProfileSetup = () => {
       return;
     }
 
+    // Validate username
+    const trimmedUsername = username.trim();
+    if (trimmedUsername && trimmedUsername.length < 2) {
+      toast({
+        title: "Ongeldige gebruikersnaam",
+        description: "Gebruikersnaam moet minimaal 2 tekens bevatten",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate date of birth
     if (!dateOfBirth) {
       toast({
@@ -340,7 +360,7 @@ const ProfileSetup = () => {
       return;
     }
 
-    // Validate phone number (optional but must be valid if provided)
+    // Validate phone number
     const trimmedPhone = phoneNumber.trim();
     if (trimmedPhone && trimmedPhone.length < 12) {
       toast({
@@ -377,7 +397,7 @@ const ProfileSetup = () => {
         description: "Je foto wordt geüpload naar de server",
       });
 
-      // Convert date from mm/dd/yyyy to yyyy-mm-dd for storage
+      // Convert date from mm/dd/yyyy to yyyy-mm-dd
       const [month, day, year] = dateOfBirth.split("/");
       const formattedDate = `${year}-${month}-${day}`;
 
@@ -396,14 +416,13 @@ const ProfileSetup = () => {
         throw new Error("Fout bij uploaden van foto. Controleer je internetverbinding en probeer opnieuw.");
       }
 
-      // Generate signed URL (valid for 60 minutes)
+      // Generate signed URL
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from("profile-photos-temp")
         .createSignedUrl(fileName, 3600);
 
       if (signedUrlError || !signedUrlData) {
         console.error("Signed URL error:", signedUrlError);
-        // Clean up uploaded file
         await supabase.storage.from("profile-photos-temp").remove([fileName]);
         throw new Error("Fout bij genereren van toegang tot foto");
       }
@@ -416,30 +435,28 @@ const ProfileSetup = () => {
         description: "Je foto wordt geanalyseerd. Dit kan even duren.",
       });
 
-      // Call analyze-photo function with both URL and fileName for reliable deletion
+      // ✅ CRITICAL FIX: Pass username to the edge function
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-photo", {
         body: {
           photoUrl: signedUrlData.signedUrl,
           photoPath: fileName,
           userId,
           firstName: trimmedName,
+          username: trimmedUsername || null, // ✅ Added username
           dateOfBirth: formattedDate,
           phoneNumber: trimmedPhone || null,
         },
       });
 
-      // Check for error in response data first (edge function returns JSON with error field)
+      // Check for error in response
       if (analysisData?.error) {
         throw new Error(analysisData.error);
       }
 
-      // Check for function invocation errors (400/500 responses)
       if (analysisError) {
         console.error("Analysis error:", analysisError);
-        // Try to extract error message from the response - it may be embedded in the message
         let errorMsg = "Fout tijdens het analyseren van de foto, upload een geldige selfie";
 
-        // Parse the error message which may contain JSON
         const errorMessage = analysisError.message || "";
         const jsonMatch = errorMessage.match(/\{"error":"([^"]+)"\}/);
         if (jsonMatch && jsonMatch[1]) {
@@ -455,16 +472,16 @@ const ProfileSetup = () => {
 
       toast({
         title: "Analyse voltooid!",
-        description: "Je profiel is succesvol ingesteld. Je wordt doorgestuurd naar de chat...",
+        description: "Je profiel is succesvol ingesteld. Je wordt doorgestuurd...",
       });
 
+      // Wait a bit then navigate
       setTimeout(() => {
-        navigate("/home");
+        navigate("/home", { replace: true });
       }, 1500);
     } catch (error: any) {
       console.error("Error:", error);
 
-      // Check if it's a selfie/face-related error - show as note instead of error toast
       const isSelfieError =
         error.message?.toLowerCase().includes("face") ||
         error.message?.toLowerCase().includes("gezicht") ||
@@ -475,16 +492,14 @@ const ProfileSetup = () => {
         error.message?.includes("No faces detected");
 
       if (isSelfieError) {
-        // Show verification prompt dialog instead of error
         const noteMessage = error.message?.includes("Upload")
           ? error.message
           : "Upload een duidelijke selfie waarop je gezicht goed zichtbaar is en je recht in de camera kijkt.";
         setVerificationMessage(noteMessage);
         setShowVerificationPrompt(true);
-        return; // Don't show error toast for selfie issues
+        return;
       }
 
-      // Determine the most appropriate error message for other errors
       let errorTitle = "Er ging iets mis";
       let errorDescription = error.message || "Probeer het opnieuw";
 
@@ -533,6 +548,17 @@ const ProfileSetup = () => {
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Je voornaam"
                 required
+              />
+            </div>
+
+            {/* ✅ Added username field */}
+            <div className="space-y-2">
+              <Label htmlFor="username">Gebruikersnaam (optioneel)</Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Je gebruikersnaam"
               />
             </div>
 
@@ -597,14 +623,14 @@ const ProfileSetup = () => {
                     />
                     {analyzing && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        {/* Simple CSS spinner - no Loader2 icon */}
+                        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                         <p className="text-sm font-medium text-foreground">Foto wordt geanalyseerd...</p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Camera buttons */}
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     type="button"
@@ -644,9 +670,20 @@ const ProfileSetup = () => {
             </div>
 
             <Button type="submit" className="w-full" disabled={uploading || analyzing || !selectedFile}>
-              {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {analyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {uploading ? "Uploaden..." : analyzing ? "Analyseren..." : "Doorgaan"}
+              {/* ✅ Simple text and CSS spinner - no Loader2 icon */}
+              {uploading && (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Uploaden...
+                </span>
+              )}
+              {analyzing && (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  Analyseren...
+                </span>
+              )}
+              {!uploading && !analyzing && "Doorgaan"}
             </Button>
           </form>
         </Card>
@@ -683,7 +720,6 @@ const ProfileSetup = () => {
                 <p className="text-center text-sm text-muted-foreground">{cameraError}</p>
               </div>
             )}
-            {/* Face guide overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-36 h-48 sm:w-48 sm:h-64 border-2 border-dashed border-white/50 rounded-full" />
             </div>
