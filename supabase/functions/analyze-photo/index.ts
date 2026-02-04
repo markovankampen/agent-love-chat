@@ -117,31 +117,38 @@ serve(async (req) => {
       };
 
       // Save mock analysis
-      const { error: analysisError } = await supabase
+      const { data: mockAnalysisData, error: analysisError } = await supabase
         .from('face_analysis')
         .upsert({
           user_id: user.id,
           photo_url: photoUrl,
           attractiveness_score: mockAnalysis.attractiveness_score,
           facial_features: mockAnalysis.facial_features,
-        });
+        })
+        .select()
+        .single();
 
       if (analysisError) {
         console.error('Error saving mock analysis:', analysisError);
+      } else {
+        console.log('✅ Mock analysis saved:', mockAnalysisData?.id);
       }
 
-      // Update profile
-      const { error: profileError } = await supabase
+      // Update profile with attractiveness_score and facial_features
+      const { data: mockProfileData, error: profileError } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
+        .update({
           first_name: firstName,
           username: username || null,
           phone_number: phoneNumber || null,
           date_of_birth: dateOfBirth,
           photo_url: photoUrl,
-        });
+          attractiveness_score: mockAnalysis.attractiveness_score,
+          facial_features: mockAnalysis.facial_features,
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
 
       if (profileError) {
         console.error('Error updating profile:', profileError);
@@ -151,7 +158,11 @@ serve(async (req) => {
         );
       }
 
-      console.log('✅ Profile updated successfully (mock mode)');
+      console.log('✅ Profile updated successfully (mock mode):', {
+        id: mockProfileData?.id,
+        photo_url: mockProfileData?.photo_url ? 'set' : 'missing',
+        attractiveness_score: mockProfileData?.attractiveness_score,
+      });
 
       // Delete temp photo
       if (photoPath) {
@@ -318,14 +329,16 @@ serve(async (req) => {
 
       // Save face analysis
       console.log('💾 Saving face analysis...');
-      const { error: analysisError } = await supabase
+      const { data: analysisData2, error: analysisError } = await supabase
         .from('face_analysis')
         .upsert({
           user_id: user.id,
           photo_url: photoUrl,
           attractiveness_score: analysisResult.attractiveness_score,
           facial_features: analysisResult.facial_features,
-        });
+        })
+        .select()
+        .single();
 
       if (analysisError) {
         console.error('❌ Error storing face analysis:', analysisError);
@@ -337,21 +350,24 @@ serve(async (req) => {
         );
       }
 
-      console.log('✅ Face analysis saved');
+      console.log('✅ Face analysis saved:', analysisData2?.id);
 
-      // Update profile with all fields
+      // Update profile with all fields INCLUDING attractiveness_score and facial_features
       console.log('💾 Updating profile...');
-      const { error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
-          email: user.email,
+        .update({
           first_name: firstName,
           username: username || null,
           phone_number: phoneNumber || null,
           date_of_birth: dateOfBirth,
           photo_url: photoUrl,
-        });
+          attractiveness_score: analysisResult.attractiveness_score,
+          facial_features: analysisResult.facial_features,
+        })
+        .eq('id', user.id)
+        .select()
+        .single();
 
       if (profileError) {
         console.error('❌ Error updating profile:', profileError);
@@ -363,7 +379,11 @@ serve(async (req) => {
         );
       }
 
-      console.log('✅ Profile updated successfully');
+      console.log('✅ Profile updated successfully:', {
+        id: profileData?.id,
+        photo_url: profileData?.photo_url ? 'set' : 'missing',
+        attractiveness_score: profileData?.attractiveness_score,
+      });
 
       // Send to n8n
       const n8nWebhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
