@@ -69,7 +69,7 @@ const ApiVerify = () => {
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Signal any waiting /verify tabs to close and redirect
+        // Signal any waiting /verify tabs to redirect to profile-setup
         try {
           localStorage.setItem("email_verified_close_tab", "true");
           setTimeout(() => {
@@ -79,13 +79,13 @@ const ApiVerify = () => {
           console.log("localStorage not available:", e);
         }
 
-        // Show success message
+        // Show success message (DO NOT redirect this tab)
         setStatus("success");
 
-        // Try to close this tab after a short delay
+        // Try to close this tab after 3 seconds
         setTimeout(() => {
           window.close();
-        }, 2000);
+        }, 3000);
       } catch (error) {
         console.error("Unexpected error:", error);
         setStatus("error");
