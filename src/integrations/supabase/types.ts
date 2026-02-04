@@ -73,6 +73,57 @@ export type Database = {
         }
         Relationships: []
       }
+      matches: {
+        Row: {
+          compatibility_reasons: Json | null
+          created_at: string
+          email_sent_at: string | null
+          id: string
+          match_score: number
+          matched_user_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compatibility_reasons?: Json | null
+          created_at?: string
+          email_sent_at?: string | null
+          id?: string
+          match_score: number
+          matched_user_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compatibility_reasons?: Json | null
+          created_at?: string
+          email_sent_at?: string | null
+          id?: string
+          match_score?: number
+          matched_user_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_matched_user_id_fkey"
+            columns: ["matched_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           created_at: string
@@ -115,6 +166,7 @@ export type Database = {
           first_name: string | null
           hair_color: string | null
           id: string
+          matching_complete: boolean | null
           phone_number: string | null
           photo_url: string | null
           updated_at: string | null
@@ -131,6 +183,7 @@ export type Database = {
           first_name?: string | null
           hair_color?: string | null
           id: string
+          matching_complete?: boolean | null
           phone_number?: string | null
           photo_url?: string | null
           updated_at?: string | null
@@ -147,6 +200,7 @@ export type Database = {
           first_name?: string | null
           hair_color?: string | null
           id?: string
+          matching_complete?: boolean | null
           phone_number?: string | null
           photo_url?: string | null
           updated_at?: string | null
