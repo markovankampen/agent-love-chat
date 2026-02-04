@@ -6,15 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, UserCircle } from "lucide-react";
+import { Heart, UserCircle, Eye, EyeOff } from "lucide-react";
 import Footer from "@/components/Footer";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
   const [showGuestInput, setShowGuestInput] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
@@ -65,6 +68,17 @@ const Auth = () => {
           description: "Je bent succesvol ingelogd.",
         });
       } else {
+        // Validate password match
+        if (password !== confirmPassword) {
+          toast({
+            title: "Wachtwoorden komen niet overeen",
+            description: "Controleer of beide wachtwoorden hetzelfde zijn.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
         // Sign up flow
         console.log("Starting signup process...");
 
@@ -214,16 +228,56 @@ const Auth = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password">Wachtwoord</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Herhaal wachtwoord</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-sm text-destructive">Wachtwoorden komen niet overeen</p>
+                )}
+              </div>
+            )}
 
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
               {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
