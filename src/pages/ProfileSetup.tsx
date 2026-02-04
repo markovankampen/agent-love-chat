@@ -681,20 +681,14 @@ const ProfileSetup = () => {
             </div>
 
             <Button type="submit" className="w-full" disabled={uploading || analyzing || !selectedFile}>
-              {/* ✅ Simple text and CSS spinner - no Loader2 icon */}
-              {uploading && (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Uploaden...
+              <span className="flex items-center justify-center gap-2">
+                {(uploading || analyzing) && (
+                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                <span>
+                  {uploading ? "Uploaden..." : analyzing ? "Analyseren..." : "Doorgaan"}
                 </span>
-              )}
-              {analyzing && (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Analyseren...
-                </span>
-              )}
-              {!uploading && !analyzing && "Doorgaan"}
+              </span>
             </Button>
           </form>
         </Card>
