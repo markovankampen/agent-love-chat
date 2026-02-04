@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // Minimum score threshold - matches below this won't be sent
@@ -37,78 +38,80 @@ interface MatchResult {
 
 // Background processing function
 async function processMatching(userId: string) {
-  console.log('Background: Starting match processing for user:', userId);
-  
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  console.log("Background: Starting match processing for user:", userId);
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
     // Check if user already has been matched
     const { data: existingMatch } = await supabase
-      .from('matches')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('status', 'notified')
+      .from("matches")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "notified")
       .maybeSingle();
 
     if (existingMatch) {
-      console.log('Background: User already has a notified match, skipping');
+      console.log("Background: User already has a notified match, skipping");
       return;
     }
 
     // Get the user's profile
     const { data: userProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score')
-      .eq('id', userId)
+      .from("profiles")
+      .select("id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score")
+      .eq("id", userId)
       .single();
 
     if (profileError || !userProfile) {
-      console.error('Background: User profile not found');
+      console.error("Background: User profile not found");
       return;
     }
 
     // Get the user's chat history
     const { data: userChats, error: chatError } = await supabase
-      .from('conversations')
-      .select('role, content, created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true });
+      .from("conversations")
+      .select("role, content, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
 
     if (chatError || !userChats || userChats.length < 3) {
-      console.log('Background: Insufficient chat history for matching');
+      console.log("Background: Insufficient chat history for matching");
       return;
     }
 
     // Get candidates with the most chat messages (more data = better matching)
     // Using a subquery approach to get users with sufficient chat history
     const { data: candidatesWithChats, error: candidatesError } = await supabase
-      .from('profiles')
-      .select('id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score')
-      .neq('id', userId)
-      .not('first_name', 'is', null)
-      .not('date_of_birth', 'is', null)
+      .from("profiles")
+      .select("id, email, first_name, date_of_birth, eye_color, hair_color, attractiveness_score")
+      .neq("id", userId)
+      .not("first_name", "is", null)
+      .not("date_of_birth", "is", null)
       .limit(MAX_CANDIDATES * 2); // Get more initially, filter by chat history
 
     if (candidatesError || !candidatesWithChats || candidatesWithChats.length === 0) {
-      console.log('Background: No eligible candidates found');
+      console.log("Background: No eligible candidates found");
       return;
     }
 
     console.log(`Background: Found ${candidatesWithChats.length} initial candidates`);
 
     // Filter to those with sufficient chat history and take top candidates
-    const eligibleCandidates: Array<{profile: UserProfile, chats: ChatMessage[]}> = [];
-    
+    const eligibleCandidates: Array<{ profile: UserProfile; chats: ChatMessage[] }> = [];
+
     for (const candidate of candidatesWithChats) {
       if (eligibleCandidates.length >= MAX_CANDIDATES) break;
 
       // Check if already matched
       const { data: existingPairMatch } = await supabase
-        .from('matches')
-        .select('id')
-        .or(`and(user_id.eq.${userId},matched_user_id.eq.${candidate.id}),and(user_id.eq.${candidate.id},matched_user_id.eq.${userId})`)
+        .from("matches")
+        .select("id")
+        .or(
+          `and(user_id.eq.${userId},matched_user_id.eq.${candidate.id}),and(user_id.eq.${candidate.id},matched_user_id.eq.${userId})`,
+        )
         .maybeSingle();
 
       if (existingPairMatch) {
@@ -117,22 +120,22 @@ async function processMatching(userId: string) {
       }
 
       const { data: candidateChats } = await supabase
-        .from('conversations')
-        .select('role, content, created_at')
-        .eq('user_id', candidate.id)
-        .order('created_at', { ascending: true });
+        .from("conversations")
+        .select("role, content, created_at")
+        .eq("user_id", candidate.id)
+        .order("created_at", { ascending: true });
 
       if (candidateChats && candidateChats.length >= 3) {
         eligibleCandidates.push({
           profile: candidate as UserProfile,
-          chats: candidateChats as ChatMessage[]
+          chats: candidateChats as ChatMessage[],
         });
       }
     }
 
     if (eligibleCandidates.length === 0) {
-      console.log('Background: No candidates with sufficient chat history');
-      await supabase.from('profiles').update({ matching_complete: true }).eq('id', userId);
+      console.log("Background: No candidates with sufficient chat history");
+      await supabase.from("profiles").update({ matching_complete: true }).eq("id", userId);
       return;
     }
 
@@ -147,7 +150,7 @@ async function processMatching(userId: string) {
           userProfile as UserProfile,
           userChats as ChatMessage[],
           candidate.profile,
-          candidate.chats
+          candidate.chats,
         );
 
         if (matchScore && matchScore.score >= MIN_MATCH_SCORE) {
@@ -157,10 +160,10 @@ async function processMatching(userId: string) {
             reasons: matchScore.reasons,
           });
           console.log(`Background: Found potential match ${candidate.profile.id} with score ${matchScore.score}`);
-          
+
           // Early exit if we find a great match (80%+)
           if (matchScore.score >= 80) {
-            console.log('Background: Found excellent match, stopping search');
+            console.log("Background: Found excellent match, stopping search");
             break;
           }
         }
@@ -170,8 +173,8 @@ async function processMatching(userId: string) {
     }
 
     if (matchResults.length === 0) {
-      console.log('Background: No meaningful matches found above threshold');
-      await supabase.from('profiles').update({ matching_complete: true }).eq('id', userId);
+      console.log("Background: No meaningful matches found above threshold");
+      await supabase.from("profiles").update({ matching_complete: true }).eq("id", userId);
       return;
     }
 
@@ -183,67 +186,63 @@ async function processMatching(userId: string) {
 
     // Get matched user's profile for email
     const { data: matchedProfile } = await supabase
-      .from('profiles')
-      .select('first_name, email')
-      .eq('id', bestMatch.matchedUserId)
+      .from("profiles")
+      .select("first_name, email")
+      .eq("id", bestMatch.matchedUserId)
       .single();
 
     // Insert the match
     const { data: insertedMatch, error: insertError } = await supabase
-      .from('matches')
+      .from("matches")
       .insert({
         user_id: userId,
         matched_user_id: bestMatch.matchedUserId,
         match_score: bestMatch.score,
         compatibility_reasons: { reasons: bestMatch.reasons },
-        status: 'pending',
+        status: "pending",
       })
       .select()
       .single();
 
     if (insertError) {
-      console.error('Background: Failed to insert match:', insertError);
+      console.error("Background: Failed to insert match:", insertError);
       return;
     }
 
-    console.log('Background: Match saved to database');
+    console.log("Background: Match saved to database");
 
     // Send email notification
     const emailSent = await sendMatchEmail(
       userProfile.email,
       userProfile.first_name,
-      matchedProfile?.first_name || 'Iemand bijzonders',
+      matchedProfile?.first_name || "Iemand bijzonders",
       bestMatch.score,
-      bestMatch.reasons
+      bestMatch.reasons,
     );
 
     // Update match status
     if (emailSent) {
       await supabase
-        .from('matches')
-        .update({ 
-          status: 'notified',
-          email_sent_at: new Date().toISOString()
+        .from("matches")
+        .update({
+          status: "notified",
+          email_sent_at: new Date().toISOString(),
         })
-        .eq('id', insertedMatch.id);
-      console.log('Background: Email sent and match updated');
+        .eq("id", insertedMatch.id);
+      console.log("Background: Email sent and match updated");
     }
 
     // Mark user's matching as complete
-    await supabase
-      .from('profiles')
-      .update({ matching_complete: true })
-      .eq('id', userId);
+    await supabase.from("profiles").update({ matching_complete: true }).eq("id", userId);
 
-    console.log('Background: Matching process completed successfully');
-
+    console.log("Background: Matching process completed successfully");
   } catch (error) {
-    console.error('Background: Fatal error in match processing:', error);
+    console.error("Background: Fatal error in match processing:", error);
   }
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -251,46 +250,45 @@ serve(async (req) => {
     const { user_id } = await req.json();
 
     if (!user_id) {
-      throw new Error('user_id is required');
+      throw new Error("user_id is required");
     }
 
-    console.log('Starting match finding for user:', user_id);
+    console.log("Starting match finding for user:", user_id);
 
     // Use EdgeRuntime.waitUntil for background processing
     // This allows the function to return immediately while processing continues
     const runtime = (globalThis as any).EdgeRuntime;
     if (runtime?.waitUntil) {
       runtime.waitUntil(processMatching(user_id));
-      console.log('Background processing initiated');
-      
+      console.log("Background processing initiated");
+
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Match processing started in background',
-          status: 'processing'
+        JSON.stringify({
+          success: true,
+          message: "Match processing started in background",
+          status: "processing",
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     } else {
       // Fallback: Run synchronously but with timeout awareness
-      console.log('EdgeRuntime.waitUntil not available, running synchronously');
+      console.log("EdgeRuntime.waitUntil not available, running synchronously");
       await processMatching(user_id);
-      
+
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Match processing completed'
+        JSON.stringify({
+          success: true,
+          message: "Match processing completed",
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
   } catch (error) {
-    console.error('Error in find-match function:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error("Error in find-match function:", error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 
@@ -298,25 +296,25 @@ async function calculateCompatibility(
   user1Profile: UserProfile,
   user1Chats: ChatMessage[],
   user2Profile: UserProfile,
-  user2Chats: ChatMessage[]
+  user2Chats: ChatMessage[],
 ): Promise<{ score: number; reasons: string[] } | null> {
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
   if (!LOVABLE_API_KEY) {
-    console.error('LOVABLE_API_KEY not configured');
+    console.error("LOVABLE_API_KEY not configured");
     return null;
   }
 
   // Extract only user messages (not agent responses)
   const user1Answers = user1Chats
-    .filter(c => c.role === 'user')
-    .map(c => c.content)
-    .join('\n---\n');
+    .filter((c) => c.role === "user")
+    .map((c) => c.content)
+    .join("\n---\n");
 
   const user2Answers = user2Chats
-    .filter(c => c.role === 'user')
-    .map(c => c.content)
-    .join('\n---\n');
+    .filter((c) => c.role === "user")
+    .map((c) => c.content)
+    .join("\n---\n");
 
   // Calculate age from date of birth
   const calculateAge = (dob: string) => {
@@ -330,8 +328,8 @@ async function calculateCompatibility(
     return age;
   };
 
-  const user1Age = user1Profile.date_of_birth ? calculateAge(user1Profile.date_of_birth) : 'onbekend';
-  const user2Age = user2Profile.date_of_birth ? calculateAge(user2Profile.date_of_birth) : 'onbekend';
+  const user1Age = user1Profile.date_of_birth ? calculateAge(user1Profile.date_of_birth) : "onbekend";
+  const user2Age = user2Profile.date_of_birth ? calculateAge(user2Profile.date_of_birth) : "onbekend";
 
   const systemPrompt = `Je bent een dating matchmaking expert die de compatibiliteit tussen twee personen analyseert op basis van hun chatgesprekken en profielgegevens.
 
@@ -350,9 +348,9 @@ Wees objectief en baseer je score alleen op de beschikbare data.`;
 
   const userPrompt = `PERSOON 1 (${user1Profile.first_name}):
 Leeftijd: ${user1Age}
-Oogkleur: ${user1Profile.eye_color || 'onbekend'}
-Haarkleur: ${user1Profile.hair_color || 'onbekend'}
-Attractiviteitsscore: ${user1Profile.attractiveness_score || 'niet beoordeeld'}
+Oogkleur: ${user1Profile.eye_color || "onbekend"}
+Haarkleur: ${user1Profile.hair_color || "onbekend"}
+Attractiviteitsscore: ${user1Profile.attractiveness_score || "niet beoordeeld"}
 
 Gesprekantwoorden:
 ${user1Answers}
@@ -361,9 +359,9 @@ ${user1Answers}
 
 PERSOON 2 (${user2Profile.first_name}):
 Leeftijd: ${user2Age}
-Oogkleur: ${user2Profile.eye_color || 'onbekend'}
-Haarkleur: ${user2Profile.hair_color || 'onbekend'}
-Attractiviteitsscore: ${user2Profile.attractiveness_score || 'niet beoordeeld'}
+Oogkleur: ${user2Profile.eye_color || "onbekend"}
+Haarkleur: ${user2Profile.hair_color || "onbekend"}
+Attractiviteitsscore: ${user2Profile.attractiveness_score || "niet beoordeeld"}
 
 Gesprekantwoorden:
 ${user2Answers}
@@ -373,69 +371,69 @@ ${user2Answers}
 Analyseer de compatibiliteit en geef een score van 0-100 plus 3-5 specifieke redenen waarom deze match goed of minder goed is.`;
 
   try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
+        model: "google/gemini-3-flash-preview",
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
         tools: [
           {
-            type: 'function',
+            type: "function",
             function: {
-              name: 'report_compatibility',
-              description: 'Report the compatibility score and reasons',
+              name: "report_compatibility",
+              description: "Report the compatibility score and reasons",
               parameters: {
-                type: 'object',
+                type: "object",
                 properties: {
-                  score: { 
-                    type: 'number', 
-                    description: 'Compatibility score from 0-100',
+                  score: {
+                    type: "number",
+                    description: "Compatibility score from 0-100",
                     minimum: 0,
-                    maximum: 100
+                    maximum: 100,
                   },
                   reasons: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'List of 3-5 reasons explaining the compatibility'
-                  }
+                    type: "array",
+                    items: { type: "string" },
+                    description: "List of 3-5 reasons explaining the compatibility",
+                  },
                 },
-                required: ['score', 'reasons'],
-                additionalProperties: false
-              }
-            }
-          }
+                required: ["score", "reasons"],
+                additionalProperties: false,
+              },
+            },
+          },
         ],
-        tool_choice: { type: 'function', function: { name: 'report_compatibility' } }
+        tool_choice: { type: "function", function: { name: "report_compatibility" } },
       }),
     });
 
     if (!response.ok) {
-      console.error('AI API error:', response.status);
+      console.error("AI API error:", response.status);
       return null;
     }
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     if (toolCall?.function?.arguments) {
       const result = JSON.parse(toolCall.function.arguments);
       console.log(`Compatibility score for ${user1Profile.id} <-> ${user2Profile.id}: ${result.score}`);
       return {
         score: Math.round(result.score),
-        reasons: result.reasons || []
+        reasons: result.reasons || [],
       };
     }
 
     return null;
   } catch (error) {
-    console.error('Error calculating compatibility:', error);
+    console.error("Error calculating compatibility:", error);
     return null;
   }
 }
@@ -445,26 +443,26 @@ async function sendMatchEmail(
   userName: string,
   matchName: string,
   score: number,
-  reasons: string[]
+  reasons: string[],
 ): Promise<boolean> {
-  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-  
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
   if (!RESEND_API_KEY) {
-    console.error('RESEND_API_KEY not configured');
+    console.error("RESEND_API_KEY not configured");
     return false;
   }
 
-  const reasonsList = reasons.map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('');
+  const reasonsList = reasons.map((r) => `<li style="margin-bottom: 8px;">${r}</li>`).join("");
 
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: 'Indebuurt Ontmoet <onboarding@resend.dev>',
+        from: "Matchmaker_Flori <no-reply@auth.lovable.cloud>",
         to: [toEmail],
         subject: `🎉 We hebben een match voor je gevonden, ${userName}!`,
         html: `
@@ -516,14 +514,14 @@ async function sendMatchEmail(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Resend API error:', response.status, errorText);
+      console.error("Resend API error:", response.status, errorText);
       return false;
     }
 
-    console.log('Match email sent successfully to:', toEmail);
+    console.log("Match email sent successfully to:", toEmail);
     return true;
   } catch (error) {
-    console.error('Error sending match email:', error);
+    console.error("Error sending match email:", error);
     return false;
   }
 }
