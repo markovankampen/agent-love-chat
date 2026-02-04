@@ -18,7 +18,7 @@ const Footer = () => {
           {/* Footer links */}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a 
-              href="mailto:contact@indebuurt.nl" 
+              href="mailto:Evenementen@indebuurt.nl" 
               className="hover:text-foreground transition-colors"
             >
               Contact
