@@ -472,7 +472,18 @@ const ProfileSetup = () => {
 
       toast({
         title: "Analyse voltooid!",
-        description: "Je profiel is succesvol ingesteld. Je wordt doorgestuurd...",
+        description: "Je profiel is succesvol ingesteld. We zoeken nu naar matches...",
+      });
+
+      // Trigger matchmaking in the background (don't wait for it)
+      supabase.functions.invoke("find-match", {
+        body: { user_id: userId }
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error("Matchmaking error:", error);
+        } else {
+          console.log("Matchmaking result:", data);
+        }
       });
 
       // Wait a bit then navigate
