@@ -7,6 +7,85 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Function to detect eye and hair color using Lovable AI (Gemini)
+async function detectColorsWithAI(photoUrl: string): Promise<{ eyeColor: string | null; hairColor: string | null }> {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  
+  if (!lovableApiKey) {
+    console.log('⚠️ LOVABLE_API_KEY not configured, skipping color detection');
+    return { eyeColor: null, hairColor: null };
+  }
+
+  try {
+    console.log('🎨 Detecting eye and hair color with AI...');
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Analyze this photo and detect the person's eye color and hair color. 
+                
+Return ONLY a JSON object in this exact format, nothing else:
+{"eyeColor": "color", "hairColor": "color"}
+
+For eye color, use one of: brown, blue, green, hazel, gray, amber
+For hair color, use one of: black, brown, blonde, red, gray, white, auburn
+
+If you cannot determine a color, use null.`
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: photoUrl
+                }
+              }
+            ]
+          }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ AI color detection failed:', response.status, errorText);
+      return { eyeColor: null, hairColor: null };
+    }
+
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content || '';
+    
+    console.log('🎨 AI response:', content);
+    
+    // Parse the JSON response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      console.log('✅ Detected colors:', parsed);
+      return {
+        eyeColor: parsed.eyeColor || null,
+        hairColor: parsed.hairColor || null,
+      };
+    }
+    
+    console.log('⚠️ Could not parse AI response');
+    return { eyeColor: null, hairColor: null };
+    
+  } catch (error) {
+    console.error('❌ AI color detection error:', error);
+    return { eyeColor: null, hairColor: null };
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -107,6 +186,9 @@ serve(async (req) => {
       // For development/testing: Skip Face++ and save profile anyway
       console.log('⚠️ Skipping Face++ analysis - saving profile with mock data');
       
+      // Detect eye and hair color with AI
+      const { eyeColor, hairColor } = await detectColorsWithAI(photoUrl);
+      
       const mockAnalysis = {
         attractiveness_score: 7,
         facial_features: {
@@ -134,7 +216,7 @@ serve(async (req) => {
         console.log('✅ Mock analysis saved:', mockAnalysisData?.id);
       }
 
-      // Update profile with attractiveness_score and facial_features
+      // Update profile with attractiveness_score, facial_features, and colors
       const { data: mockProfileData, error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -145,6 +227,8 @@ serve(async (req) => {
           photo_url: photoUrl,
           attractiveness_score: mockAnalysis.attractiveness_score,
           facial_features: mockAnalysis.facial_features,
+          eye_color: eyeColor,
+          hair_color: hairColor,
         })
         .eq('id', user.id)
         .select()
@@ -162,6 +246,8 @@ serve(async (req) => {
         id: mockProfileData?.id,
         photo_url: mockProfileData?.photo_url ? 'set' : 'missing',
         attractiveness_score: mockProfileData?.attractiveness_score,
+        eye_color: mockProfileData?.eye_color,
+        hair_color: mockProfileData?.hair_color,
       });
 
       // Delete temp photo
@@ -352,7 +438,10 @@ serve(async (req) => {
 
       console.log('✅ Face analysis saved:', analysisData2?.id);
 
-      // Update profile with all fields INCLUDING attractiveness_score and facial_features
+      // Detect eye and hair color with AI
+      const { eyeColor, hairColor } = await detectColorsWithAI(photoUrl);
+
+      // Update profile with all fields INCLUDING attractiveness_score, facial_features, and colors
       console.log('💾 Updating profile...');
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -364,6 +453,8 @@ serve(async (req) => {
           photo_url: photoUrl,
           attractiveness_score: analysisResult.attractiveness_score,
           facial_features: analysisResult.facial_features,
+          eye_color: eyeColor,
+          hair_color: hairColor,
         })
         .eq('id', user.id)
         .select()
@@ -383,6 +474,8 @@ serve(async (req) => {
         id: profileData?.id,
         photo_url: profileData?.photo_url ? 'set' : 'missing',
         attractiveness_score: profileData?.attractiveness_score,
+        eye_color: profileData?.eye_color,
+        hair_color: profileData?.hair_color,
       });
 
       // Send to n8n
