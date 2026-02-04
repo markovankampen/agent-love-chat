@@ -320,20 +320,6 @@ const Account = () => {
                 className="bg-muted"
               />
             </div>
-
-            {profile?.hair_color && (
-              <div className="space-y-2">
-                <Label>Haarkleur</Label>
-                <Input value={profile.hair_color} disabled className="bg-muted" />
-              </div>
-            )}
-
-            {profile?.eye_color && (
-              <div className="space-y-2">
-                <Label>Oogkleur</Label>
-                <Input value={profile.eye_color} disabled className="bg-muted" />
-              </div>
-            )}
           </div>
 
           {/* Save Button - TEXT ONLY, NO ICON */}
