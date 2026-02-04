@@ -78,7 +78,7 @@ const Index = () => {
                 </h1>
 
                 <p className="text-base font-semibold md:text-lg text-[#2b2b2b] mb-4 max-w-md mx-auto">
-                  Waag de sprong in het diepe met onze verrassende en slimme matchmaker Flori
+                  Waag de sprong in het diepe met onze verrassende en slimme matchmaker.
                 </p>
 
                 <div>
@@ -141,7 +141,7 @@ const Index = () => {
 
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold font-sans text-foreground mb-6 leading-tight">
-            Samen op<br />avontuur met Flori
+            Samen op<br />avontuur
           </h2>
 
           <p className="text-base md:text-lg font-sans font-medium text-[#333] mb-8 max-w-xl mx-auto leading-relaxed">
