@@ -187,7 +187,7 @@ const Index = () => {
         <div className="flex flex-col items-center gap-2 absolute bottom-0 left-[2%]">
           <img src={CupidBow} alt="" className="w-20 h-20 object-contain" />
         </div>
-        <div className="flex flex-col items-center gap-2 absolute -bottom-14 left-[47%]">
+        <div className="flex flex-col items-center gap-2 absolute -bottom-14 left-1/2 transform -translate-x-1/2">
           <img src={IndebuurtOntmoet} alt="" className="w-20 h-20 object-contain" />
         </div>
       </section>
