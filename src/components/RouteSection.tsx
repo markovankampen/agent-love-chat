@@ -88,7 +88,7 @@ const RouteSection = () => {
               <h3 className="text-[25px] font-semibold text-black mb-2 leading-tight font-sans text-center">
                 Chat met onze
                 <br />
-                speelse AI bot Flori
+                speelse AI bot
               </h3>
               <p className="text-xs text-black -mb-1 leading-relaxed text-center">
                 Chat met Flori, onze speelse AI matchmaker. Vertel over jezelf, wat je leuk vindt, wat je belangrijk
@@ -182,7 +182,7 @@ const RouteSection = () => {
             <div className="w-10 h-10 bg-foreground text-background rounded-full flex items-center justify-center font-bold text-lg mb-4">
               2
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">Chat met onze speelse AI bot Flori</h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">Chat met onze speelse AI bot</h3>
             <p className="text-sm text-muted-foreground mb-2 max-w-xs">
               Chat met Flori, onze speelse AI matchmaker. Vertel over jezelf, wat je leuk vindt, wat je belangrijk vindt
               in een ander en wat jou uniek maakt.
