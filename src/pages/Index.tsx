@@ -74,7 +74,7 @@ const Index = () => {
                 </div>
 
                 <h1 className="text-5xl md:text-6xl font-sans lg:text-7xl font-semibold text-foreground mb-2 leading-tight">
-                  Flori<br />verbindt!<span className="font-caveat text-primary text-2xl md:text-3xl font-normal align-baseline ml-1">beta</span>
+                  indebuurt<br />verbindt!<span className="font-caveat text-primary text-2xl md:text-3xl font-normal align-baseline ml-1">beta</span>
                 </h1>
 
                 <p className="text-base font-semibold md:text-lg text-[#2b2b2b] mb-4 max-w-md mx-auto">
