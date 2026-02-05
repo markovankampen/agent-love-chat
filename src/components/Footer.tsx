@@ -21,7 +21,7 @@ const Footer = () => {
               href="mailto:Evenementen@indebuurt.nl" 
               className="hover:text-foreground transition-colors"
             >
-              Contact
+              Evenementen@indebuurt.nl
             </a>
             <span className="text-muted-foreground/30">•</span>
             <button 
