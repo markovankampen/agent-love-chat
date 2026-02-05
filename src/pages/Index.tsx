@@ -168,7 +168,7 @@ const Index = () => {
       <section className="py-16 md:py-24 bg-secondary/90 relative">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-semibold font-sans text-foreground mb-6 leading-tight">
-            Jouw volgende ontmoeting<br />begint hier met Flori
+            Jouw volgende ontmoeting<br />begint hier!
           </h2>
 
           <p className="text-base font-sans font-semibold text-[#2e2e2e] md:text-lg mb-8">
