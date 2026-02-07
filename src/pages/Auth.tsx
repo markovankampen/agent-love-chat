@@ -79,10 +79,9 @@ const Auth = () => {
           return;
         }
 
-        // Sign up flow with custom Resend verification
-        console.log("Starting signup process with custom verification...");
+        // Sign up flow
+        console.log("Starting signup process...");
 
-        // First, create the user with auto-confirm enabled
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -90,6 +89,8 @@ const Auth = () => {
             data: {
               username: username,
             },
+            // emailRedirectTo is automatically set by Supabase to your Site URL
+            // The verification email will contain a link to /verify-email
           },
         });
 
@@ -100,42 +101,18 @@ const Auth = () => {
 
         console.log("Signup response:", data);
 
-        if (data.user) {
-          // Now send our custom verification email via Resend
-          console.log("Sending custom verification email via Resend...");
-          
-          const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-            "custom-send-verification",
-            {
-              body: {
-                user_id: data.user.id,
-                email: email,
-                redirect_url: window.location.origin,
-              },
-            }
-          );
-
-          if (verifyError) {
-            console.error("Verification email error:", verifyError);
-            // Don't fail signup, just warn
-            toast({
-              title: "Account aangemaakt",
-              description: "Er was een probleem met het versturen van de verificatie email. Probeer later opnieuw.",
-              variant: "destructive",
-            });
-          } else {
-            console.log("Custom verification email sent:", verifyData);
-            toast({
-              title: "Bijna klaar!",
-              description: "Check je email om je account te verifiëren.",
-            });
-          }
-        }
-
         // Store email for verification screen display
         sessionStorage.setItem("pendingVerificationEmail", email);
 
+        toast({
+          title: "Bijna klaar!",
+          description: "Check je email om je account te verifiëren.",
+        });
+
         // Navigate to the waiting screen
+        // User will click the link in their email
+        // The link will open /verify-email in the SAME tab (because it's a normal link)
+        // The /verify page will detect verification via polling
         navigate("/verify");
       }
     } catch (error: any) {

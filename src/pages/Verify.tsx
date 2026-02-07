@@ -41,32 +41,16 @@ const Verify = () => {
       setUserEmail(email);
     }
 
-    // Check if user is already verified (Supabase or custom)
+    // Check if user is already verified
     const checkIfAlreadyVerified = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      // Check Supabase email_confirmed_at
       if (session?.user?.email_confirmed_at) {
-        console.log("Already verified via Supabase, redirecting to /profile-setup");
+        console.log("Already verified, redirecting to /profile-setup");
         handleVerificationSuccess();
         return;
-      }
-
-      // Check custom email verification in profile
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("custom_email_verified")
-          .eq("id", session.user.id)
-          .maybeSingle();
-
-        if (profile?.custom_email_verified) {
-          console.log("Already verified via custom flow, redirecting to /profile-setup");
-          handleVerificationSuccess();
-          return;
-        }
       }
     };
 
@@ -104,36 +88,14 @@ const Verify = () => {
             return;
           }
 
-          // Check Supabase email_confirmed_at
           if (session?.user?.email_confirmed_at) {
-            console.log("Email verified via Supabase polling!");
+            console.log("Email verified via polling!");
 
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
 
             handleVerificationSuccess();
-            return;
-          }
-
-          // Check custom email verification in profile
-          if (session?.user) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("custom_email_verified")
-              .eq("id", session.user.id)
-              .maybeSingle();
-
-            if (profile?.custom_email_verified) {
-              console.log("Email verified via custom flow polling!");
-
-              if (pollIntervalRef.current) {
-                clearInterval(pollIntervalRef.current);
-              }
-
-              handleVerificationSuccess();
-              return;
-            }
           }
         } catch (error) {
           // Silently handle polling errors - they're expected before verification
