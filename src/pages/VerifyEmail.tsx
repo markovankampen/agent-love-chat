@@ -17,7 +17,36 @@ const VerifyEmail = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        // Get token_hash from URL params
+        // First, check for custom token (from our Resend email)
+        const customToken = searchParams.get("token");
+        
+        if (customToken) {
+          console.log("Verifying custom token from Resend email...");
+          
+          const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+            "verify-custom-token",
+            {
+              body: { token: customToken },
+            }
+          );
+
+          if (verifyError) {
+            console.error("Custom token verification error:", verifyError);
+            throw new Error("Verificatie mislukt. Probeer opnieuw.");
+          }
+
+          if (!verifyData?.success) {
+            throw new Error(verifyData?.error || "Ongeldige of verlopen token");
+          }
+
+          console.log("Custom token verified successfully:", verifyData);
+          setStatus("success");
+          sessionStorage.removeItem("pendingVerificationEmail");
+          startCountdown();
+          return;
+        }
+
+        // Fallback: Check for Supabase token_hash (legacy flow)
         let tokenHash = searchParams.get("token_hash");
         let type = searchParams.get("type");
 
@@ -52,8 +81,6 @@ const VerifyEmail = () => {
             console.log("Email verified successfully via access_token");
             setStatus("success");
             sessionStorage.removeItem("pendingVerificationEmail");
-
-            // Start countdown
             startCountdown();
             return;
           }
@@ -87,8 +114,6 @@ const VerifyEmail = () => {
         // Success
         setStatus("success");
         sessionStorage.removeItem("pendingVerificationEmail");
-
-        // Start countdown
         startCountdown();
       } catch (error: any) {
         console.error("Verification error:", error);

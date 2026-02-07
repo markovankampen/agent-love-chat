@@ -46,6 +46,44 @@ export type Database = {
           },
         ]
       }
+      email_verification_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          token: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          token: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_verification_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       face_analysis: {
         Row: {
           attractiveness_score: number | null
@@ -158,6 +196,7 @@ export type Database = {
         Row: {
           attractiveness_score: number | null
           created_at: string | null
+          custom_email_verified: boolean | null
           date_of_birth: string | null
           email: string | null
           email_verified: boolean | null
@@ -175,6 +214,7 @@ export type Database = {
         Insert: {
           attractiveness_score?: number | null
           created_at?: string | null
+          custom_email_verified?: boolean | null
           date_of_birth?: string | null
           email?: string | null
           email_verified?: boolean | null
@@ -192,6 +232,7 @@ export type Database = {
         Update: {
           attractiveness_score?: number | null
           created_at?: string | null
+          custom_email_verified?: boolean | null
           date_of_birth?: string | null
           email?: string | null
           email_verified?: boolean | null

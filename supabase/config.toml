@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.find-match]
 verify_jwt = false
+
+[functions.custom-send-verification]
+verify_jwt = false
+
+[functions.verify-custom-token]
+verify_jwt = false
