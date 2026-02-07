@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
     console.log("Sending email via Resend...");
     const { data, error } = await resend.emails.send({
-      from: "Matchmaker Flori <noreply@matchmakerflori.nl>",
+      from: "Matchmaker Flori <onboarding@resend.dev>",
       to: [user.email],
       subject: "Verifieer je e-mailadres - indebuurt ontmoet",
       html,

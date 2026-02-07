@@ -462,7 +462,7 @@ async function sendMatchEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Matchmaker Flori <noreply@matchmakerflori.nl>",
+        from: "Matchmaker_Flori <no-reply@auth.lovable.cloud>",
         to: [toEmail],
         subject: `🎉 We hebben een match voor je gevonden, ${userName}!`,
         html: `
