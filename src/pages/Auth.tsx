@@ -117,9 +117,25 @@ const Auth = () => {
       }
     } catch (error: any) {
       console.error("Auth error:", error);
+      
+      // Handle specific error types with friendly Dutch messages
+      let errorTitle = "Fout";
+      let errorDescription = error.message;
+      
+      if (error.message?.toLowerCase().includes("email rate limit exceeded")) {
+        errorTitle = "Even geduld alsjeblieft";
+        errorDescription = "Je hebt onlangs al een verificatie-email ontvangen. Controleer je inbox (en spam-map) of wacht een uurtje voordat je het opnieuw probeert.";
+      } else if (error.message?.toLowerCase().includes("user already registered")) {
+        errorTitle = "Email al in gebruik";
+        errorDescription = "Dit emailadres is al geregistreerd. Probeer in te loggen of gebruik een ander emailadres.";
+      } else if (error.message?.toLowerCase().includes("password")) {
+        errorTitle = "Wachtwoord niet sterk genoeg";
+        errorDescription = "Kies een sterker wachtwoord met minimaal 6 tekens, inclusief letters en cijfers.";
+      }
+      
       toast({
-        title: "Fout",
-        description: error.message,
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
       });
     } finally {
