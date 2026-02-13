@@ -7,6 +7,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Fire-and-forget sync to external database
+async function triggerSync(table: string, type: string, record: Record<string, unknown>) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return;
+    
+    await fetch(`${supabaseUrl}/functions/v1/sync-to-external`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+        "x-webhook-source": "database",
+      },
+      body: JSON.stringify({ type, table, record }),
+    });
+  } catch (_e) { /* non-critical */ }
+}
+
 // Minimum score threshold - matches below this won't be sent
 // Minimum score threshold - matches below this won't be sent
 const MIN_MATCH_SCORE = 50;
@@ -210,6 +229,7 @@ async function processMatching(userId: string) {
     }
 
     console.log("Background: Match saved to database");
+    if (insertedMatch) triggerSync("matches", "INSERT", insertedMatch as Record<string, unknown>);
 
     // Send email notification
     const emailSent = await sendMatchEmail(
@@ -230,6 +250,7 @@ async function processMatching(userId: string) {
         })
         .eq("id", insertedMatch.id);
       console.log("Background: Email sent and match updated");
+      triggerSync("matches", "UPDATE", { ...insertedMatch, status: "notified", email_sent_at: new Date().toISOString() } as Record<string, unknown>);
     }
 
     // Mark user's matching as complete

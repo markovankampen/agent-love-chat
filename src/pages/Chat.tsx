@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { syncToExternal } from "@/lib/syncToExternal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -178,6 +179,9 @@ const Chat = () => {
       setIsTyping(false);
       return;
     }
+
+    // Sync user message to external database
+    if (userMsgData) syncToExternal("conversations", "INSERT", userMsgData as Record<string, unknown>);
 
     const userMessage: Message = {
       id: userMsgData.id,

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { syncToExternal } from "@/lib/syncToExternal";
 
 const HEARTBEAT_INTERVAL = 60_000; // 60 seconds
 
@@ -14,16 +15,19 @@ export function useHeartbeat() {
       if (!session?.user || !mounted) return;
 
       const route = window.location.pathname;
+      const record = {
+        user_id: session.user.id,
+        last_seen_at: new Date().toISOString(),
+        is_online: true,
+        page_route: route,
+      };
 
-      await supabase.from("user_activity").upsert(
-        {
-          user_id: session.user.id,
-          last_seen_at: new Date().toISOString(),
-          is_online: true,
-          page_route: route,
-        },
+      const { data } = await supabase.from("user_activity").upsert(
+        record,
         { onConflict: "user_id" }
-      );
+      ).select().single();
+
+      if (data) syncToExternal("user_activity", "UPDATE", data);
     };
 
     const markOffline = async () => {

@@ -8,6 +8,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Fire-and-forget sync to external database
+async function triggerSync(table: string, type: string, record: Record<string, unknown>) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) return;
+    
+    await fetch(`${supabaseUrl}/functions/v1/sync-to-external`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+        "x-webhook-source": "database",
+      },
+      body: JSON.stringify({ type, table, record }),
+    });
+  } catch (_e) { /* non-critical */ }
+}
+
 // Phrases that indicate conversation completion
 const COMPLETION_PHRASES = [
   "bedankt voor het invullen",
@@ -173,6 +192,8 @@ serve(async (req) => {
 
       if (agentMsgError) {
         console.error("Error saving agent message:", agentMsgError);
+      } else if (agentMsgData) {
+        triggerSync("conversations", "INSERT", agentMsgData as Record<string, unknown>);
       }
 
       // Check if conversation is complete and trigger matchmaking
