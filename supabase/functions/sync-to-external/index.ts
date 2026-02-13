@@ -136,13 +136,37 @@ serve(async (req) => {
     const syncResults: Record<string, { synced: number; errors: number }> = {};
 
     for (const table of SYNC_TABLES) {
-      const { data, error } = await localClient.from(table).select("*");
+      // Paginate to get ALL rows (Supabase default limit is 1000)
+      let allData: Record<string, unknown>[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      let hasMore = true;
 
-      if (error) {
-        console.error(`Error reading ${table}:`, error);
-        syncResults[table] = { synced: 0, errors: 1 };
-        continue;
+      while (hasMore) {
+        const { data, error } = await localClient
+          .from(table)
+          .select("*")
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) {
+          console.error(`Error reading ${table}:`, error);
+          syncResults[table] = { synced: 0, errors: 1 };
+          hasMore = false;
+          continue;
+        }
+
+        if (data && data.length > 0) {
+          allData = allData.concat(data);
+          if (data.length < pageSize) hasMore = false;
+          else page++;
+        } else {
+          hasMore = false;
+        }
       }
+
+      if (syncResults[table]) continue; // skip if errored during read
+
+      const data = allData;
 
       if (!data || data.length === 0) {
         syncResults[table] = { synced: 0, errors: 0 };
