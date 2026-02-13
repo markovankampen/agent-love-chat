@@ -1,5 +1,8 @@
 project_id = "mfeqjtatlvsxrywcpwpv"
 
+[functions.sync-to-external]
+verify_jwt = false
+
 [functions.external-data]
 verify_jwt = false
 
