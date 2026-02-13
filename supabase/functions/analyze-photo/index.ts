@@ -7,6 +7,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fire-and-forget sync to external database
+async function triggerSync(table: string, type: string, record: Record<string, unknown>) {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceKey) return;
+    
+    await fetch(`${supabaseUrl}/functions/v1/sync-to-external`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+        'x-webhook-source': 'database',
+      },
+      body: JSON.stringify({ type, table, record }),
+    });
+    console.log(`✅ Sync triggered: ${type} on ${table}`);
+  } catch (e) {
+    console.error('⚠️ Sync trigger failed (non-critical):', e);
+  }
+}
+
 // Function to detect eye and hair color using Lovable AI (Gemini)
 async function detectColorsWithAI(photoUrl: string): Promise<{ eyeColor: string | null; hairColor: string | null }> {
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -250,6 +272,10 @@ serve(async (req) => {
         hair_color: mockProfileData?.hair_color,
       });
 
+      // Sync to external database
+      if (mockProfileData) triggerSync('profiles', 'UPDATE', mockProfileData as Record<string, unknown>);
+      if (mockAnalysisData) triggerSync('face_analysis', 'UPDATE', mockAnalysisData as Record<string, unknown>);
+
       // Delete temp photo
       if (photoPath) {
         try {
@@ -480,6 +506,10 @@ serve(async (req) => {
         eye_color: profileData?.eye_color,
         hair_color: profileData?.hair_color,
       });
+
+      // Sync to external database
+      if (profileData) triggerSync('profiles', 'UPDATE', profileData as Record<string, unknown>);
+      if (analysisData2) triggerSync('face_analysis', 'UPDATE', analysisData2 as Record<string, unknown>);
 
       // Send to n8n
       const n8nWebhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
