@@ -90,40 +90,40 @@ serve(async (req) => {
       });
     }
 
-    // Full sync mode - verify admin auth
+    // Full sync mode - verify admin auth or internal call
     const authHeader = req.headers.get("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
-      const authClient = createClient(localUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user }, error: userError } = await authClient.auth.getUser(token);
-
-      if (userError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const isWebhook = req.headers.get("x-webhook-source") === "database";
+    const isFullSyncRequest = req.headers.get("x-full-sync") === "true";
+    
+    if (!isWebhook && !isFullSyncRequest) {
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.replace("Bearer ", "");
+        const authClient = createClient(localUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: authHeader } },
         });
-      }
+        const { data: { user }, error: userError } = await authClient.auth.getUser(token);
 
-      const { data: roleData } = await localClient
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+        if (userError || !user) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
-      if (!roleData) {
-        return new Response(JSON.stringify({ error: "Forbidden: Admin access required" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      // For non-webhook, non-auth requests, deny
-      // Allow if called internally (no auth header but from webhook)
-      const isWebhook = req.headers.get("x-webhook-source") === "database";
-      if (!isWebhook) {
+        const { data: roleData } = await localClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (!roleData) {
+          return new Response(JSON.stringify({ error: "Forbidden: Admin access required" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
