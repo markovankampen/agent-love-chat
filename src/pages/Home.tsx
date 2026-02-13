@@ -28,7 +28,7 @@ const Home = () => {
         .from("profiles")
         .select("username, first_name, date_of_birth, photo_url")
         .eq("id", session.user.id)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         setUsername(profile.first_name || profile.username || "daar");

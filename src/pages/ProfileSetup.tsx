@@ -157,7 +157,7 @@ const ProfileSetup = () => {
           .from("profiles")
           .select("first_name, username, phone_number, date_of_birth")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (profile) {
           if (profile.first_name) setFirstName(profile.first_name);
