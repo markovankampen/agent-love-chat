@@ -236,84 +236,6 @@ const Chat = () => {
     );
   }
 
-  const SidebarContent = () => (
-    <div className="p-6 space-y-6">
-      {/* Illustration */}
-      <div className="flex justify-center">
-        <div className="w-40 h-40">
-          <svg viewBox="0 0 160 160" className="w-full h-full">
-            {/* Simple hand-drawn style figure */}
-            <circle cx="80" cy="50" r="25" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-            <path d="M70 45 Q75 40, 80 45 Q85 40, 90 45" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-            <circle cx="72" cy="47" r="2" fill="hsl(var(--foreground))" />
-            <circle cx="88" cy="47" r="2" fill="hsl(var(--foreground))" />
-            <path d="M75 58 Q80 62, 85 58" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
-            {/* Body */}
-            <path d="M60 75 L65 100 M100 75 L95 100" stroke="hsl(var(--foreground))" strokeWidth="2" />
-            <path d="M65 100 L55 130 M95 100 L105 130" stroke="hsl(var(--foreground))" strokeWidth="2" />
-            {/* Arm with heart */}
-            <path d="M55 85 L35 70" stroke="hsl(var(--foreground))" strokeWidth="2" />
-            <path d="M33 60 Q38 50, 43 60 Q48 50, 53 60 L43 75 Z" fill="hsl(var(--primary))" />
-          </svg>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div>
-          <p className="font-semibold text-foreground">Hallo!</p>
-          <p className="text-sm text-muted-foreground">
-            Ik ben Matchmaker Flori, en ik ga je helpen om een geweldige match te vinden. Ik zal je enkele vragen stellen om jou beter te leren kennen!
-          </p>
-        </div>
-
-        <div>
-          <p className="font-semibold text-foreground mb-2">Wat kun je verwachten?</p>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Ik stel je persoonlijke vragen over jezelf en je ideale partner</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Ik probeer een beeld te krijgen van wie je bent en wat je zoekt</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Op basis van jouw antwoorden en foto ga ik op zoek naar een match</span>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <p className="font-semibold text-foreground mb-2">De spelregels</p>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Wees eerlijk - dat helpt mij om de beste match te vinden</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Neem de tijd voor je antwoorden</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Er zijn geen foute antwoorden - gewoon jouw antwoorden!</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <span>Bij een match sturen we jou en je date een mail om een afspraak in te plannen</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <p className="text-xs text-muted-foreground">
-        PS: Dit gesprek blijft tussen ons.<br />
-        Jouw privacy is belangrijk!
-      </p>
-    </div>
-  );
-
   return (
     <div className="flex h-screen w-full bg-background">
       {/* Top Bar */}
@@ -349,7 +271,6 @@ const Chat = () => {
         {/* Chat Header */}
         <div className="border-b border-border bg-background px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Mobile Menu Trigger */}
             <Drawer>
               <DrawerTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -478,5 +399,75 @@ const Chat = () => {
     </div>
   );
 };
+
+const SidebarContent = () => (
+  <div className="p-6 space-y-6">
+    <div className="flex justify-center">
+      <div className="w-40 h-40">
+        <svg viewBox="0 0 160 160" className="w-full h-full">
+          <circle cx="80" cy="50" r="25" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
+          <path d="M70 45 Q75 40, 80 45 Q85 40, 90 45" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
+          <circle cx="72" cy="47" r="2" fill="hsl(var(--foreground))" />
+          <circle cx="88" cy="47" r="2" fill="hsl(var(--foreground))" />
+          <path d="M75 58 Q80 62, 85 58" fill="none" stroke="hsl(var(--foreground))" strokeWidth="2" />
+          <path d="M60 75 L65 100 M100 75 L95 100" stroke="hsl(var(--foreground))" strokeWidth="2" />
+          <path d="M65 100 L55 130 M95 100 L105 130" stroke="hsl(var(--foreground))" strokeWidth="2" />
+          <path d="M55 85 L35 70" stroke="hsl(var(--foreground))" strokeWidth="2" />
+          <path d="M33 60 Q38 50, 43 60 Q48 50, 53 60 L43 75 Z" fill="hsl(var(--primary))" />
+        </svg>
+      </div>
+    </div>
+    <div className="space-y-4">
+      <div>
+        <p className="font-semibold text-foreground">Hallo!</p>
+        <p className="text-sm text-muted-foreground">
+          Ik ben Matchmaker Flori, en ik ga je helpen om een geweldige match te vinden. Ik zal je enkele vragen stellen om jou beter te leren kennen!
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold text-foreground mb-2">Wat kun je verwachten?</p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li className="flex items-start gap-2">
+            <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <span>Ik stel je persoonlijke vragen over jezelf en je ideale partner</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <span>Ik probeer een beeld te krijgen van wie je bent en wat je zoekt</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <span>Op basis van jouw antwoorden en foto ga ik op zoek naar een match</span>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <p className="font-semibold text-foreground mb-2">De spelregels</p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li className="flex items-start gap-2">
+            <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <span>Wees eerlijk - dat helpt mij om de beste match te vinden</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <span>Neem de tijd voor je antwoorden</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <span>Er zijn geen foute antwoorden - gewoon jouw antwoorden!</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <Heart className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+            <span>Bij een match sturen we jou en je date een mail om een afspraak in te plannen</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <p className="text-xs text-muted-foreground">
+      PS: Dit gesprek blijft tussen ons.<br />
+      Jouw privacy is belangrijk!
+    </p>
+  </div>
+);
 
 export default Chat;
