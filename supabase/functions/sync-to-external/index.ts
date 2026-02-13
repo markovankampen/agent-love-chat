@@ -135,8 +135,72 @@ serve(async (req) => {
     console.log("Starting full sync...");
     const syncResults: Record<string, { synced: number; errors: number }> = {};
 
+    // Sync auth users first
+    console.log("Syncing auth users...");
+    try {
+      let allUsers: Record<string, unknown>[] = [];
+      let page = 1;
+      let hasMoreUsers = true;
+
+      while (hasMoreUsers) {
+        const { data: { users }, error: usersError } = await localClient.auth.admin.listUsers({
+          page,
+          perPage: 1000,
+        });
+
+        if (usersError) {
+          console.error("Error listing users:", usersError);
+          syncResults["auth_users"] = { synced: 0, errors: 1 };
+          hasMoreUsers = false;
+          continue;
+        }
+
+        if (users && users.length > 0) {
+          const mapped = users.map((u) => ({
+            id: u.id,
+            email: u.email || null,
+            created_at: u.created_at,
+            updated_at: u.updated_at,
+            last_sign_in_at: u.last_sign_in_at || null,
+            email_confirmed_at: u.email_confirmed_at || null,
+            phone: u.phone || null,
+            is_anonymous: u.is_anonymous || false,
+          }));
+          allUsers = allUsers.concat(mapped);
+          if (users.length < 1000) hasMoreUsers = false;
+          else page++;
+        } else {
+          hasMoreUsers = false;
+        }
+      }
+
+      if (!syncResults["auth_users"] && allUsers.length > 0) {
+        let synced = 0;
+        let errors = 0;
+        for (let i = 0; i < allUsers.length; i += 50) {
+          const batch = allUsers.slice(i, i + 50);
+          const { error: upsertError } = await externalClient
+            .from("auth_users")
+            .upsert(batch, { onConflict: "id" });
+
+          if (upsertError) {
+            console.error("Upsert error for auth_users:", upsertError);
+            errors++;
+          } else {
+            synced += batch.length;
+          }
+        }
+        syncResults["auth_users"] = { synced, errors };
+      } else if (!syncResults["auth_users"]) {
+        syncResults["auth_users"] = { synced: 0, errors: 0 };
+      }
+    } catch (e) {
+      console.error("Auth users sync error:", e);
+      syncResults["auth_users"] = { synced: 0, errors: 1 };
+    }
+
+    // Sync regular tables
     for (const table of SYNC_TABLES) {
-      // Paginate to get ALL rows (Supabase default limit is 1000)
       let allData: Record<string, unknown>[] = [];
       let page = 0;
       const pageSize = 1000;
@@ -164,7 +228,7 @@ serve(async (req) => {
         }
       }
 
-      if (syncResults[table]) continue; // skip if errored during read
+      if (syncResults[table]) continue;
 
       const data = allData;
 
@@ -173,7 +237,6 @@ serve(async (req) => {
         continue;
       }
 
-      // Upsert in batches of 50
       let synced = 0;
       let errors = 0;
       for (let i = 0; i < data.length; i += 50) {
