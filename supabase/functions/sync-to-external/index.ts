@@ -15,6 +15,7 @@ const SYNC_TABLES = [
   "notification_settings",
   "email_verification_tokens",
   "user_roles",
+  "user_activity",
 ];
 
 serve(async (req) => {

@@ -249,6 +249,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity: {
+        Row: {
+          created_at: string
+          id: string
+          is_online: boolean
+          last_seen_at: string
+          page_route: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_online?: boolean
+          last_seen_at?: string
+          page_route?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_online?: boolean
+          last_seen_at?: string
+          page_route?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
