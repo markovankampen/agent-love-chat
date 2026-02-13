@@ -31,19 +31,7 @@ const Home = () => {
         .single();
 
       if (profile) {
-        // Check if profile is complete
-        if (!profile.first_name || !profile.date_of_birth || !profile.photo_url) {
-          // Profile incomplete - redirect to profile setup
-          console.log("Profile incomplete, redirecting to /profile-setup");
-          navigate("/profile-setup", { replace: true });
-          return;
-        }
-
         setUsername(profile.first_name || profile.username || "daar");
-      } else {
-        // No profile found - redirect to profile setup
-        navigate("/profile-setup", { replace: true });
-        return;
       }
 
       setLoading(false);

@@ -34,7 +34,19 @@ const Auth = () => {
           password,
         });
 
-        if (error) throw error;
+        if (error) {
+          // Handle invalid credentials / unregistered user
+          if (error.message === "Invalid login credentials") {
+            toast({
+              title: "Inloggen mislukt",
+              description: "Ongeldig e-mailadres of wachtwoord. Heb je al een account?",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          throw error;
+        }
 
         // Check if email is verified
         if (!data.user?.email_confirmed_at) {
@@ -42,26 +54,12 @@ const Auth = () => {
             title: "Email niet geverifieerd",
             description: "Controleer je inbox en verifieer je email om door te gaan.",
           });
-          // Store email for display on verification screen
           sessionStorage.setItem("pendingVerificationEmail", email);
           navigate("/verify");
           return;
         }
 
-        // Check if profile is complete
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, date_of_birth, photo_url")
-          .eq("id", data.user.id)
-          .single();
-
-        if (!profile?.first_name || !profile?.date_of_birth || !profile?.photo_url) {
-          // Profile incomplete, go to profile setup
-          navigate("/profile-setup");
-        } else {
-          // Profile complete, go to home
-          navigate("/home");
-        }
+        navigate("/home");
 
         toast({
           title: "Welkom terug!",
