@@ -417,12 +417,15 @@ serve(async (req) => {
       console.log('💾 Saving face analysis...');
       const { data: analysisData2, error: analysisError } = await supabase
         .from('face_analysis')
-        .upsert({
-          user_id: user.id,
-          photo_url: photoUrl,
-          attractiveness_score: analysisResult.attractiveness_score,
-          facial_features: analysisResult.facial_features,
-        })
+        .upsert(
+          {
+            user_id: user.id,
+            photo_url: photoUrl,
+            attractiveness_score: analysisResult.attractiveness_score,
+            facial_features: analysisResult.facial_features,
+          },
+          { onConflict: 'user_id' }
+        )
         .select()
         .single();
 

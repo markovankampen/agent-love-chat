@@ -402,12 +402,38 @@ const ProfileSetup = () => {
       const [day, month, year] = dateOfBirth.split("/");
       const formattedDate = `${year}-${month}-${day}`;
 
+      // Convert to JPEG to ensure Face++ compatibility
+      let uploadFile: File | Blob = selectedFile;
+      const fileExt = selectedFile.name.split(".").pop()?.toLowerCase();
+      let finalExt = fileExt || "jpeg";
+      
+      if (fileExt !== "jpg" && fileExt !== "jpeg") {
+        try {
+          const bitmap = await createImageBitmap(selectedFile);
+          const canvas = document.createElement("canvas");
+          canvas.width = bitmap.width;
+          canvas.height = bitmap.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(bitmap, 0, 0);
+            const blob = await new Promise<Blob | null>((resolve) =>
+              canvas.toBlob(resolve, "image/jpeg", 0.9)
+            );
+            if (blob) {
+              uploadFile = blob;
+              finalExt = "jpeg";
+            }
+          }
+        } catch (convErr) {
+          console.warn("JPEG conversion failed, uploading original:", convErr);
+        }
+      }
+
       // Upload photo to storage
-      const fileExt = selectedFile.name.split(".").pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      const fileName = `${userId}/${Date.now()}.${finalExt}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("profile-photos-temp")
-        .upload(fileName, selectedFile, {
+        .upload(fileName, uploadFile, {
           cacheControl: "3600",
           upsert: false,
         });
