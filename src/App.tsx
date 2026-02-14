@@ -34,7 +34,7 @@ const App = () => (
           <Route path="/home" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/verify" element={<Verify />} />
-          <Route path="/api/verify" element={<ApiVerify />} />
+          <Route path="/api-verify" element={<ApiVerify />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/account" element={<Account />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
