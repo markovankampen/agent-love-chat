@@ -87,8 +87,6 @@ const Auth = () => {
             data: {
               username: username,
             },
-            // emailRedirectTo is automatically set by Supabase to your Site URL
-            // The verification email will contain a link to /verify-email
           },
         });
 
@@ -99,6 +97,23 @@ const Auth = () => {
 
         console.log("Signup response:", data);
 
+        // Send custom verification email via edge function
+        try {
+          const baseUrl = window.location.origin;
+          const response = await supabase.functions.invoke("send-verification-email", {
+            body: {
+              email,
+              redirectUrl: `${baseUrl}/api-verify`,
+            },
+          });
+          console.log("Verification email response:", response);
+          if (response.error) {
+            console.error("Failed to send verification email:", response.error);
+          }
+        } catch (emailError) {
+          console.error("Error calling send-verification-email:", emailError);
+        }
+
         // Store email for verification screen display
         sessionStorage.setItem("pendingVerificationEmail", email);
 
@@ -107,10 +122,6 @@ const Auth = () => {
           description: "Check je email om je account te verifiëren.",
         });
 
-        // Navigate to the waiting screen
-        // User will click the link in their email
-        // The link will open /verify-email in the SAME tab (because it's a normal link)
-        // The /verify page will detect verification via polling
         navigate("/verify");
       }
     } catch (error: any) {
