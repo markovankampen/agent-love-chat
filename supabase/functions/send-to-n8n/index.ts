@@ -118,7 +118,7 @@ serve(async (req) => {
     // Get user profile
     const { data: profile } = await supabaseClient
       .from("profiles")
-      .select("username, email, matching_complete")
+      .select("username, email, matching_complete, photo_url, date_of_birth, first_name, email_verified")
       .eq("id", user.id)
       .single();
 
@@ -194,6 +194,34 @@ serve(async (req) => {
         console.error("Error saving agent message:", agentMsgError);
       } else if (agentMsgData) {
         triggerSync("conversations", "INSERT", agentMsgData as Record<string, unknown>);
+      }
+
+      // ✅ AUTO-COMPLETE PROFILE if essential fields are filled
+      if (
+        profile?.photo_url &&
+        profile?.date_of_birth &&
+        profile?.first_name &&
+        (!profile?.matching_complete || !profile?.email_verified)
+      ) {
+        console.log("Auto-completing profile for user:", user.id);
+        const { data: updatedProfile, error: updateError } = await supabaseAdmin
+          .from("profiles")
+          .update({
+            matching_complete: true,
+            email_verified: true,
+          })
+          .eq("id", user.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error("Error auto-completing profile:", updateError);
+        } else {
+          console.log("✅ Profile auto-completed for user:", user.id);
+          if (updatedProfile) {
+            triggerSync("profiles", "UPDATE", updatedProfile as Record<string, unknown>);
+          }
+        }
       }
 
       // Check if conversation is complete and trigger matchmaking
