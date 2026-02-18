@@ -77,42 +77,52 @@ serve(async (req) => {
       });
     }
 
-    // Fetch all data
+    // Fetch all profiles (paginated)
     const profiles = await fetchAllRows(supabaseAdmin, "profiles");
+    
+    // Fetch all matches
     const matches = await fetchAllRows(supabaseAdmin, "matches");
-    const conversations = await fetchAllRows(supabaseAdmin, "conversations", "id, user_id, role, created_at");
+    
+    // Fetch conversation count via counting all rows
+    const conversations = await fetchAllRows(supabaseAdmin, "conversations", "id, user_id, role, content, created_at");
+    
+    // Fetch user activity
     const userActivity = await fetchAllRows(supabaseAdmin, "user_activity");
 
-    // Generate fresh signed photo URLs and extract gender from facial_features
-    const enrichedProfiles = await Promise.all(profiles.map(async (p: any) => {
-      // Extract gender from facial_features JSON
-      let gender: string | null = null;
-      if (p.facial_features) {
-        const ff = typeof p.facial_features === "string" ? JSON.parse(p.facial_features) : p.facial_features;
-        gender = ff?.gender || null;
-      }
+    // Extract gender from conversations: the first user message after the "naar op zoek" question
+    // Pattern: assistant asks "man, vrouw of allebei?", user responds with preference
+    // We infer: looking for "man" → Female, looking for "vrouw" → Male, "allebei" → Unknown
+    const genderMap: Record<string, string> = {};
+    const userConvos: Record<string, { role: string; content: string; created_at: string }[]> = {};
+    
+    for (const c of conversations) {
+      if (!userConvos[c.user_id]) userConvos[c.user_id] = [];
+      userConvos[c.user_id].push(c);
+    }
 
-      // Generate fresh signed URL if photo exists
-      let freshPhotoUrl: string | null = null;
-      if (p.photo_url) {
-        // Extract the storage path from the URL (format: profile-photos-temp/userId/filename.jpg)
-        const match = p.photo_url.match(/profile-photos-temp\/([^?]+)/);
-        if (match) {
-          const filePath = match[1];
-          const { data: signedData } = await supabaseAdmin.storage
-            .from("profile-photos-temp")
-            .createSignedUrl(filePath, 3600); // 1 hour expiry
-          if (signedData?.signedUrl) {
-            freshPhotoUrl = signedData.signedUrl;
+    for (const [uid, msgs] of Object.entries(userConvos)) {
+      // Sort by created_at ascending
+      msgs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      
+      for (let i = 0; i < msgs.length - 1; i++) {
+        if (msgs[i].role === "agent" && msgs[i].content.includes("man, vrouw of allebei")) {
+          const answer = msgs[i + 1]?.content?.toLowerCase().trim() || "";
+          if (answer.includes("vrouw") && !answer.includes("man")) {
+            genderMap[uid] = "Male";
+          } else if (answer.includes("man") && !answer.includes("vrouw")) {
+            genderMap[uid] = "Female";
+          } else if (answer.includes("allebei") || (answer.includes("man") && answer.includes("vrouw"))) {
+            genderMap[uid] = "Other";
           }
+          break;
         }
       }
+    }
 
-      return {
-        ...p,
-        gender,
-        photo_url: freshPhotoUrl || p.photo_url,
-      };
+    // Enrich profiles with gender
+    const enrichedProfiles = profiles.map((p: any) => ({
+      ...p,
+      gender: genderMap[p.id] || null,
     }));
 
     return new Response(
