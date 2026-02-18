@@ -99,23 +99,6 @@ const Auth = () => {
 
         console.log("Signup response:", data);
 
-        // Send custom verification email via edge function
-        try {
-          const baseUrl = window.location.origin;
-          const response = await supabase.functions.invoke("send-verification-email", {
-            body: {
-              email,
-              redirectUrl: `${baseUrl}/api-verify`,
-            },
-          });
-          console.log("Verification email response:", response);
-          if (response.error) {
-            console.error("Failed to send verification email:", response.error);
-          }
-        } catch (emailError) {
-          console.error("Error calling send-verification-email:", emailError);
-        }
-
         // Store email for verification screen display
         sessionStorage.setItem("pendingVerificationEmail", email);
 
