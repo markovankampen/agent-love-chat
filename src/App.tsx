@@ -12,6 +12,7 @@ import Verify from "./pages/Verify";
 import ApiVerify from "./pages/ApiVerify";
 import ProfileSetup from "./pages/ProfileSetup";
 import Account from "./pages/Account";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/api-verify" element={<ApiVerify />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
