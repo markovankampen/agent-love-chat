@@ -114,22 +114,15 @@ const Verify = () => {
     };
   }, [searchParams, navigate, toast]);
 
-  const handleVerificationSuccess = async () => {
+  const handleVerificationSuccess = () => {
     if (hasRedirectedRef.current) return;
     hasRedirectedRef.current = true;
 
     sessionStorage.removeItem("pendingVerificationEmail");
     
-    // Navigate based on role and profile completeness
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      const { getPostAuthRoute } = await import("@/lib/postAuthNavigate");
-      const route = await getPostAuthRoute(session.user.id);
-      console.log("Email verified - redirecting to", route);
-      navigate(route, { replace: true });
-    } else {
-      navigate("/profile-setup", { replace: true });
-    }
+    // Immediately redirect to profile setup - no countdown needed
+    console.log("Email verified - redirecting to /profile-setup");
+    navigate("/profile-setup", { replace: true });
   };
 
   const handleGoBack = () => {
