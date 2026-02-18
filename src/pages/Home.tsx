@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { MessageCircle, User, LogOut } from "lucide-react";
 import Footer from "@/components/Footer";
 import heartRedGlow from "@/assets/illustrations/heart-red-glow.png";
+import { getPostAuthRoute } from "@/lib/getPostAuthRoute";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -20,6 +21,13 @@ const Home = () => {
 
       if (!session) {
         navigate("/");
+        return;
+      }
+
+      // Check if user should be on a different route
+      const route = await getPostAuthRoute(session.user.id);
+      if (route !== "/home") {
+        navigate(route, { replace: true });
         return;
       }
 
