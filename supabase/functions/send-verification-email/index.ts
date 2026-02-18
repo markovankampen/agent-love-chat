@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
 
     // Build our custom verification link pointing to /api-verify
     const baseUrl = redirectUrl ? new URL(redirectUrl).origin : "https://indebuurtontmoet.nl";
-    const verificationLink = `${baseUrl}/api-verify?token_hash=${encodeURIComponent(otpData.properties.hashed_token)}&type=signup`;
+    const verificationLink = `${baseUrl}/api-verify?token_hash=${encodeURIComponent(otpData.properties?.hashed_token ?? '')}&type=signup`;
 
     console.log("Verification link:", verificationLink);
 

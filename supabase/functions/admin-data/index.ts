@@ -65,7 +65,7 @@ serve(async (req) => {
 
     // Fetch data using service role client
     if (table) {
-      const validTables = ["profiles", "conversations", "matches", "face_analysis", "notification_settings", "email_verification_tokens", "user_roles"];
+      const validTables = ["profiles", "conversations", "matches", "face_analysis", "notification_settings", "email_verification_tokens", "user_roles", "user_activity"];
       if (!validTables.includes(table)) {
         return new Response(JSON.stringify({ error: `Invalid table: ${table}` }), {
           status: 400,
@@ -87,7 +87,7 @@ serve(async (req) => {
     }
 
     // Fetch all tables
-    const tables = ["profiles", "conversations", "matches", "face_analysis", "notification_settings", "email_verification_tokens", "user_roles"];
+    const tables = ["profiles", "conversations", "matches", "face_analysis", "notification_settings", "email_verification_tokens", "user_roles", "user_activity"];
     const results: Record<string, { count: number; data: unknown[] }> = {};
 
     await Promise.all(
