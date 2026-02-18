@@ -296,6 +296,7 @@ export default function Admin() {
                 <TableRow>
                   <TableHead></TableHead>
                   <TableHead>NAME</TableHead>
+                  <TableHead>EMAIL</TableHead>
                   <TableHead>AGE</TableHead>
                   <TableHead>GENDER</TableHead>
                   <TableHead>STATUS</TableHead>
@@ -316,7 +317,8 @@ export default function Admin() {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="font-medium">{p.first_name || p.email?.split("@")[0] || "—"}</TableCell>
+                      <TableCell className="font-medium">{p.first_name || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{p.email || "—"}</TableCell>
                       <TableCell>{age ?? "—"}</TableCell>
                       <TableCell>{p.gender || "—"}</TableCell>
                       <TableCell>
