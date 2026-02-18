@@ -7,13 +7,34 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function fetchAllRows(supabaseAdmin: any, table: string, selectFields = "*", orderBy = "created_at") {
+  const allRows: any[] = [];
+  let offset = 0;
+  const batchSize = 1000;
+  let hasMore = true;
+  while (hasMore) {
+    const { data, error } = await supabaseAdmin
+      .from(table)
+      .select(selectFields)
+      .order(orderBy, { ascending: false })
+      .range(offset, offset + batchSize - 1);
+    if (error || !data || data.length === 0) {
+      hasMore = false;
+    } else {
+      allRows.push(...data);
+      offset += batchSize;
+      hasMore = data.length === batchSize;
+    }
+  }
+  return allRows;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -40,8 +61,6 @@ serve(async (req) => {
     }
 
     const userId = user.id;
-
-    // Check admin role using service role client (bypasses RLS)
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: roleData } = await supabaseAdmin
@@ -58,59 +77,64 @@ serve(async (req) => {
       });
     }
 
-    // Parse optional query params for filtering
-    const url = new URL(req.url);
-    const table = url.searchParams.get("table"); // optional: fetch single table
-    const limit = Math.min(parseInt(url.searchParams.get("limit") || "100"), 1000);
+    // Fetch all profiles (paginated)
+    const profiles = await fetchAllRows(supabaseAdmin, "profiles");
+    
+    // Fetch all matches
+    const matches = await fetchAllRows(supabaseAdmin, "matches");
+    
+    // Fetch conversation count via counting all rows
+    const conversations = await fetchAllRows(supabaseAdmin, "conversations", "id, user_id, role, content, created_at");
+    
+    // Fetch user activity
+    const userActivity = await fetchAllRows(supabaseAdmin, "user_activity");
 
-    // Fetch data using service role client
-    if (table) {
-      const validTables = ["profiles", "conversations", "matches", "face_analysis", "notification_settings", "email_verification_tokens", "user_roles", "user_activity"];
-      if (!validTables.includes(table)) {
-        return new Response(JSON.stringify({ error: `Invalid table: ${table}` }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const { data, error } = await supabaseAdmin
-        .from(table)
-        .select("*")
-        .limit(limit)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      return new Response(JSON.stringify({ table, count: data?.length || 0, data }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Extract gender from conversations: the first user message after the "naar op zoek" question
+    // Pattern: assistant asks "man, vrouw of allebei?", user responds with preference
+    // We infer: looking for "man" → Female, looking for "vrouw" → Male, "allebei" → Unknown
+    const genderMap: Record<string, string> = {};
+    const userConvos: Record<string, { role: string; content: string; created_at: string }[]> = {};
+    
+    for (const c of conversations) {
+      if (!userConvos[c.user_id]) userConvos[c.user_id] = [];
+      userConvos[c.user_id].push(c);
     }
 
-    // Fetch all tables
-    const tables = ["profiles", "conversations", "matches", "face_analysis", "notification_settings", "email_verification_tokens", "user_roles", "user_activity"];
-    const results: Record<string, { count: number; data: unknown[] }> = {};
-
-    await Promise.all(
-      tables.map(async (t) => {
-        const { data, error } = await supabaseAdmin
-          .from(t)
-          .select("*")
-          .limit(limit)
-          .order("created_at", { ascending: false });
-
-        if (!error && data) {
-          results[t] = { count: data.length, data };
-        } else {
-          results[t] = { count: 0, data: [] };
+    for (const [uid, msgs] of Object.entries(userConvos)) {
+      // Sort by created_at ascending
+      msgs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      
+      for (let i = 0; i < msgs.length - 1; i++) {
+        if (msgs[i].role === "agent" && msgs[i].content.includes("man, vrouw of allebei")) {
+          const answer = msgs[i + 1]?.content?.toLowerCase().trim() || "";
+          if (answer.includes("vrouw") && !answer.includes("man")) {
+            genderMap[uid] = "Male";
+          } else if (answer.includes("man") && !answer.includes("vrouw")) {
+            genderMap[uid] = "Female";
+          } else if (answer.includes("allebei") || (answer.includes("man") && answer.includes("vrouw"))) {
+            genderMap[uid] = "Other";
+          }
+          break;
         }
-      })
-    );
+      }
+    }
+
+    // Enrich profiles with gender
+    const enrichedProfiles = profiles.map((p: any) => ({
+      ...p,
+      gender: genderMap[p.id] || null,
+    }));
 
     return new Response(
       JSON.stringify({
         fetched_at: new Date().toISOString(),
         admin_user_id: userId,
-        tables: results,
+        tables: {
+          profiles: { count: profiles.length, data: enrichedProfiles },
+          conversations: { count: conversations.length, data: [] },
+          matches: { count: matches.length, data: matches },
+          user_activity: { count: userActivity.length, data: userActivity },
+        },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

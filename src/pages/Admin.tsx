@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserCheck, UserPlus, Clock } from "lucide-react";
+import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +24,7 @@ interface Profile {
   created_at: string | null;
   photo_url: string | null;
   attractiveness_score: number | null;
+  gender: string | null;
 }
 
 interface Match {
@@ -34,14 +35,6 @@ interface Match {
   status: string;
   created_at: string;
   compatibility_reasons: { reasons?: string[] } | null;
-}
-
-interface Conversation {
-  id: string;
-  user_id: string;
-  role: string;
-  content: string;
-  created_at: string | null;
 }
 
 const PIE_COLORS = ["hsl(245, 85%, 60%)", "hsl(200, 80%, 55%)", "hsl(0, 84%, 60%)", "hsl(35, 90%, 55%)", "hsl(150, 60%, 45%)", "hsl(280, 60%, 55%)"];
@@ -66,8 +59,8 @@ function timeAgo(dateStr: string | null): string {
   return `${days}d ago`;
 }
 
-function getAgeGroup(age: number | null): string {
-  if (age === null) return "Unknown";
+function getAgeGroup(age: number | null): string | null {
+  if (age === null) return null;
   if (age < 18) return "<18";
   if (age <= 24) return "18-24";
   if (age <= 34) return "25-34";
@@ -107,11 +100,7 @@ export default function Admin() {
 
   async function checkAdminAndFetch() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
-
+    if (!session) { navigate("/auth"); return; }
     try {
       const { data: result, error } = await supabase.functions.invoke("admin-data", {
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -145,7 +134,6 @@ export default function Admin() {
 
   const profiles = (data.tables.profiles?.data || []) as Profile[];
   const matches = (data.tables.matches?.data || []) as Match[];
-  const conversations = (data.tables.conversations?.data || []) as Conversation[];
   const activeUsers = (data.tables.user_activity?.data || []) as { user_id: string; is_online: boolean }[];
 
   const totalUsers = data.tables.profiles?.count || 0;
@@ -159,25 +147,29 @@ export default function Admin() {
   const declinedMatches = matches.filter(m => m.status === "declined").length;
   const matchRate = totalMatches > 0 ? ((acceptedMatches / totalMatches) * 100).toFixed(1) : "0.0";
   const completedProfiles = profiles.filter(p => p.matching_complete);
-  const incompleteProfiles = profiles.filter(p => !p.matching_complete);
 
-  // Age distribution
+  // Age distribution - exclude unknown
   const ageGroups: Record<string, number> = {};
   profiles.forEach(p => {
     const group = getAgeGroup(getAge(p.date_of_birth));
-    ageGroups[group] = (ageGroups[group] || 0) + 1;
+    if (group) ageGroups[group] = (ageGroups[group] || 0) + 1;
   });
   const ageData = Object.entries(ageGroups).map(([name, value]) => ({ name, value, pct: ((value / totalUsers) * 100).toFixed(1) }));
 
-  // Gender ratio - infer from conversations or just use Unknown since no gender field
-  const genderData = [
-    { name: "Unknown", value: totalUsers, pct: "100.0" },
-  ];
+  // Gender ratio from enriched profiles
+  const genderCounts: Record<string, number> = {};
+  profiles.forEach(p => {
+    const g = p.gender || null;
+    if (g) genderCounts[g] = (genderCounts[g] || 0) + 1;
+  });
+  const unknownGender = totalUsers - Object.values(genderCounts).reduce((a, b) => a + b, 0);
+  if (unknownGender > 0) genderCounts["Unknown"] = unknownGender;
+  const genderData = Object.entries(genderCounts).map(([name, value]) => ({ name, value, pct: ((value / totalUsers) * 100).toFixed(1) }));
 
   // User engagement
   const engagementData = [
     { name: "Completed Chat", value: completedProfiles.length, pct: ((completedProfiles.length / Math.max(totalUsers, 1)) * 100).toFixed(1) },
-    { name: "Incomplete Chat", value: incompleteProfiles.length, pct: ((incompleteProfiles.length / Math.max(totalUsers, 1)) * 100).toFixed(1) },
+    { name: "Incomplete Chat", value: totalUsers - completedProfiles.length, pct: (((totalUsers - completedProfiles.length) / Math.max(totalUsers, 1)) * 100).toFixed(1) },
     { name: "New Today", value: newToday, pct: ((newToday / Math.max(totalUsers, 1)) * 100).toFixed(1) },
   ];
 
@@ -197,20 +189,16 @@ export default function Admin() {
   }));
 
   const weeklySignups = getWeeklySignups(profiles);
-
-  // Recent completed users
   const recentCompleted = completedProfiles.slice(0, 10);
 
   return (
     <div className="min-h-screen bg-secondary">
-      {/* Header */}
       <header className="bg-card border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <Heart className="h-6 w-6 text-destructive fill-destructive" />
           <h1 className="text-xl font-bold text-foreground">Matchmaker Flori</h1>
           <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-            <span className="w-2 h-2 rounded-full bg-primary mr-1.5 inline-block" />
-            Live
+            <span className="w-2 h-2 rounded-full bg-primary mr-1.5 inline-block" /> Live
           </Badge>
         </div>
         <p className="text-muted-foreground text-sm hidden md:block">Your matchmaking insights at a glance</p>
@@ -245,7 +233,7 @@ export default function Admin() {
         <Card>
           <CardHeader className="flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg">Recent Profiles</CardTitle>
-            <Badge variant="outline">{profiles.length} shown</Badge>
+            <Badge variant="outline">{profiles.length} total</Badge>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
@@ -273,34 +261,7 @@ export default function Admin() {
             </CardHeader>
             <CardContent className="space-y-3">
               {matchPairs.slice(0, 6).map(mp => (
-                <div key={mp.id} className="flex items-center gap-3 py-2 border-b last:border-0">
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{mp.user?.first_name || mp.user?.email?.split("@")[0] || "User"}</p>
-                      <p className="text-xs text-muted-foreground">{getAge(mp.user?.date_of_birth ?? null) ? `${getAge(mp.user?.date_of_birth ?? null)}y` : ""}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <Heart className="h-4 w-4 text-destructive fill-destructive" />
-                    <span className="text-xs font-bold text-destructive">{mp.match_score}%</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-1 justify-end">
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{mp.matched?.first_name || mp.matched?.email?.split("@")[0] || "User"}</p>
-                      <p className="text-xs text-muted-foreground">{getAge(mp.matched?.date_of_birth ?? null) ? `${getAge(mp.matched?.date_of_birth ?? null)}y` : ""}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <Badge variant={mp.status === "accepted" ? "default" : mp.status === "declined" ? "destructive" : "secondary"} className="text-xs ml-2">
-                    {mp.status}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground ml-1">{timeAgo(mp.created_at)}</span>
-                </div>
+                <MatchPairCard key={mp.id} mp={mp} />
               ))}
             </CardContent>
           </Card>
@@ -336,6 +297,7 @@ export default function Admin() {
                   <TableHead></TableHead>
                   <TableHead>NAME</TableHead>
                   <TableHead>AGE</TableHead>
+                  <TableHead>GENDER</TableHead>
                   <TableHead>STATUS</TableHead>
                   <TableHead>JOINED</TableHead>
                 </TableRow>
@@ -346,14 +308,19 @@ export default function Admin() {
                   return (
                     <TableRow key={p.id}>
                       <TableCell>
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        {p.photo_url ? (
+                          <img src={p.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="font-medium">{p.first_name || p.email?.split("@")[0] || "—"}</TableCell>
                       <TableCell>{age ?? "—"}</TableCell>
+                      <TableCell>{p.gender || "—"}</TableCell>
                       <TableCell>
-                        <Badge className="bg-primary/10 text-primary hover:bg-primary/10">complete</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">complete</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{timeAgo(p.created_at)}</TableCell>
                     </TableRow>
@@ -383,19 +350,75 @@ function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string
 function ProfileCard({ profile }: { profile: Profile }) {
   const age = getAge(profile.date_of_birth);
   const name = profile.first_name || profile.email?.split("@")[0] || "User";
+  const score = profile.attractiveness_score ? `${profile.attractiveness_score}/10` : null;
   return (
-    <div className="text-center space-y-1">
-      <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center">
-        <Users className="h-6 w-6 text-muted-foreground" />
+    <div className="text-center space-y-1 p-3 rounded-lg bg-card border">
+      <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center overflow-hidden">
+        {profile.photo_url ? (
+          <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <Users className="h-6 w-6 text-muted-foreground" />
+        )}
       </div>
-      <p className="text-sm font-medium truncate">{name}</p>
-      <p className="text-xs text-muted-foreground">{age ? `${age}y` : ""}</p>
-      <div className="flex items-center justify-center gap-1">
-        <Badge variant={profile.matching_complete ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-          {profile.matching_complete ? "Complete" : "Pending"}
-        </Badge>
-      </div>
+      <p className="text-sm font-semibold truncate">{name}</p>
+      <p className="text-xs text-muted-foreground">
+        {age ? `${age}y` : ""}
+        {age && profile.gender ? " • " : ""}
+        {profile.gender || ""}
+      </p>
+      {score && <p className="text-xs text-muted-foreground">Score: {score}</p>}
       <p className="text-[10px] text-muted-foreground">{timeAgo(profile.created_at)}</p>
+    </div>
+  );
+}
+
+function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Profile; match_score: number; status: string; created_at: string } }) {
+  const userName = mp.user?.first_name || mp.user?.email?.split("@")[0] || "User";
+  const matchedName = mp.matched?.first_name || mp.matched?.email?.split("@")[0] || "User";
+  const userAge = getAge(mp.user?.date_of_birth ?? null);
+  const matchedAge = getAge(mp.matched?.date_of_birth ?? null);
+
+  return (
+    <div className="flex items-center gap-4 p-4 border rounded-lg bg-card">
+      {/* User 1 */}
+      <div className="flex flex-col items-center gap-1 min-w-[60px]">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+          {mp.user?.photo_url ? (
+            <img src={mp.user.photo_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <Users className="h-5 w-5 text-muted-foreground" />
+          )}
+        </div>
+        <p className="text-xs font-semibold truncate max-w-[60px]">{userName}</p>
+        <p className="text-[10px] text-muted-foreground">{userAge ? `${userAge}y` : ""}</p>
+      </div>
+
+      {/* Score */}
+      <div className="flex flex-col items-center">
+        <Heart className="h-4 w-4 text-destructive fill-destructive" />
+        <span className="text-sm font-bold text-destructive">{mp.match_score}%</span>
+      </div>
+
+      {/* User 2 */}
+      <div className="flex flex-col items-center gap-1 min-w-[60px]">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+          {mp.matched?.photo_url ? (
+            <img src={mp.matched.photo_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <Users className="h-5 w-5 text-muted-foreground" />
+          )}
+        </div>
+        <p className="text-xs font-semibold truncate max-w-[60px]">{matchedName}</p>
+        <p className="text-[10px] text-muted-foreground">{matchedAge ? `${matchedAge}y` : ""}</p>
+      </div>
+
+      {/* Status & Time */}
+      <div className="flex items-center gap-2 ml-auto">
+        <Badge variant={mp.status === "accepted" ? "default" : mp.status === "declined" ? "destructive" : "secondary"} className="text-xs">
+          {mp.status}
+        </Badge>
+        <span className="text-xs text-muted-foreground">{timeAgo(mp.created_at)}</span>
+      </div>
     </div>
   );
 }
@@ -408,11 +431,11 @@ function PieChartCard({ title, data }: { title: string; data: { name: string; va
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-24 h-24">
+        <div className="flex items-center gap-3">
+          <div className="w-28 h-28">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={filtered} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" strokeWidth={0}>
+                <Pie data={filtered} cx="50%" cy="50%" innerRadius={30} outerRadius={50} dataKey="value" strokeWidth={0}>
                   {filtered.map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
@@ -420,10 +443,10 @@ function PieChartCard({ title, data }: { title: string; data: { name: string; va
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex-1 space-y-0.5">
+          <div className="flex-1 space-y-1">
             {data.map((d, i) => (
-              <div key={d.name} className="flex items-center gap-1.5 text-[11px]">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+              <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
                 <span className="text-muted-foreground truncate">{d.name}</span>
                 <span className="font-medium ml-auto">{d.pct}%</span>
               </div>
