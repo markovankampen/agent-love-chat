@@ -156,15 +156,14 @@ export default function Admin() {
   });
   const ageData = Object.entries(ageGroups).map(([name, value]) => ({ name, value, pct: ((value / totalUsers) * 100).toFixed(1) }));
 
-  // Gender ratio from enriched profiles
+  // Gender ratio from enriched profiles - exclude unknown
   const genderCounts: Record<string, number> = {};
   profiles.forEach(p => {
     const g = p.gender || null;
-    if (g) genderCounts[g] = (genderCounts[g] || 0) + 1;
+    if (g && g !== "Unknown") genderCounts[g] = (genderCounts[g] || 0) + 1;
   });
-  const unknownGender = totalUsers - Object.values(genderCounts).reduce((a, b) => a + b, 0);
-  if (unknownGender > 0) genderCounts["Unknown"] = unknownGender;
-  const genderData = Object.entries(genderCounts).map(([name, value]) => ({ name, value, pct: ((value / totalUsers) * 100).toFixed(1) }));
+  const genderTotal = Object.values(genderCounts).reduce((a, b) => a + b, 0);
+  const genderData = Object.entries(genderCounts).map(([name, value]) => ({ name, value, pct: ((value / Math.max(genderTotal, 1)) * 100).toFixed(1) }));
 
   // User engagement
   const engagementData = [
@@ -189,7 +188,14 @@ export default function Admin() {
   }));
 
   const weeklySignups = getWeeklySignups(profiles);
-  const recentCompleted = completedProfiles.slice(0, 10);
+  // Sort completed profiles: those with facial_features (gender/age data) first
+  const sortedCompleted = [...completedProfiles].sort((a, b) => {
+    const aHasData = (a.gender && a.date_of_birth) ? 1 : 0;
+    const bHasData = (b.gender && b.date_of_birth) ? 1 : 0;
+    if (bHasData !== aHasData) return bHasData - aHasData;
+    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+  });
+  const recentCompleted = sortedCompleted.slice(0, 10);
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -237,7 +243,12 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-              {profiles.slice(0, 12).map(p => (
+              {[...profiles].sort((a, b) => {
+                const aHasData = (a.gender && a.date_of_birth) ? 1 : 0;
+                const bHasData = (b.gender && b.date_of_birth) ? 1 : 0;
+                if (bHasData !== aHasData) return bHasData - aHasData;
+                return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+              }).slice(0, 12).map(p => (
                 <ProfileCard key={p.id} profile={p} />
               ))}
             </div>
