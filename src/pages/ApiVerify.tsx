@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getPostAuthRoute } from "@/lib/getPostAuthRoute";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,7 @@ const ApiVerify = () => {
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");
 
-        // Signal any waiting /verify tabs to redirect to profile-setup
+        // Signal any waiting /verify tabs to redirect
         try {
           localStorage.setItem("email_verified_close_tab", "true");
           setTimeout(() => {
@@ -79,13 +80,15 @@ const ApiVerify = () => {
           console.log("localStorage not available:", e);
         }
 
-        // Show success message (DO NOT redirect this tab)
         setStatus("success");
 
-        // Try to close this tab after 3 seconds
-        setTimeout(() => {
-          window.close();
-        }, 3000);
+        // Redirect this tab to the correct page after a short delay
+        if (data.user) {
+          const route = await getPostAuthRoute(data.user.id);
+          setTimeout(() => {
+            navigate(route);
+          }, 2000);
+        }
       } catch (error) {
         console.error("Unexpected error:", error);
         setStatus("error");
@@ -150,22 +153,10 @@ const ApiVerify = () => {
             <p className="text-muted-foreground">Je email is succesvol geverifieerd.</p>
 
             <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mt-4">
-              <p className="text-green-800 dark:text-green-200 font-medium mb-2">Je kunt dit tabblad nu sluiten</p>
+              <p className="text-green-800 dark:text-green-200 font-medium mb-2">Je wordt automatisch doorgestuurd...</p>
               <p className="text-sm text-green-800 dark:text-green-200">
-                Je oorspronkelijke tabblad wordt automatisch doorgestuurd naar profiel setup.
+                Even geduld, je wordt doorgestuurd naar je profiel.
               </p>
-            </div>
-
-            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-4">
-              <p className="text-xs text-blue-800 dark:text-blue-200">
-                💡 Dit tabblad probeert zichzelf te sluiten. Als dit niet werkt, kun je het handmatig sluiten.
-              </p>
-            </div>
-
-            <div className="pt-4">
-              <Button onClick={() => window.close()} variant="outline" className="w-full">
-                Sluit dit tabblad
-              </Button>
             </div>
           </div>
         </Card>
