@@ -174,9 +174,9 @@ export default function Admin() {
 
   // Match activity
   const matchActivityData = [
-    { name: "Accepted", value: acceptedMatches, pct: totalMatches > 0 ? ((acceptedMatches / totalMatches) * 100).toFixed(1) : "0.0" },
-    { name: "Pending", value: pendingMatches, pct: totalMatches > 0 ? ((pendingMatches / totalMatches) * 100).toFixed(1) : "0.0" },
-    { name: "Declined", value: declinedMatches, pct: totalMatches > 0 ? ((declinedMatches / totalMatches) * 100).toFixed(1) : "0.0" },
+    { name: "Accepted", value: acceptedMatches, pct: totalMatches > 0 ? ((acceptedMatches / totalMatches) * 100).toFixed(1) : "0.0", color: "hsl(150, 60%, 45%)" },
+    { name: "Pending", value: pendingMatches, pct: totalMatches > 0 ? ((pendingMatches / totalMatches) * 100).toFixed(1) : "0.0", color: "hsl(35, 90%, 55%)" },
+    { name: "Declined", value: declinedMatches, pct: totalMatches > 0 ? ((declinedMatches / totalMatches) * 100).toFixed(1) : "0.0", color: "hsl(0, 84%, 60%)" },
   ];
 
   // Match pairs with profile lookup
@@ -320,13 +320,9 @@ export default function Admin() {
                   return (
                     <TableRow key={p.id}>
                       <TableCell>
-                        {p.photo_url ? (
-                          <img src={p.photo_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium">{p.first_name || "—"}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{p.email || "—"}</TableCell>
@@ -366,12 +362,8 @@ function ProfileCard({ profile }: { profile: Profile }) {
   const score = profile.attractiveness_score ? `${profile.attractiveness_score}/10` : null;
   return (
     <div className="text-center space-y-1 p-3 rounded-lg bg-card border">
-      <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center overflow-hidden">
-        {profile.photo_url ? (
-          <img src={profile.photo_url} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <Users className="h-6 w-6 text-muted-foreground" />
-        )}
+      <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center">
+        <Users className="h-6 w-6 text-muted-foreground" />
       </div>
       <p className="text-sm font-semibold truncate">{name}</p>
       <p className="text-xs text-muted-foreground">
@@ -395,12 +387,8 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
     <div className="flex items-center gap-4 p-4 border rounded-lg bg-card">
       {/* User 1 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-          {mp.user?.photo_url ? (
-            <img src={mp.user.photo_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <Users className="h-5 w-5 text-muted-foreground" />
-          )}
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+          <Users className="h-5 w-5 text-muted-foreground" />
         </div>
         <p className="text-xs font-semibold truncate max-w-[60px]">{userName}</p>
         <p className="text-[10px] text-muted-foreground">{userAge ? `${userAge}y` : ""}</p>
@@ -414,12 +402,8 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
 
       {/* User 2 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-          {mp.matched?.photo_url ? (
-            <img src={mp.matched.photo_url} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <Users className="h-5 w-5 text-muted-foreground" />
-          )}
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+          <Users className="h-5 w-5 text-muted-foreground" />
         </div>
         <p className="text-xs font-semibold truncate max-w-[60px]">{matchedName}</p>
         <p className="text-[10px] text-muted-foreground">{matchedAge ? `${matchedAge}y` : ""}</p>
@@ -436,7 +420,7 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
   );
 }
 
-function PieChartCard({ title, data }: { title: string; data: { name: string; value: number; pct: string }[] }) {
+function PieChartCard({ title, data }: { title: string; data: { name: string; value: number; pct: string; color?: string }[] }) {
   const filtered = data.filter(d => d.value > 0);
   return (
     <Card>
@@ -449,22 +433,27 @@ function PieChartCard({ title, data }: { title: string; data: { name: string; va
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={filtered} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" strokeWidth={0}>
-                  {filtered.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
+                  {filtered.map((entry, i) => {
+                    const origIndex = data.findIndex(d => d.name === entry.name);
+                    const color = entry.color || PIE_COLORS[origIndex % PIE_COLORS.length];
+                    return <Cell key={i} fill={color} />;
+                  })}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="w-full space-y-1.5">
-            {data.map((d, i) => (
-              <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
-                <span className="text-muted-foreground truncate">{d.name}</span>
-                <span className="font-medium ml-auto">{d.value} ({d.pct}%)</span>
-              </div>
-            ))}
+            {data.map((d, i) => {
+              const color = d.color || PIE_COLORS[i % PIE_COLORS.length];
+              return (
+                <div key={d.name} className="flex items-center gap-1.5 text-xs">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <span className="text-muted-foreground truncate">{d.name}</span>
+                  <span className="font-medium ml-auto">{d.value} ({d.pct}%)</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </CardContent>
