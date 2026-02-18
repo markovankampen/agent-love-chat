@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, UserCircle, Eye, EyeOff } from "lucide-react";
 import Footer from "@/components/Footer";
+import { getPostAuthRoute } from "@/lib/getPostAuthRoute";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -59,7 +60,8 @@ const Auth = () => {
           return;
         }
 
-        navigate("/home");
+        const route = await getPostAuthRoute(data.user!.id);
+        navigate(route);
 
         toast({
           title: "Welkom terug!",

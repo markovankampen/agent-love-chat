@@ -47,8 +47,8 @@ const Verify = () => {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (session?.user?.email_confirmed_at) {
-        console.log("Already verified, redirecting to /profile-setup");
+    if (session?.user?.email_confirmed_at) {
+        console.log("Already verified, redirecting...");
         handleVerificationSuccess();
         return;
       }

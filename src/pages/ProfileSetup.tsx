@@ -513,7 +513,7 @@ const ProfileSetup = () => {
         }
       });
 
-      // Wait a bit then navigate
+      // Wait a bit then navigate to home (profile is now complete)
       setTimeout(() => {
         navigate("/home", { replace: true });
       }, 1500);
