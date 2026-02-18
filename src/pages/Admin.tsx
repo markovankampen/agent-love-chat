@@ -444,24 +444,25 @@ function PieChartCard({ title, data }: { title: string; data: { name: string; va
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-28 h-28">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-44 h-44">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={filtered} cx="50%" cy="50%" innerRadius={30} outerRadius={50} dataKey="value" strokeWidth={0}>
+                <Pie data={filtered} cx="50%" cy="50%" innerRadius={40} outerRadius={70} dataKey="value" strokeWidth={0}>
                   {filtered.map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex-1 space-y-1">
+          <div className="w-full space-y-1.5">
             {data.map((d, i) => (
               <div key={d.name} className="flex items-center gap-1.5 text-xs">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
                 <span className="text-muted-foreground truncate">{d.name}</span>
-                <span className="font-medium ml-auto">{d.pct}%</span>
+                <span className="font-medium ml-auto">{d.value} ({d.pct}%)</span>
               </div>
             ))}
           </div>

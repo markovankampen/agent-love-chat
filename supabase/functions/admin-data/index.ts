@@ -83,37 +83,53 @@ serve(async (req) => {
     const conversations = await fetchAllRows(supabaseAdmin, "conversations", "id, user_id, role, created_at");
     const userActivity = await fetchAllRows(supabaseAdmin, "user_activity");
 
-    // Generate fresh signed photo URLs and extract gender from facial_features
-    const enrichedProfiles = await Promise.all(profiles.map(async (p: any) => {
-      // Extract gender from facial_features JSON
+    // Collect all file paths that need signed URLs
+    const pathsToSign: { index: number; filePath: string }[] = [];
+    profiles.forEach((p: any, i: number) => {
+      if (p.photo_url) {
+        const m = p.photo_url.match(/profile-photos-temp\/([^?]+)/);
+        if (m) pathsToSign.push({ index: i, filePath: m[1] });
+      }
+    });
+
+    // Batch sign URLs (Supabase supports createSignedUrls for multiple paths)
+    let signedUrlMap: Record<string, string> = {};
+    if (pathsToSign.length > 0) {
+      const batchSize = 100;
+      for (let i = 0; i < pathsToSign.length; i += batchSize) {
+        const batch = pathsToSign.slice(i, i + batchSize);
+        const paths = batch.map(b => b.filePath);
+        const { data: signedData } = await supabaseAdmin.storage
+          .from("profile-photos-temp")
+          .createSignedUrls(paths, 3600); // 1 hour expiry
+        if (signedData) {
+          signedData.forEach((sd: any, idx: number) => {
+            if (sd.signedUrl) {
+              signedUrlMap[batch[idx].filePath] = sd.signedUrl;
+            }
+          });
+        }
+      }
+    }
+
+    // Enrich profiles with gender and fresh photo URLs
+    const enrichedProfiles = profiles.map((p: any) => {
       let gender: string | null = null;
       if (p.facial_features) {
         const ff = typeof p.facial_features === "string" ? JSON.parse(p.facial_features) : p.facial_features;
         gender = ff?.gender || null;
       }
 
-      // Generate fresh signed URL if photo exists
       let freshPhotoUrl: string | null = null;
       if (p.photo_url) {
-        // Extract the storage path from the URL (format: profile-photos-temp/userId/filename.jpg)
-        const match = p.photo_url.match(/profile-photos-temp\/([^?]+)/);
-        if (match) {
-          const filePath = match[1];
-          const { data: signedData } = await supabaseAdmin.storage
-            .from("profile-photos-temp")
-            .createSignedUrl(filePath, 3600); // 1 hour expiry
-          if (signedData?.signedUrl) {
-            freshPhotoUrl = signedData.signedUrl;
-          }
+        const m = p.photo_url.match(/profile-photos-temp\/([^?]+)/);
+        if (m && signedUrlMap[m[1]]) {
+          freshPhotoUrl = signedUrlMap[m[1]];
         }
       }
 
-      return {
-        ...p,
-        gender,
-        photo_url: freshPhotoUrl || p.photo_url,
-      };
-    }));
+      return { ...p, gender, photo_url: freshPhotoUrl || p.photo_url };
+    });
 
     return new Response(
       JSON.stringify({
