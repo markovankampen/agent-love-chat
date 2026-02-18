@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getPostAuthRoute } from "@/lib/postAuthNavigate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MessageCircle, User, LogOut } from "lucide-react";
@@ -20,6 +21,13 @@ const Home = () => {
 
       if (!session) {
         navigate("/");
+        return;
+      }
+
+      // Check if user should be on a different page
+      const route = await getPostAuthRoute(session.user.id);
+      if (route !== "/home") {
+        navigate(route, { replace: true });
         return;
       }
 
