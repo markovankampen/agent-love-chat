@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getPostAuthRoute } from "@/lib/postAuthNavigate";
 import { Card } from "@/components/ui/card";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -99,9 +100,11 @@ const VerifyEmail = () => {
           setErrorMessage("Deze verificatie link is verlopen of ongeldig. Probeer opnieuw in te loggen.");
         } else if (error.message?.includes("already") && error.message?.includes("verified")) {
           setErrorMessage("Dit email adres is al geverifieerd.");
-          // Already verified - redirect to profile setup
-          setTimeout(() => {
-            navigate("/profile-setup", { replace: true });
+          // Already verified - redirect based on role/profile
+          setTimeout(async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const route = session ? await getPostAuthRoute(session.user.id) : "/profile-setup";
+            navigate(route, { replace: true });
           }, 2000);
         } else {
           setErrorMessage(error.message || "Er ging iets mis bij het verifiëren");
@@ -114,14 +117,16 @@ const VerifyEmail = () => {
 
   const startCountdown = () => {
     let count = 3;
-    const timer = setInterval(() => {
+    const timer = setInterval(async () => {
       count--;
       setCountdown(count);
 
       if (count <= 0) {
         clearInterval(timer);
-        console.log("Redirecting to /profile-setup");
-        navigate("/profile-setup", { replace: true });
+        const { data: { session } } = await supabase.auth.getSession();
+        const route = session ? await getPostAuthRoute(session.user.id) : "/profile-setup";
+        console.log("Redirecting to", route);
+        navigate(route, { replace: true });
       }
     }, 1000);
   };
