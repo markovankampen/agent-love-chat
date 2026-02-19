@@ -320,9 +320,13 @@ export default function Admin() {
                   return (
                     <TableRow key={p.id}>
                       <TableCell>
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        {p.photo_url ? (
+                          <img src={p.photo_url} alt={p.first_name || "User"} className="w-8 h-8 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="font-medium">{p.first_name || "—"}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{p.email || "—"}</TableCell>
@@ -362,9 +366,13 @@ function ProfileCard({ profile }: { profile: Profile }) {
   const score = profile.attractiveness_score ? `${profile.attractiveness_score}/10` : null;
   return (
     <div className="text-center space-y-1 p-3 rounded-lg bg-card border">
-      <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center">
-        <Users className="h-6 w-6 text-muted-foreground" />
-      </div>
+      {profile.photo_url ? (
+        <img src={profile.photo_url} alt={name} className="w-14 h-14 mx-auto rounded-full object-cover" />
+      ) : (
+        <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center">
+          <Users className="h-6 w-6 text-muted-foreground" />
+        </div>
+      )}
       <p className="text-sm font-semibold truncate">{name}</p>
       <p className="text-xs text-muted-foreground">
         {age ? `${age}y` : ""}
@@ -387,9 +395,13 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
     <div className="flex items-center gap-4 p-4 border rounded-lg bg-card">
       {/* User 1 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-          <Users className="h-5 w-5 text-muted-foreground" />
-        </div>
+        {mp.user?.photo_url ? (
+          <img src={mp.user.photo_url} alt={userName} className="w-12 h-12 rounded-full object-cover" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+            <Users className="h-5 w-5 text-muted-foreground" />
+          </div>
+        )}
         <p className="text-xs font-semibold truncate max-w-[60px]">{userName}</p>
         <p className="text-[10px] text-muted-foreground">{userAge ? `${userAge}y` : ""}</p>
       </div>
@@ -402,9 +414,13 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
 
       {/* User 2 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-          <Users className="h-5 w-5 text-muted-foreground" />
-        </div>
+        {mp.matched?.photo_url ? (
+          <img src={mp.matched.photo_url} alt={matchedName} className="w-12 h-12 rounded-full object-cover" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+            <Users className="h-5 w-5 text-muted-foreground" />
+          </div>
+        )}
         <p className="text-xs font-semibold truncate max-w-[60px]">{matchedName}</p>
         <p className="text-[10px] text-muted-foreground">{matchedAge ? `${matchedAge}y` : ""}</p>
       </div>
