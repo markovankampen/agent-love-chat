@@ -225,7 +225,7 @@ serve(async (req) => {
         .from('face_analysis')
         .upsert({
           user_id: user.id,
-          photo_url: photoUrl,
+          photo_url: photoPath || photoUrl,
           attractiveness_score: mockAnalysis.attractiveness_score,
           facial_features: mockAnalysis.facial_features,
         })
@@ -246,7 +246,7 @@ serve(async (req) => {
           username: username || null,
           phone_number: phoneNumber || null,
           date_of_birth: dateOfBirth,
-          photo_url: photoUrl,
+          photo_url: photoPath || photoUrl,
           attractiveness_score: mockAnalysis.attractiveness_score,
           facial_features: mockAnalysis.facial_features,
           eye_color: eyeColor,
@@ -446,7 +446,7 @@ serve(async (req) => {
         .upsert(
           {
             user_id: user.id,
-            photo_url: photoUrl,
+            photo_url: photoPath || photoUrl,
             attractiveness_score: analysisResult.attractiveness_score,
             facial_features: analysisResult.facial_features,
           },
@@ -479,7 +479,7 @@ serve(async (req) => {
           username: username || null,
           phone_number: phoneNumber || null,
           date_of_birth: dateOfBirth,
-          photo_url: photoUrl,
+          photo_url: photoPath || photoUrl,
           attractiveness_score: analysisResult.attractiveness_score,
           facial_features: analysisResult.facial_features,
           eye_color: eyeColor,
