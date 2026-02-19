@@ -276,15 +276,8 @@ serve(async (req) => {
       if (mockProfileData) triggerSync('profiles', 'UPDATE', mockProfileData as Record<string, unknown>);
       if (mockAnalysisData) triggerSync('face_analysis', 'UPDATE', mockAnalysisData as Record<string, unknown>);
 
-      // Delete temp photo
-      if (photoPath) {
-        try {
-          await supabase.storage.from('profile-photos-temp').remove([photoPath]);
-          console.log('✅ Temp photo deleted');
-        } catch (deleteErr) {
-          console.error('Failed to delete temp photo:', deleteErr);
-        }
-      }
+      // Keep photos in storage for future reference
+      console.log('📸 Photo retained in storage:', photoPath || photoUrl);
 
       return new Response(
         JSON.stringify({
@@ -531,22 +524,8 @@ serve(async (req) => {
         }
       }
 
-      // Delete temp photo
-      if (photoPath) {
-        try {
-          const { error: deleteError } = await supabase.storage
-            .from('profile-photos-temp')
-            .remove([photoPath]);
-
-          if (deleteError) {
-            console.error('⚠️ Error deleting temp photo:', deleteError);
-          } else {
-            console.log('✅ Temp photo deleted:', photoPath);
-          }
-        } catch (deleteErr) {
-          console.error('⚠️ Exception during photo deletion:', deleteErr);
-        }
-      }
+      // Keep photos in storage for future reference
+      console.log('📸 Photo retained in storage:', photoPath || photoUrl);
 
       console.log('=== ✅ Analyze Photo Function Completed Successfully ===');
 
