@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -123,12 +123,15 @@ const formatPhoneNumber = (value: string): string => {
 };
 
 const ProfileSetup = () => {
+  const [searchParams] = useSearchParams();
+  const photoOnly = searchParams.get("photo-only") === "true";
+  
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
-  const [username, setUsername] = useState(""); // ✅ Added username state
+  const [username, setUsername] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
@@ -137,6 +140,7 @@ const ProfileSetup = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const navigate = useNavigate();
@@ -152,7 +156,7 @@ const ProfileSetup = () => {
       } else {
         setUserId(user.id);
 
-        // Load existing profile data if available
+        // Load existing profile data
         const { data: profile } = await supabase
           .from("profiles")
           .select("first_name, username, phone_number, date_of_birth")
@@ -164,11 +168,11 @@ const ProfileSetup = () => {
           if (profile.username) setUsername(profile.username);
           if (profile.phone_number) setPhoneNumber(profile.phone_number);
           if (profile.date_of_birth) {
-            // Convert from yyyy-mm-dd to dd/mm/yyyy for display
             const [year, month, day] = profile.date_of_birth.split("-");
             setDateOfBirth(`${day}/${month}/${year}`);
           }
         }
+        setProfileLoaded(true);
       }
     };
     checkAuth();
@@ -284,92 +288,95 @@ const ProfileSetup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate first name
-    const trimmedName = firstName.trim();
-    if (!trimmedName) {
-      toast({
-        title: "Voornaam verplicht",
-        description: "Vul je voornaam in om door te gaan",
-        variant: "destructive",
-      });
-      return;
-    }
+    // In photo-only mode, skip field validations — use existing profile data
+    if (!photoOnly) {
+      // Validate first name
+      const trimmedNameVal = firstName.trim();
+      if (!trimmedNameVal) {
+        toast({
+          title: "Voornaam verplicht",
+          description: "Vul je voornaam in om door te gaan",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (trimmedName.length < 2) {
-      toast({
-        title: "Ongeldige voornaam",
-        description: "Je voornaam moet minimaal 2 tekens bevatten",
-        variant: "destructive",
-      });
-      return;
-    }
+      if (trimmedNameVal.length < 2) {
+        toast({
+          title: "Ongeldige voornaam",
+          description: "Je voornaam moet minimaal 2 tekens bevatten",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (isOffensiveName(trimmedName)) {
-      toast({
-        title: "Ongeldige voornaam",
-        description: "Gebruik je echte voornaam",
-        variant: "destructive",
-      });
-      return;
-    }
+      if (isOffensiveName(trimmedNameVal)) {
+        toast({
+          title: "Ongeldige voornaam",
+          description: "Gebruik je echte voornaam",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Validate username
-    const trimmedUsername = username.trim();
-    if (trimmedUsername && trimmedUsername.length < 2) {
-      toast({
-        title: "Ongeldige gebruikersnaam",
-        description: "Gebruikersnaam moet minimaal 2 tekens bevatten",
-        variant: "destructive",
-      });
-      return;
-    }
+      // Validate username
+      const trimmedUsernameVal = username.trim();
+      if (trimmedUsernameVal && trimmedUsernameVal.length < 2) {
+        toast({
+          title: "Ongeldige gebruikersnaam",
+          description: "Gebruikersnaam moet minimaal 2 tekens bevatten",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Validate date of birth
-    if (!dateOfBirth) {
-      toast({
-        title: "Vul je geboortedatum in",
-        description: "Geboortedatum is verplicht",
-        variant: "destructive",
-      });
-      return;
-    }
+      // Validate date of birth
+      if (!dateOfBirth) {
+        toast({
+          title: "Vul je geboortedatum in",
+          description: "Geboortedatum is verplicht",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (!isValidDateFormat(dateOfBirth)) {
-      toast({
-        title: "Ongeldig datumformaat",
-        description: "Gebruik het formaat dd/mm/jjjj",
-        variant: "destructive",
-      });
-      return;
-    }
+      if (!isValidDateFormat(dateOfBirth)) {
+        toast({
+          title: "Ongeldig datumformaat",
+          description: "Gebruik het formaat dd/mm/jjjj",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (!parseDate(dateOfBirth)) {
-      toast({
-        title: "Ongeldige datum",
-        description: "Deze datum bestaat niet",
-        variant: "destructive",
-      });
-      return;
-    }
+      if (!parseDate(dateOfBirth)) {
+        toast({
+          title: "Ongeldige datum",
+          description: "Deze datum bestaat niet",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    if (!isAtLeast18(dateOfBirth)) {
-      toast({
-        title: "Leeftijdsbeperking",
-        description: "Je moet minimaal 18 jaar oud zijn om deze app te gebruiken",
-        variant: "destructive",
-      });
-      return;
-    }
+      if (!isAtLeast18(dateOfBirth)) {
+        toast({
+          title: "Leeftijdsbeperking",
+          description: "Je moet minimaal 18 jaar oud zijn om deze app te gebruiken",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Validate phone number
-    const trimmedPhone = phoneNumber.trim();
-    if (trimmedPhone && trimmedPhone.length < 12) {
-      toast({
-        title: "Ongeldig telefoonnummer",
-        description: "Voer een geldig Nederlands telefoonnummer in",
-        variant: "destructive",
-      });
-      return;
+      // Validate phone number
+      const trimmedPhoneVal = phoneNumber.trim();
+      if (trimmedPhoneVal && trimmedPhoneVal.length < 12) {
+        toast({
+          title: "Ongeldig telefoonnummer",
+          description: "Voer een geldig Nederlands telefoonnummer in",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     if (!selectedFile) {
@@ -389,6 +396,10 @@ const ProfileSetup = () => {
       });
       return;
     }
+
+    const trimmedName = firstName.trim();
+    const trimmedUsername = username.trim();
+    const trimmedPhone = phoneNumber.trim();
 
     try {
       setUploading(true);
@@ -571,63 +582,72 @@ const ProfileSetup = () => {
             <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full mb-2 sm:mb-4">
               <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold">Stel je profiel in</h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Upload een foto en vertel ons over jezelf</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              {photoOnly ? "Upload je profielfoto" : "Stel je profiel in"}
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {photoOnly
+                ? "Upload een selfie om je profiel compleet te maken"
+                : "Upload een foto en vertel ons over jezelf"}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">
-                Voornaam <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="firstName"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Je voornaam"
-                required
-              />
-            </div>
+            {!photoOnly && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">
+                    Voornaam <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="firstName"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Je voornaam"
+                    required
+                  />
+                </div>
 
-            {/* ✅ Added username field */}
-            <div className="space-y-2">
-              <Label htmlFor="username">Gebruikersnaam (optioneel)</Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Je gebruikersnaam"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Gebruikersnaam (optioneel)</Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Je gebruikersnaam"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">
-                Geboortedatum <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="dateOfBirth"
-                type="text"
-                value={dateOfBirth}
-                onChange={handleDateChange}
-                placeholder="dd/mm/jjjj"
-                maxLength={10}
-                required
-              />
-              <p className="text-xs text-muted-foreground">Je moet minimaal 18 jaar oud zijn</p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">
+                    Geboortedatum <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="text"
+                    value={dateOfBirth}
+                    onChange={handleDateChange}
+                    placeholder="dd/mm/jjjj"
+                    maxLength={10}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Je moet minimaal 18 jaar oud zijn</p>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Telefoonnummer (optioneel)</Label>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                value={phoneNumber}
-                onChange={handlePhoneChange}
-                placeholder="+31 6 12345678"
-                maxLength={14}
-              />
-              <p className="text-xs text-muted-foreground">Bijvoorbeeld: +31 6 12345678</p>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phoneNumber">Telefoonnummer (optioneel)</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    placeholder="+31 6 12345678"
+                    maxLength={14}
+                  />
+                  <p className="text-xs text-muted-foreground">Bijvoorbeeld: +31 6 12345678</p>
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="photo" className="font-medium">

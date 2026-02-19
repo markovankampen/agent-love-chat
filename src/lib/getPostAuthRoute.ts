@@ -26,8 +26,12 @@ export async function getPostAuthRoute(userId: string): Promise<string> {
     .eq("id", userId)
     .maybeSingle();
 
-  if (!profile || !profile.first_name || !profile.date_of_birth || !profile.photo_url) {
+  if (!profile || !profile.first_name || !profile.date_of_birth) {
     return "/profile-setup";
+  }
+
+  if (!profile.photo_url) {
+    return "/profile-setup?photo-only=true";
   }
 
   return "/home";
