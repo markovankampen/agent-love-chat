@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const BUCKET = "profile-photos-temp";
+const BUCKET = "profile-photos";
 const SIGNED_URL_EXPIRY = 3600; // 1 hour
+
+// Fallback bucket for legacy photos that may still be in temp
+const FALLBACK_BUCKET = "profile-photos-temp";
 
 /**
  * Generates a fresh signed URL from a stored storage path.
@@ -26,14 +29,25 @@ export function useSignedUrl(storedPath: string | null | undefined): string | nu
     let cancelled = false;
 
     async function sign() {
+      // Try permanent bucket first
       const { data, error } = await supabase.storage
         .from(BUCKET)
         .createSignedUrl(storedPath!, SIGNED_URL_EXPIRY);
 
       if (!cancelled) {
         if (error) {
-          console.error("Failed to create signed URL:", error);
-          setUrl(null);
+          // Fallback to legacy temp bucket
+          const { data: fallbackData, error: fallbackError } = await supabase.storage
+            .from(FALLBACK_BUCKET)
+            .createSignedUrl(storedPath!, SIGNED_URL_EXPIRY);
+          if (!cancelled) {
+            if (fallbackError) {
+              console.error("Failed to create signed URL:", fallbackError);
+              setUrl(null);
+            } else {
+              setUrl(fallbackData.signedUrl);
+            }
+          }
         } else {
           setUrl(data.signedUrl);
         }
@@ -72,9 +86,17 @@ export function useSignedUrls(paths: (string | null | undefined)[]): Record<stri
             result[path] = path;
             return;
           }
-          const { data, error } = await supabase.storage
+          // Try permanent bucket first, fallback to temp
+          let { data, error } = await supabase.storage
             .from(BUCKET)
             .createSignedUrl(path, SIGNED_URL_EXPIRY);
+          if (error) {
+            const fallback = await supabase.storage
+              .from(FALLBACK_BUCKET)
+              .createSignedUrl(path, SIGNED_URL_EXPIRY);
+            data = fallback.data;
+            error = fallback.error;
+          }
           if (!error && data) {
             result[path] = data.signedUrl;
           }

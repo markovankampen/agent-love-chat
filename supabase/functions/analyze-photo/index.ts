@@ -167,7 +167,7 @@ serve(async (req) => {
       );
     }
 
-    const { photoUrl, photoPath, userId, firstName, username, phoneNumber, dateOfBirth } = requestBody;
+    const { photoUrl, photoPath, userId, firstName, username, phoneNumber, dateOfBirth, permanentBucket } = requestBody;
 
     console.log('📝 Request data:', { 
       userId, 

@@ -105,15 +105,32 @@ serve(async (req) => {
       const batchSize = 100;
       for (let i = 0; i < pathsArray.length; i += batchSize) {
         const batch = pathsArray.slice(i, i + batchSize);
+        // Try permanent bucket first
         const { data: signedData } = await supabaseAdmin.storage
-          .from("profile-photos-temp")
+          .from("profile-photos")
           .createSignedUrls(batch, 3600);
         if (signedData) {
+          const missingPaths: string[] = [];
           signedData.forEach((sd: any, idx: number) => {
             if (sd.signedUrl) {
               signedUrlMap[batch[idx]] = sd.signedUrl;
+            } else {
+              missingPaths.push(batch[idx]);
             }
           });
+          // Fallback to temp bucket for legacy photos
+          if (missingPaths.length > 0) {
+            const { data: fallbackData } = await supabaseAdmin.storage
+              .from("profile-photos-temp")
+              .createSignedUrls(missingPaths, 3600);
+            if (fallbackData) {
+              fallbackData.forEach((sd: any, idx: number) => {
+                if (sd.signedUrl) {
+                  signedUrlMap[missingPaths[idx]] = sd.signedUrl;
+                }
+              });
+            }
+          }
         }
       }
     }
