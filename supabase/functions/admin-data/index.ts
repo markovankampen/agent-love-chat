@@ -82,30 +82,36 @@ serve(async (req) => {
     const matches = await fetchAllRows(supabaseAdmin, "matches");
     const conversations = await fetchAllRows(supabaseAdmin, "conversations", "id, user_id, role, created_at");
     const userActivity = await fetchAllRows(supabaseAdmin, "user_activity");
+    const faceAnalysis = await fetchAllRows(supabaseAdmin, "face_analysis");
 
-    // Collect all file paths that need signed URLs
-    const pathsToSign: { index: number; filePath: string }[] = [];
-    profiles.forEach((p: any, i: number) => {
-      if (p.photo_url) {
-        const m = p.photo_url.match(/profile-photos-temp\/([^?]+)/);
-        if (m) pathsToSign.push({ index: i, filePath: m[1] });
+    // Collect all file paths that need signed URLs (from profiles AND face_analysis)
+    const allPaths = new Set<string>();
+
+    profiles.forEach((p: any) => {
+      if (p.photo_url && !p.photo_url.startsWith("http")) {
+        allPaths.add(p.photo_url);
+      }
+    });
+    faceAnalysis.forEach((fa: any) => {
+      if (fa.photo_url && !fa.photo_url.startsWith("http")) {
+        allPaths.add(fa.photo_url);
       }
     });
 
-    // Batch sign URLs (Supabase supports createSignedUrls for multiple paths)
+    // Batch sign URLs
     let signedUrlMap: Record<string, string> = {};
-    if (pathsToSign.length > 0) {
+    const pathsArray = Array.from(allPaths);
+    if (pathsArray.length > 0) {
       const batchSize = 100;
-      for (let i = 0; i < pathsToSign.length; i += batchSize) {
-        const batch = pathsToSign.slice(i, i + batchSize);
-        const paths = batch.map(b => b.filePath);
+      for (let i = 0; i < pathsArray.length; i += batchSize) {
+        const batch = pathsArray.slice(i, i + batchSize);
         const { data: signedData } = await supabaseAdmin.storage
           .from("profile-photos-temp")
-          .createSignedUrls(paths, 3600); // 1 hour expiry
+          .createSignedUrls(batch, 3600);
         if (signedData) {
           signedData.forEach((sd: any, idx: number) => {
             if (sd.signedUrl) {
-              signedUrlMap[batch[idx].filePath] = sd.signedUrl;
+              signedUrlMap[batch[idx]] = sd.signedUrl;
             }
           });
         }
@@ -119,16 +125,14 @@ serve(async (req) => {
         const ff = typeof p.facial_features === "string" ? JSON.parse(p.facial_features) : p.facial_features;
         gender = ff?.gender || null;
       }
+      const freshUrl = (!p.photo_url?.startsWith("http") && signedUrlMap[p.photo_url]) || p.photo_url;
+      return { ...p, gender, photo_url: freshUrl };
+    });
 
-      let freshPhotoUrl: string | null = null;
-      if (p.photo_url) {
-        const m = p.photo_url.match(/profile-photos-temp\/([^?]+)/);
-        if (m && signedUrlMap[m[1]]) {
-          freshPhotoUrl = signedUrlMap[m[1]];
-        }
-      }
-
-      return { ...p, gender, photo_url: freshPhotoUrl || p.photo_url };
+    // Enrich face_analysis with fresh photo URLs
+    const enrichedFaceAnalysis = faceAnalysis.map((fa: any) => {
+      const freshUrl = (!fa.photo_url?.startsWith("http") && signedUrlMap[fa.photo_url]) || fa.photo_url;
+      return { ...fa, photo_url: freshUrl };
     });
 
     return new Response(
@@ -140,6 +144,7 @@ serve(async (req) => {
           conversations: { count: conversations.length, data: [] },
           matches: { count: matches.length, data: matches },
           user_activity: { count: userActivity.length, data: userActivity },
+          face_analysis: { count: faceAnalysis.length, data: enrichedFaceAnalysis },
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

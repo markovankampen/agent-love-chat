@@ -5,16 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock } from "lucide-react";
+import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
-import { useSignedUrl } from "@/hooks/useSignedUrl";
-
-function SignedImage({ path, alt, className }: { path: string | null | undefined; alt: string; className: string }) {
-  const url = useSignedUrl(path);
-  if (!url) return null;
-  return <img src={url} alt={alt} className={className} />;
-}
 
 interface AdminData {
   fetched_at: string;
@@ -32,6 +25,15 @@ interface Profile {
   photo_url: string | null;
   attractiveness_score: number | null;
   gender: string | null;
+}
+
+interface FaceAnalysis {
+  id: string;
+  user_id: string;
+  photo_url: string;
+  attractiveness_score: number | null;
+  facial_features: Record<string, unknown> | null;
+  created_at: string;
 }
 
 interface Match {
@@ -142,6 +144,7 @@ export default function Admin() {
   const profiles = (data.tables.profiles?.data || []) as Profile[];
   const matches = (data.tables.matches?.data || []) as Match[];
   const activeUsers = (data.tables.user_activity?.data || []) as { user_id: string; is_online: boolean }[];
+  const faceAnalyses = (data.tables.face_analysis?.data || []) as FaceAnalysis[];
 
   const totalUsers = data.tables.profiles?.count || 0;
   const liveUsers = activeUsers.filter(u => u.is_online).length;
@@ -328,7 +331,7 @@ export default function Admin() {
                     <TableRow key={p.id}>
                       <TableCell>
                         {p.photo_url ? (
-                          <SignedImage path={p.photo_url} alt={p.first_name || "User"} className="w-8 h-8 rounded-full object-cover" />
+                          <img src={p.photo_url} alt={p.first_name || "User"} className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                             <Users className="h-4 w-4 text-muted-foreground" />
@@ -348,6 +351,46 @@ export default function Admin() {
                 })}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        {/* Face Analysis */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Camera className="h-5 w-5 text-primary" /> Face Analysis
+            </CardTitle>
+            <Badge variant="outline">{faceAnalyses.length} analyses</Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {faceAnalyses.slice(0, 18).map(fa => {
+                const profile = profileMap.get(fa.user_id);
+                const name = profile?.first_name || profile?.email?.split("@")[0] || "User";
+                return (
+                  <div key={fa.id} className="text-center space-y-1.5 p-3 rounded-lg bg-card border">
+                    {fa.photo_url ? (
+                      <a href={fa.photo_url} target="_blank" rel="noopener noreferrer" className="block">
+                        <img
+                          src={fa.photo_url}
+                          alt={name}
+                          className="w-16 h-16 mx-auto rounded-full object-cover ring-2 ring-primary/20 hover:ring-primary/50 transition-all cursor-pointer"
+                        />
+                      </a>
+                    ) : (
+                      <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center">
+                        <Camera className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <p className="text-sm font-semibold truncate">{name}</p>
+                    {fa.attractiveness_score != null && (
+                      <p className="text-xs text-muted-foreground">Score: {fa.attractiveness_score}/10</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">{timeAgo(fa.created_at)}</p>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </main>
@@ -374,7 +417,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
   return (
     <div className="text-center space-y-1 p-3 rounded-lg bg-card border">
       {profile.photo_url ? (
-        <SignedImage path={profile.photo_url} alt={name} className="w-14 h-14 mx-auto rounded-full object-cover" />
+        <img src={profile.photo_url} alt={name} className="w-14 h-14 mx-auto rounded-full object-cover" />
       ) : (
         <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center">
           <Users className="h-6 w-6 text-muted-foreground" />
@@ -403,7 +446,7 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
       {/* User 1 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
         {mp.user?.photo_url ? (
-          <SignedImage path={mp.user.photo_url} alt={userName} className="w-12 h-12 rounded-full object-cover" />
+          <img src={mp.user.photo_url} alt={userName} className="w-12 h-12 rounded-full object-cover" />
         ) : (
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
             <Users className="h-5 w-5 text-muted-foreground" />
@@ -422,7 +465,7 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
       {/* User 2 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
         {mp.matched?.photo_url ? (
-          <SignedImage path={mp.matched.photo_url} alt={matchedName} className="w-12 h-12 rounded-full object-cover" />
+          <img src={mp.matched.photo_url} alt={matchedName} className="w-12 h-12 rounded-full object-cover" />
         ) : (
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
             <Users className="h-5 w-5 text-muted-foreground" />
