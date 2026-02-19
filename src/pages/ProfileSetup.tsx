@@ -429,10 +429,10 @@ const ProfileSetup = () => {
         }
       }
 
-      // Upload photo to storage
+      // Upload photo to PERMANENT storage first
       const fileName = `${userId}/${Date.now()}.${finalExt}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("profile-photos-temp")
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
         .upload(fileName, uploadFile, {
           cacheControl: "3600",
           upsert: false,
@@ -443,14 +443,14 @@ const ProfileSetup = () => {
         throw new Error("Fout bij uploaden van foto. Controleer je internetverbinding en probeer opnieuw.");
       }
 
-      // Generate signed URL
+      // Generate signed URL for AI/Face++ processing
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from("profile-photos-temp")
+        .from("profile-photos")
         .createSignedUrl(fileName, 3600);
 
       if (signedUrlError || !signedUrlData) {
         console.error("Signed URL error:", signedUrlError);
-        await supabase.storage.from("profile-photos-temp").remove([fileName]);
+        await supabase.storage.from("profile-photos").remove([fileName]);
         throw new Error("Fout bij genereren van toegang tot foto");
       }
 

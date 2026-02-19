@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, User, LogOut } from "lucide-react";
+import { MessageCircle, User, LogOut, Camera } from "lucide-react";
 import Footer from "@/components/Footer";
 import heartRedGlow from "@/assets/illustrations/heart-red-glow.png";
 import { getPostAuthRoute } from "@/lib/getPostAuthRoute";
@@ -12,6 +12,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
+  const [showPhotoPrompt, setShowPhotoPrompt] = useState(false);
 
   useEffect(() => {
     const checkAuthAndLoadProfile = async () => {
@@ -40,6 +41,25 @@ const Home = () => {
 
       if (profile) {
         setUsername(profile.first_name || profile.username || "daar");
+        
+        // Check if photo is missing or invalid — prompt re-upload
+        if (!profile.photo_url) {
+          setShowPhotoPrompt(true);
+        } else if (!profile.photo_url.startsWith("http")) {
+          // It's a storage path — verify it exists by trying to sign it
+          const { error } = await supabase.storage
+            .from("profile-photos")
+            .createSignedUrl(profile.photo_url, 60);
+          if (error) {
+            // Try fallback bucket
+            const { error: fallbackError } = await supabase.storage
+              .from("profile-photos-temp")
+              .createSignedUrl(profile.photo_url, 60);
+            if (fallbackError) {
+              setShowPhotoPrompt(true);
+            }
+          }
+        }
       }
 
       setLoading(false);
@@ -93,6 +113,26 @@ const Home = () => {
           </Button>
         </div>
       </header>
+
+      {/* Photo re-upload prompt */}
+      {showPhotoPrompt && (
+        <div className="max-w-4xl mx-auto px-4 pt-6">
+          <Card className="p-4 border-primary/50 bg-primary/5">
+            <div className="flex items-center gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Camera className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-foreground text-sm">Profielfoto ontbreekt</p>
+                <p className="text-xs text-muted-foreground">Upload een profielfoto om je profiel compleet te maken en matches te vinden.</p>
+              </div>
+              <Button size="sm" onClick={() => navigate("/profile-setup")}>
+                Foto uploaden
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
