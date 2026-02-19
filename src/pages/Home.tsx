@@ -126,7 +126,7 @@ const Home = () => {
                 <p className="font-medium text-foreground text-sm">Profielfoto ontbreekt</p>
                 <p className="text-xs text-muted-foreground">Upload een profielfoto om je profiel compleet te maken en matches te vinden.</p>
               </div>
-              <Button size="sm" onClick={() => navigate("/profile-setup")}>
+              <Button size="sm" onClick={() => navigate("/profile-setup?photo-only=true")}>
                 Foto uploaden
               </Button>
             </div>
