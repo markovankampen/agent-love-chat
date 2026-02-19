@@ -290,6 +290,46 @@ const Auth = () => {
               </div>
             )}
 
+            {isLogin && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!email) {
+                      toast({
+                        title: "Vul je email in",
+                        description: "Voer eerst je emailadres in om je wachtwoord te resetten.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    setLoading(true);
+                    try {
+                      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${window.location.origin}/reset-password`,
+                      });
+                      if (error) throw error;
+                      toast({
+                        title: "Email verzonden",
+                        description: "Check je inbox voor de wachtwoord reset link.",
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: "Fout",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Wachtwoord vergeten?
+                </button>
+              </div>
+            )}
+
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
               {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
             </Button>
