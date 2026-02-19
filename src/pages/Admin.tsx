@@ -8,6 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import { useSignedUrl } from "@/hooks/useSignedUrl";
+
+function SignedImage({ path, alt, className }: { path: string | null | undefined; alt: string; className: string }) {
+  const url = useSignedUrl(path);
+  if (!url) return null;
+  return <img src={url} alt={alt} className={className} />;
+}
 
 interface AdminData {
   fetched_at: string;
@@ -321,7 +328,7 @@ export default function Admin() {
                     <TableRow key={p.id}>
                       <TableCell>
                         {p.photo_url ? (
-                          <img src={p.photo_url} alt={p.first_name || "User"} className="w-8 h-8 rounded-full object-cover" />
+                          <SignedImage path={p.photo_url} alt={p.first_name || "User"} className="w-8 h-8 rounded-full object-cover" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                             <Users className="h-4 w-4 text-muted-foreground" />
@@ -367,7 +374,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
   return (
     <div className="text-center space-y-1 p-3 rounded-lg bg-card border">
       {profile.photo_url ? (
-        <img src={profile.photo_url} alt={name} className="w-14 h-14 mx-auto rounded-full object-cover" />
+        <SignedImage path={profile.photo_url} alt={name} className="w-14 h-14 mx-auto rounded-full object-cover" />
       ) : (
         <div className="w-14 h-14 mx-auto rounded-full bg-muted flex items-center justify-center">
           <Users className="h-6 w-6 text-muted-foreground" />
@@ -396,7 +403,7 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
       {/* User 1 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
         {mp.user?.photo_url ? (
-          <img src={mp.user.photo_url} alt={userName} className="w-12 h-12 rounded-full object-cover" />
+          <SignedImage path={mp.user.photo_url} alt={userName} className="w-12 h-12 rounded-full object-cover" />
         ) : (
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
             <Users className="h-5 w-5 text-muted-foreground" />
@@ -415,7 +422,7 @@ function MatchPairCard({ mp }: { mp: { id: string; user?: Profile; matched?: Pro
       {/* User 2 */}
       <div className="flex flex-col items-center gap-1 min-w-[60px]">
         {mp.matched?.photo_url ? (
-          <img src={mp.matched.photo_url} alt={matchedName} className="w-12 h-12 rounded-full object-cover" />
+          <SignedImage path={mp.matched.photo_url} alt={matchedName} className="w-12 h-12 rounded-full object-cover" />
         ) : (
           <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
             <Users className="h-5 w-5 text-muted-foreground" />
