@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowLeft, User, Trash2, Bell, Heart, Mail, Phone } from "lucide-react";
 import Footer from "@/components/Footer";
+import { useSignedUrl } from "@/hooks/useSignedUrl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,21 @@ interface NotificationSettings {
   match_notifications: boolean;
   update_notifications: boolean;
   email_notifications: boolean;
+}
+
+function AvatarWithSignedUrl({ photoUrl, size = "w-12 h-12", iconSize = "w-6 h-6" }: { photoUrl: string | null | undefined; size?: string; iconSize?: string }) {
+  const signedUrl = useSignedUrl(photoUrl);
+  return (
+    <Avatar className={size}>
+      {signedUrl ? (
+        <AvatarImage src={signedUrl} alt="Profielfoto" />
+      ) : (
+        <AvatarFallback>
+          <User className={`${iconSize} text-muted-foreground`} />
+        </AvatarFallback>
+      )}
+    </Avatar>
+  );
 }
 
 const Account = () => {
@@ -253,15 +269,7 @@ const Account = () => {
 
         <Card className="p-6 space-y-6">
           <div className="flex items-center gap-4">
-            <Avatar className="w-20 h-20">
-              {profile?.photo_url ? (
-                <AvatarImage src={profile.photo_url} alt="Profielfoto" />
-              ) : (
-                <AvatarFallback>
-                  <User className="w-10 h-10 text-muted-foreground" />
-                </AvatarFallback>
-              )}
-            </Avatar>
+            <AvatarWithSignedUrl photoUrl={profile?.photo_url} size="w-20 h-20" iconSize="w-10 h-10" />
             <div>
               <h2 className="text-xl font-semibold">
                 {profile?.first_name || "Gebruiker"}
