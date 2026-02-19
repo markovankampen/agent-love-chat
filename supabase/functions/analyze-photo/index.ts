@@ -220,12 +220,19 @@ serve(async (req) => {
         }
       };
 
+      // Build permanent public URL for the photo
+      const storagePath = photoPath || '';
+      const permanentUrl = storagePath
+        ? `${supabaseUrl}/storage/v1/object/public/profile-photos/${storagePath}`
+        : photoUrl;
+
       // Save mock analysis
       const { data: mockAnalysisData, error: analysisError } = await supabase
         .from('face_analysis')
         .upsert({
           user_id: user.id,
           photo_url: photoPath || photoUrl,
+          permanent_photo_url: permanentUrl,
           attractiveness_score: mockAnalysis.attractiveness_score,
           facial_features: mockAnalysis.facial_features,
         })
@@ -432,6 +439,12 @@ serve(async (req) => {
         }
       };
 
+      // Build permanent public URL for the photo
+      const storagePath2 = photoPath || '';
+      const permanentUrl2 = storagePath2
+        ? `${supabaseUrl}/storage/v1/object/public/profile-photos/${storagePath2}`
+        : photoUrl;
+
       // Save face analysis
       console.log('💾 Saving face analysis...');
       const { data: analysisData2, error: analysisError } = await supabase
@@ -440,6 +453,7 @@ serve(async (req) => {
           {
             user_id: user.id,
             photo_url: photoPath || photoUrl,
+            permanent_photo_url: permanentUrl2,
             attractiveness_score: analysisResult.attractiveness_score,
             facial_features: analysisResult.facial_features,
           },

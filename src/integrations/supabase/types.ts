@@ -90,6 +90,7 @@ export type Database = {
           created_at: string
           facial_features: Json | null
           id: string
+          permanent_photo_url: string | null
           photo_url: string
           user_id: string
         }
@@ -98,6 +99,7 @@ export type Database = {
           created_at?: string
           facial_features?: Json | null
           id?: string
+          permanent_photo_url?: string | null
           photo_url: string
           user_id: string
         }
@@ -106,6 +108,7 @@ export type Database = {
           created_at?: string
           facial_features?: Json | null
           id?: string
+          permanent_photo_url?: string | null
           photo_url?: string
           user_id?: string
         }
