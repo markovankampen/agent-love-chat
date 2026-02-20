@@ -129,6 +129,7 @@ export default function Admin() {
     if (!session) { navigate("/auth"); return; }
     try {
       const { data: result, error } = await supabase.functions.invoke("admin-data", {
+        method: "GET",
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (error) throw error;
