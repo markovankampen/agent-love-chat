@@ -16,6 +16,8 @@ const SYNC_TABLES = [
   "email_verification_tokens",
   "user_roles",
   "user_activity",
+  "photo_reupload_tokens",
+  "admin_audit_log",
 ];
 
 serve(async (req) => {
