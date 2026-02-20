@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, UserCircle, Eye, EyeOff } from "lucide-react";
+import { Heart, Eye, EyeOff } from "lucide-react";
 import Footer from "@/components/Footer";
 import { getPostAuthRoute } from "@/lib/getPostAuthRoute";
 
@@ -15,8 +15,6 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [guestEmail, setGuestEmail] = useState("");
-  const [showGuestInput, setShowGuestInput] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -138,63 +136,6 @@ const Auth = () => {
     }
   };
 
-  const handleGuestLogin = async () => {
-    if (!showGuestInput) {
-      setShowGuestInput(true);
-      return;
-    }
-
-    if (!guestEmail || !guestEmail.includes("@")) {
-      toast({
-        title: "Fout",
-        description: "Voer een geldig emailadres in",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const guestId = crypto.randomUUID();
-      const guestUsername = `Gast_${guestId.slice(0, 8)}`;
-      const guestPassword = crypto.randomUUID();
-
-      const { data, error } = await supabase.auth.signUp({
-        email: guestEmail,
-        password: guestPassword,
-        options: {
-          data: {
-            username: guestUsername,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      // Auto sign in after signup (no email verification for guests)
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: guestEmail,
-        password: guestPassword,
-      });
-
-      if (signInError) throw signInError;
-
-      toast({
-        title: "Welkom!",
-        description: `Je bent ingelogd als gast`,
-      });
-      navigate("/profile-setup");
-    } catch (error: any) {
-      toast({
-        title: "Fout",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
@@ -334,34 +275,6 @@ const Auth = () => {
               {loading ? "Bezig..." : isLogin ? "Inloggen" : "Registreren"}
             </Button>
           </form>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Of</span>
-            </div>
-          </div>
-
-          {showGuestInput && (
-            <div className="space-y-2 mb-4">
-              <Label htmlFor="guestEmail">Email voor gast account</Label>
-              <Input
-                id="guestEmail"
-                type="email"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-                placeholder="jouw@email.nl"
-                required
-              />
-            </div>
-          )}
-
-          {/* <Button onClick={handleGuestLogin} variant="outline" className="w-full" disabled={loading}>
-            <UserCircle className="mr-2 h-4 w-4" />
-            {showGuestInput ? "Bevestig & doorgaan" : "Doorgaan als gast"}
-          </Button> */}
 
           <div className="text-center mt-4">
             <button
