@@ -142,6 +142,9 @@ Deno.serve(async (req) => {
     let errorCount = 0;
     const results: Array<{ userId: string; email: string; status: string; error?: string }> = [];
 
+    // Helper to wait between emails (Resend allows max 2/sec)
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
     for (const user of usersWithoutPhotos) {
       if (!user.email) {
         console.log(`Skipping user ${user.id} - no email`);
@@ -191,6 +194,9 @@ Deno.serve(async (req) => {
         console.log(`✅ Email sent to ${user.email}, ID: ${emailData?.id}`);
         results.push({ userId: user.id, email: user.email, status: "sent" });
         sentCount++;
+
+        // Rate limit: wait 600ms between sends to stay under 2/sec
+        await delay(600);
 
       } catch (userError) {
         console.error(`Error processing user ${user.id}:`, userError);
