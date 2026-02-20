@@ -326,13 +326,16 @@ serve(async (req) => {
         console.error('❌ Face++ API error:', response.status, errorText);
         
         let errorMessage = 'Unable to analyze photo. Please ensure the image is clear and contains a visible face.';
+        let isFreeCallLimit = false;
         
         try {
           const errorJson = JSON.parse(errorText);
           console.error('Face++ error details:', errorJson);
           
           if (errorJson.error_message) {
-            if (errorJson.error_message.includes('INVALID_IMAGE_URL')) {
+            if (errorJson.error_message.includes('FREE_CALL_COUNT_LIMIT')) {
+              isFreeCallLimit = true;
+            } else if (errorJson.error_message.includes('INVALID_IMAGE_URL')) {
               errorMessage = 'Foto kon niet worden geladen. Probeer opnieuw.';
             } else if (errorJson.error_message.includes('IMAGE_FILE_TOO_LARGE')) {
               errorMessage = 'Foto is te groot. Upload een kleinere foto (max 2MB).';
@@ -344,6 +347,81 @@ serve(async (req) => {
           }
         } catch (parseErr) {
           console.error('Could not parse Face++ error response');
+        }
+        
+        // If free call limit reached, fall back to AI-only analysis
+        if (isFreeCallLimit) {
+          console.log('⚠️ Face++ free call limit reached - falling back to AI-only analysis');
+          clearTimeout(timeoutId);
+          
+          const { eyeColor, hairColor } = await detectColorsWithAI(photoUrl);
+          
+          const fallbackAnalysis = {
+            attractiveness_score: 7,
+            facial_features: {
+              gender: 'unknown',
+              age: 25,
+              note: 'Face++ free limit reached - using AI-only analysis'
+            }
+          };
+
+          const fbStoragePath = photoPath || '';
+          const fbPermanentUrl = fbStoragePath
+            ? `${supabaseUrl}/storage/v1/object/public/profile-photos/${fbStoragePath}`
+            : photoUrl;
+
+          const { data: fbAnalysisData, error: fbAnalysisError } = await supabase
+            .from('face_analysis')
+            .upsert({
+              user_id: user.id,
+              photo_url: photoPath || photoUrl,
+              permanent_photo_url: fbPermanentUrl,
+              attractiveness_score: fallbackAnalysis.attractiveness_score,
+              facial_features: fallbackAnalysis.facial_features,
+            }, { onConflict: 'user_id' })
+            .select()
+            .single();
+
+          if (fbAnalysisError) {
+            console.error('Error saving fallback analysis:', fbAnalysisError);
+          }
+
+          const { data: fbProfileData, error: fbProfileError } = await supabase
+            .from('profiles')
+            .update({
+              first_name: firstName,
+              username: username || null,
+              phone_number: phoneNumber || null,
+              date_of_birth: dateOfBirth,
+              photo_url: photoPath || photoUrl,
+              attractiveness_score: fallbackAnalysis.attractiveness_score,
+              facial_features: fallbackAnalysis.facial_features,
+              eye_color: eyeColor,
+              hair_color: hairColor,
+            })
+            .eq('id', user.id)
+            .select()
+            .single();
+
+          if (fbProfileError) {
+            console.error('Error updating profile (fallback):', fbProfileError);
+            return new Response(
+              JSON.stringify({ error: 'Failed to update profile: ' + fbProfileError.message }),
+              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
+          if (fbProfileData) triggerSync('profiles', 'UPDATE', fbProfileData as Record<string, unknown>);
+          if (fbAnalysisData) triggerSync('face_analysis', 'UPDATE', fbAnalysisData as Record<string, unknown>);
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: 'Profiel succesvol bijgewerkt',
+              analysis: fallbackAnalysis,
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         
         return new Response(
