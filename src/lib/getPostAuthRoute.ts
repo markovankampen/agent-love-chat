@@ -34,5 +34,16 @@ export async function getPostAuthRoute(userId: string): Promise<string> {
     return "/profile-setup?photo-only=true";
   }
 
+  // Check if user has a permanent photo stored in face_analysis
+  const { data: faceData } = await supabase
+    .from("face_analysis")
+    .select("permanent_photo_url")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!faceData || !faceData.permanent_photo_url) {
+    return "/profile-setup?photo-only=true";
+  }
+
   return "/home";
 }
