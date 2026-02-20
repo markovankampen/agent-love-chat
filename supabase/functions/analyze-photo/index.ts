@@ -231,7 +231,7 @@ serve(async (req) => {
         .from('face_analysis')
         .upsert({
           user_id: user.id,
-          photo_url: photoPath || photoUrl,
+          photo_url: permanentUrl,
           permanent_photo_url: permanentUrl,
           attractiveness_score: mockAnalysis.attractiveness_score,
           facial_features: mockAnalysis.facial_features,
@@ -374,7 +374,7 @@ serve(async (req) => {
             .from('face_analysis')
             .upsert({
               user_id: user.id,
-              photo_url: photoPath || photoUrl,
+              photo_url: fbPermanentUrl,
               permanent_photo_url: fbPermanentUrl,
               attractiveness_score: fallbackAnalysis.attractiveness_score,
               facial_features: fallbackAnalysis.facial_features,
@@ -530,7 +530,7 @@ serve(async (req) => {
         .upsert(
           {
             user_id: user.id,
-            photo_url: photoPath || photoUrl,
+            photo_url: permanentUrl2,
             permanent_photo_url: permanentUrl2,
             attractiveness_score: analysisResult.attractiveness_score,
             facial_features: analysisResult.facial_features,
