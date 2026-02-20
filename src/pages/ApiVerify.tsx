@@ -33,10 +33,11 @@ const ApiVerify = () => {
 
         console.log("Verifying email with token_hash...");
 
-        // Verify the email
+        // Verify the email - use the type from the URL (magiclink for our custom flow)
+        const otpType = type === "signup" ? "signup" : type === "magiclink" ? "magiclink" : "email";
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
-          type: type === "signup" ? "signup" : "email",
+          type: otpType as any,
         });
 
         if (error) {
@@ -65,6 +66,15 @@ const ApiVerify = () => {
         }
 
         console.log("✅ Email verified successfully!");
+
+        // Update custom_email_verified in profiles
+        if (data.user) {
+          await supabase
+            .from("profiles")
+            .update({ custom_email_verified: true })
+            .eq("id", data.user.id);
+          console.log("✅ custom_email_verified set to true");
+        }
 
         // Clean up
         sessionStorage.removeItem("pendingVerificationEmail");

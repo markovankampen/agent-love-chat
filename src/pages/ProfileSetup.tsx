@@ -156,12 +156,19 @@ const ProfileSetup = () => {
       } else {
         setUserId(user.id);
 
-        // Load existing profile data
+        // Check custom_email_verified - block unverified users
         const { data: profile } = await supabase
           .from("profiles")
-          .select("first_name, username, phone_number, date_of_birth")
+          .select("first_name, username, phone_number, date_of_birth, custom_email_verified")
           .eq("id", user.id)
           .maybeSingle();
+
+        if (!profile?.custom_email_verified) {
+          console.log("Email not verified, redirecting to /verify");
+          sessionStorage.setItem("pendingVerificationEmail", user.email || "");
+          navigate("/verify", { replace: true });
+          return;
+        }
 
         if (profile) {
           if (profile.first_name) setFirstName(profile.first_name);
