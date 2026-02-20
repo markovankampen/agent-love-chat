@@ -56,7 +56,6 @@ serve(async (req) => {
     const { data: records, error } = await supabase
       .from("face_analysis")
       .select("*")
-      .gte("created_at", new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString())
       .eq("attractiveness_score", 7)
       .order("created_at", { ascending: true });
 
