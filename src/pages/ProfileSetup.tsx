@@ -321,7 +321,16 @@ const ProfileSetup = () => {
 
       // Validate username
       const trimmedUsernameVal = username.trim();
-      if (trimmedUsernameVal && trimmedUsernameVal.length < 2) {
+      if (!trimmedUsernameVal) {
+        toast({
+          title: "Gebruikersnaam verplicht",
+          description: "Vul een gebruikersnaam in om door te gaan",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (trimmedUsernameVal.length < 2) {
         toast({
           title: "Ongeldige gebruikersnaam",
           description: "Gebruikersnaam moet minimaal 2 tekens bevatten",
