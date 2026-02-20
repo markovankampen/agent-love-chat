@@ -6,6 +6,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function generateToken(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -54,6 +60,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Parse optional domain from body
+    let baseDomain = "https://agent-love-chat.lovable.app";
+    try {
+      const body = await req.json();
+      if (body.redirectDomain) {
+        baseDomain = body.redirectDomain.replace(/\/$/, "");
+      }
+    } catch {
+      // no body, use default
+    }
+
     // Fetch all profiles missing photo
     const allProfiles: any[] = [];
     let offset = 0;
@@ -85,19 +102,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Parse optional redirectDomain from body
-    let redirectDomain = "https://agent-love-chat.lovable.app";
-    try {
-      const body = await req.json();
-      if (body.redirectDomain) {
-        redirectDomain = body.redirectDomain.replace(/\/$/, "");
-      }
-    } catch {
-      // no body, use default
-    }
-
-    const redirectTo = `${redirectDomain}/profile-setup?photo-only=true`;
-
     const csvRows: string[] = ["email,magic_link"];
     let successCount = 0;
     let errorCount = 0;
@@ -112,25 +116,33 @@ Deno.serve(async (req) => {
       }
 
       try {
-        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-          type: "magiclink",
-          email: profile.email,
-          options: { redirectTo },
-        });
+        // Generate a unique reupload token
+        const reuploadToken = generateToken();
 
-        if (linkError || !linkData?.properties?.action_link) {
-          console.error(`Link error for ${profile.email}:`, linkError);
-          errors.push({ email: profile.email, error: linkError?.message || "No link generated" });
+        // Store token in photo_reupload_tokens table
+        const { error: insertError } = await supabaseAdmin
+          .from("photo_reupload_tokens")
+          .insert({
+            user_id: profile.id,
+            token: reuploadToken,
+            // expires_at defaults to now() + 7 days
+          });
+
+        if (insertError) {
+          console.error(`Token insert error for ${profile.email}:`, insertError);
+          errors.push({ email: profile.email, error: insertError.message });
           errorCount++;
           continue;
         }
 
-        // Escape email for CSV (handle commas/quotes)
+        const reuploadLink = `${baseDomain}/reupload-photo?token=${reuploadToken}`;
+
+        // Escape email for CSV
         const safeEmail = profile.email.includes(",")
           ? `"${profile.email.replace(/"/g, '""')}"`
           : profile.email;
 
-        csvRows.push(`${safeEmail},${linkData.properties.action_link}`);
+        csvRows.push(`${safeEmail},${reuploadLink}`);
         successCount++;
       } catch (e) {
         console.error(`Error for ${profile.email}:`, e);
@@ -150,11 +162,11 @@ Deno.serve(async (req) => {
         total_missing: allProfiles.length,
         links_generated: successCount,
         errors: errorCount,
-        redirect_domain: redirectDomain,
+        domain: baseDomain,
       },
     });
 
-    // Check if caller wants JSON summary instead of CSV
+    // Check if caller wants JSON summary
     const accept = req.headers.get("Accept") || "";
     if (accept.includes("application/json")) {
       return new Response(
@@ -175,7 +187,7 @@ Deno.serve(async (req) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="photo-magic-links-${new Date().toISOString().slice(0, 10)}.csv"`,
+        "Content-Disposition": `attachment; filename="photo-reupload-links-${new Date().toISOString().slice(0, 10)}.csv"`,
       },
     });
   } catch (error) {
