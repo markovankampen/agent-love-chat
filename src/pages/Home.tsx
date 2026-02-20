@@ -25,13 +25,6 @@ const Home = () => {
         return;
       }
 
-      // Check if user should be on a different route
-      const route = await getPostAuthRoute(session.user.id);
-      if (route !== "/home") {
-        navigate(route, { replace: true });
-        return;
-      }
-
       // Load profile data
       const { data: profile } = await supabase
         .from("profiles")

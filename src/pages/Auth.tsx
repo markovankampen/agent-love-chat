@@ -64,8 +64,7 @@ const Auth = () => {
           return;
         }
 
-        const route = await getPostAuthRoute(data.user!.id);
-        navigate(route);
+        navigate("/home");
 
         toast({
           title: "Welkom terug!",
