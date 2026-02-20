@@ -105,27 +105,25 @@ serve(async (req) => {
             const bytes = new Uint8Array(imgBuffer);
             
             // If > 2MB, resize using OffscreenCanvas (Deno only supports PNG output)
-            if (bytes.length > 2 * 1024 * 1024) {
-              console.log(`📐 Image too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB), resizing...`);
+            // Always resize to max 400px to stay under Face++ 2MB limit
+            {
+              console.log(`📐 Image size: ${(bytes.length / 1024).toFixed(0)}KB, resizing to max 400px...`);
               try {
                 const srcBlob = new Blob([bytes], { type: "image/jpeg" });
                 const imageBitmap = await createImageBitmap(srcBlob);
-                const maxDim = 800;
+                const maxDim = 400;
                 const ratio = Math.min(maxDim / imageBitmap.width, maxDim / imageBitmap.height, 1);
                 const w = Math.round(imageBitmap.width * ratio);
                 const h = Math.round(imageBitmap.height * ratio);
                 const canvas = new OffscreenCanvas(w, h);
                 const ctx = canvas.getContext("2d")!;
                 ctx.drawImage(imageBitmap, 0, 0, w, h);
-                // Deno edge runtime only supports PNG for convertToBlob
                 imageBlob = await canvas.convertToBlob({ type: "image/png" });
                 console.log(`✅ Resized to ${w}x${h}, ${(imageBlob.size / 1024).toFixed(0)}KB`);
               } catch (resizeErr) {
                 console.error("⚠️ Resize failed, sending original as file:", resizeErr);
                 imageBlob = new Blob([bytes], { type: "image/jpeg" });
               }
-            } else {
-              imageBlob = new Blob([bytes], { type: "image/jpeg" });
             }
           }
         } catch (dlErr) {
