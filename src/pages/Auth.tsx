@@ -47,8 +47,14 @@ const Auth = () => {
           throw error;
         }
 
-        // Check if email is verified
-        if (!data.user?.email_confirmed_at) {
+        // Check custom_email_verified from profiles
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("custom_email_verified")
+          .eq("id", data.user!.id)
+          .single();
+
+        if (!profile?.custom_email_verified) {
           toast({
             title: "Email niet geverifieerd",
             description: "Controleer je inbox en verifieer je email om door te gaan.",
