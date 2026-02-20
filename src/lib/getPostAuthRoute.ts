@@ -19,8 +19,10 @@ export async function getPostAuthRoute(userId: string): Promise<string> {
     return "/profile-setup";
   }
 
+  // Returning users with complete profile but missing photo go to /home
+  // where they'll see the photo re-upload prompt banner
   if (!profile.photo_url) {
-    return "/profile-setup?photo-only=true";
+    return "/home";
   }
 
   // Check admin role (RLS only allows admins to read user_roles)
