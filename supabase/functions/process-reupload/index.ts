@@ -169,6 +169,59 @@ serve(async (req) => {
 
     const analysisPhotoUrl = signedUrlData?.signedUrl || permanentUrl;
 
+    // Run Face++ analysis
+    const faceppApiKey = Deno.env.get("FACEPP_API_KEY");
+    const faceppApiSecret = Deno.env.get("FACEPP_API_SECRET");
+
+    let attractivenessScore = 7;
+    let facialFeatures: Record<string, unknown> = { note: "Face++ not available" };
+
+    if (faceppApiKey && faceppApiSecret) {
+      try {
+        console.log("🔍 Running Face++ analysis...");
+        const formData = new FormData();
+        formData.append("api_key", faceppApiKey);
+        formData.append("api_secret", faceppApiSecret);
+        formData.append("image_url", analysisPhotoUrl);
+        formData.append("return_attributes", "gender,age,beauty,emotion,eyestatus,skinstatus,headpose");
+
+        const faceResp = await fetch("https://api-us.faceplusplus.com/facepp/v3/detect", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (faceResp.ok) {
+          const faceResult = await faceResp.json();
+          if (faceResult.faces?.length === 1) {
+            const attrs = faceResult.faces[0].attributes;
+            const maleScore = attrs?.beauty?.male_score || 0;
+            const femaleScore = attrs?.beauty?.female_score || 0;
+            attractivenessScore = Math.round(((maleScore + femaleScore) / 2) / 10);
+
+            facialFeatures = {
+              gender: attrs?.gender?.value || null,
+              age: attrs?.age?.value || null,
+              emotion: attrs?.emotion || null,
+              beauty_scores: { male: maleScore, female: femaleScore },
+              skin_status: attrs?.skinstatus || null,
+              headpose: attrs?.headpose || null,
+            };
+            console.log("✅ Face++ analysis complete, score:", attractivenessScore);
+          } else {
+            console.log("⚠️ Face++ detected", faceResult.faces?.length || 0, "faces");
+            facialFeatures = { note: "Unexpected face count: " + (faceResult.faces?.length || 0) };
+          }
+        } else {
+          const errText = await faceResp.text();
+          console.error("❌ Face++ error:", errText);
+          facialFeatures = { note: "Face++ error", error: errText };
+        }
+      } catch (e) {
+        console.error("❌ Face++ exception:", e);
+        facialFeatures = { note: "Face++ exception", error: String(e) };
+      }
+    }
+
     // Detect colors with AI
     const { eyeColor, hairColor } = await detectColorsWithAI(analysisPhotoUrl);
 
@@ -180,8 +233,8 @@ serve(async (req) => {
           user_id: userId,
           photo_url: permanentUrl,
           permanent_photo_url: permanentUrl,
-          attractiveness_score: 7,
-          facial_features: { note: "Uploaded via reupload link" },
+          attractiveness_score: attractivenessScore,
+          facial_features: facialFeatures,
         },
         { onConflict: "user_id" }
       )
@@ -194,13 +247,15 @@ serve(async (req) => {
       console.log("✅ Face analysis saved:", analysisData?.id);
     }
 
-    // Update profile with photo and colors
+    // Update profile with photo, colors, and analysis
     const { data: profileData, error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({
         photo_url: fileName,
         eye_color: eyeColor,
         hair_color: hairColor,
+        attractiveness_score: attractivenessScore,
+        facial_features: facialFeatures,
       })
       .eq("id", userId)
       .select()
