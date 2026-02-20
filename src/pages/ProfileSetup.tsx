@@ -189,6 +189,17 @@ const ProfileSetup = () => {
         });
         return;
       }
+      
+      // Validate it's an image
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Ongeldig bestand",
+          description: "Upload een foto (JPG, PNG of HEIC)",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setSelectedFile(file);
       setShowVerificationPrompt(false);
       const url = URL.createObjectURL(file);
@@ -422,31 +433,42 @@ const ProfileSetup = () => {
       const [day, month, year] = dateOfBirth.split("/");
       const formattedDate = `${year}-${month}-${day}`;
 
-      // Convert to JPEG to ensure Face++ compatibility
+      // Convert to JPEG and resize to stay under Face++ 2MB limit (max 1280px)
       let uploadFile: File | Blob = selectedFile;
-      const fileExt = selectedFile.name.split(".").pop()?.toLowerCase();
-      let finalExt = fileExt || "jpeg";
+      let finalExt = "jpeg";
       
-      if (fileExt !== "jpg" && fileExt !== "jpeg") {
-        try {
-          const bitmap = await createImageBitmap(selectedFile);
-          const canvas = document.createElement("canvas");
-          canvas.width = bitmap.width;
-          canvas.height = bitmap.height;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(bitmap, 0, 0);
-            const blob = await new Promise<Blob | null>((resolve) =>
-              canvas.toBlob(resolve, "image/jpeg", 0.9)
+      try {
+        const bitmap = await createImageBitmap(selectedFile);
+        const maxDim = 1280;
+        const ratio = Math.min(maxDim / bitmap.width, maxDim / bitmap.height, 1);
+        const w = Math.round(bitmap.width * ratio);
+        const h = Math.round(bitmap.height * ratio);
+        
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(bitmap, 0, 0, w, h);
+          
+          // Try quality levels until under 1.8MB
+          let quality = 0.85;
+          let blob: Blob | null = null;
+          while (quality >= 0.3) {
+            blob = await new Promise<Blob | null>((resolve) =>
+              canvas.toBlob(resolve, "image/jpeg", quality)
             );
-            if (blob) {
-              uploadFile = blob;
-              finalExt = "jpeg";
-            }
+            if (blob && blob.size <= 1800 * 1024) break;
+            quality -= 0.1;
           }
-        } catch (convErr) {
-          console.warn("JPEG conversion failed, uploading original:", convErr);
+          
+          if (blob) {
+            uploadFile = blob;
+            console.log(`📐 Resized to ${w}x${h}, ${(blob.size / 1024).toFixed(0)}KB, quality=${quality.toFixed(1)}`);
+          }
         }
+      } catch (convErr) {
+        console.warn("Image resize failed, uploading original:", convErr);
       }
 
       // Upload photo to PERMANENT storage first
