@@ -191,11 +191,11 @@ const ProfileSetup = () => {
         return;
       }
 
-      // Max 2MB
-      if (file.size > 2 * 1024 * 1024) {
+      // Max 10MB
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           title: "Bestand te groot",
-          description: "Upload een foto kleiner dan 2MB. Verklein je foto eerst via je telefoon of een online tool.",
+          description: "Upload een foto kleiner dan 10MB. Verklein je foto eerst via je telefoon of een online tool.",
           variant: "destructive",
         });
         return;
