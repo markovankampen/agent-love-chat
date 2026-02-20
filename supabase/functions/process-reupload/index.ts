@@ -178,7 +178,7 @@ serve(async (req) => {
       .upsert(
         {
           user_id: userId,
-          photo_url: fileName,
+          photo_url: permanentUrl,
           permanent_photo_url: permanentUrl,
           attractiveness_score: 7,
           facial_features: { note: "Uploaded via reupload link" },
