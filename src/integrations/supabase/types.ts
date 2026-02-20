@@ -266,6 +266,7 @@ export type Database = {
           hair_color: string | null
           id: string
           matching_complete: boolean | null
+          paused: boolean | null
           phone_number: string | null
           photo_url: string | null
           updated_at: string | null
@@ -284,6 +285,7 @@ export type Database = {
           hair_color?: string | null
           id: string
           matching_complete?: boolean | null
+          paused?: boolean | null
           phone_number?: string | null
           photo_url?: string | null
           updated_at?: string | null
@@ -302,6 +304,7 @@ export type Database = {
           hair_color?: string | null
           id?: string
           matching_complete?: boolean | null
+          paused?: boolean | null
           phone_number?: string | null
           photo_url?: string | null
           updated_at?: string | null
