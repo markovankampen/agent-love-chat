@@ -7,13 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-function generateToken(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function generatePhotoRequestEmail(firstName: string, reuploadLink: string): string {
+function generatePhotoRequestEmail(firstName: string, magicLink: string): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -37,23 +31,15 @@ function generatePhotoRequestEmail(firstName: string, reuploadLink: string): str
           </p>
           
           <div style="margin: 32px 0; text-align: center;">
-            <a href="${reuploadLink}" 
+            <a href="${magicLink}" 
                style="display: inline-block; padding: 14px 32px; background-color: #6366f1; color: #ffffff; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">
               📸 Selfie uploaden
             </a>
           </div>
 
           <p style="color: #666; font-size: 14px; line-height: 22px; margin: 16px 0;">
-            Klik op de knop hierboven om direct een selfie te uploaden. De link is 7 dagen geldig.
+            Klik op de knop hierboven om direct in te loggen en je selfie te uploaden. De link is eenmalig geldig.
           </p>
-          
-          <p style="color: #666; font-size: 14px; line-height: 22px; margin: 24px 0 8px 0;">
-            Of kopieer en plak deze link in je browser:
-          </p>
-          
-          <div style="padding: 12px; background-color: #f4f4f4; border-radius: 5px; border: 1px solid #eee; word-break: break-all;">
-            <code style="color: #333; font-size: 12px;">${reuploadLink}</code>
-          </div>
           
           <p style="color: #333; font-size: 16px; line-height: 26px; margin: 24px 0 8px 0;">
             Alvast bedankt! 💜
@@ -83,8 +69,6 @@ Deno.serve(async (req) => {
   console.log("=== Send Photo Request Function Started ===");
 
   try {
-    // Verify admin/service role access
-    const authHeader = req.headers.get("Authorization");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -94,8 +78,6 @@ Deno.serve(async (req) => {
     }
 
     const resend = new Resend(resendApiKey);
-
-    // Create admin client
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     // Parse optional body for targeting specific users
@@ -106,37 +88,65 @@ Deno.serve(async (req) => {
         targetUserIds = body.userIds;
       }
     } catch {
-      // No body or invalid JSON — send to all users without photos
+      // No body or invalid JSON — send to all users without permanent photos
     }
 
-    // Find users without a photo_url in their profile
-    let query = supabaseAdmin
+    // Find all profiles
+    let profileQuery = supabaseAdmin
       .from("profiles")
-      .select("id, email, first_name, photo_url")
-      .is("photo_url", null);
+      .select("id, email, first_name");
 
     if (targetUserIds) {
-      query = query.in("id", targetUserIds);
+      profileQuery = profileQuery.in("id", targetUserIds);
     }
 
-    const { data: usersWithoutPhotos, error: queryError } = await query;
+    const { data: allProfiles, error: profileError } = await profileQuery;
 
-    if (queryError) {
-      console.error("Error querying profiles:", queryError);
-      throw queryError;
+    if (profileError) {
+      console.error("Error querying profiles:", profileError);
+      throw profileError;
     }
 
-    console.log(`Found ${usersWithoutPhotos?.length || 0} users without photos`);
-
-    if (!usersWithoutPhotos || usersWithoutPhotos.length === 0) {
+    if (!allProfiles || allProfiles.length === 0) {
       return new Response(
-        JSON.stringify({ success: true, message: "No users need photo requests", sent: 0 }),
+        JSON.stringify({ success: true, message: "No profiles found", sent: 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Determine base URL for reupload links
+    // Get all face_analysis records with a permanent_photo_url
+    const { data: faceRecords, error: faceError } = await supabaseAdmin
+      .from("face_analysis")
+      .select("user_id, permanent_photo_url")
+      .not("permanent_photo_url", "is", null);
+
+    if (faceError) {
+      console.error("Error querying face_analysis:", faceError);
+      throw faceError;
+    }
+
+    // Build set of user IDs that already have a permanent photo
+    const usersWithPhoto = new Set(
+      (faceRecords || [])
+        .filter((r) => r.permanent_photo_url)
+        .map((r) => r.user_id)
+    );
+
+    // Filter to users WITHOUT a permanent photo
+    const usersWithoutPhotos = allProfiles.filter((p) => !usersWithPhoto.has(p.id));
+
+    console.log(`Found ${usersWithoutPhotos.length} users without permanent photo (out of ${allProfiles.length} total)`);
+
+    if (usersWithoutPhotos.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, message: "All users have permanent photos", sent: 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Base URL for redirect after magic link login
     const baseUrl = "https://agent-love-chat.lovable.app";
+    const redirectTo = `${baseUrl}/profile-setup?photo-only=true`;
 
     let sentCount = 0;
     let errorCount = 0;
@@ -153,29 +163,26 @@ Deno.serve(async (req) => {
       }
 
       try {
-        // Generate a unique token
-        const token = generateToken();
+        // Generate a magic link that auto-logs the user in and redirects to photo upload
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+          type: "magiclink",
+          email: user.email,
+          options: {
+            redirectTo,
+          },
+        });
 
-        // Store token in database
-        const { error: tokenError } = await supabaseAdmin
-          .from("photo_reupload_tokens")
-          .insert({
-            user_id: user.id,
-            token,
-          });
-
-        if (tokenError) {
-          console.error(`Error creating token for ${user.id}:`, tokenError);
-          results.push({ userId: user.id, email: user.email, status: "error", error: tokenError.message });
+        if (linkError || !linkData?.properties?.action_link) {
+          console.error(`Error generating magic link for ${user.email}:`, linkError);
+          results.push({ userId: user.id, email: user.email, status: "error", error: linkError?.message || "No link generated" });
           errorCount++;
           continue;
         }
 
-        // Build reupload link
-        const reuploadLink = `${baseUrl}/reupload-photo?token=${token}`;
+        const magicLink = linkData.properties.action_link;
 
-        // Send email
-        const html = generatePhotoRequestEmail(user.first_name || "", reuploadLink);
+        // Send email via Resend
+        const html = generatePhotoRequestEmail(user.first_name || "", magicLink);
 
         const { data: emailData, error: emailError } = await resend.emails.send({
           from: "Matchmaker Flori <noreply@matchmakerflori.nl>",
