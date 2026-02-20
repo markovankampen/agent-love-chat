@@ -18,10 +18,10 @@ const Footer = () => {
           {/* Footer links */}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a 
-              href="mailto:Evenementen@indebuurt.nl" 
+              href="mailto:ontmoet@indebuurt.nl" 
               className="hover:text-foreground transition-colors"
             >
-              Evenementen@indebuurt.nl
+              ontmoet@indebuurt.nl
             </a>
             <span className="text-muted-foreground/30">•</span>
             <button 
