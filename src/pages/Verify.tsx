@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Mail, ArrowLeft, XCircle } from "lucide-react";
+import { Mail, ArrowLeft, XCircle, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,8 @@ const Verify = () => {
   const [userEmail, setUserEmail] = useState<string>("");
   const [status, setStatus] = useState<"waiting" | "error">("waiting");
   const [errorMessage, setErrorMessage] = useState("");
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasRedirectedRef = useRef(false);
 
@@ -140,6 +142,61 @@ const Verify = () => {
     navigate("/auth");
   };
 
+  const handleResendEmail = async () => {
+    if (resending || resendCooldown > 0) return;
+
+    const email = userEmail || sessionStorage.getItem("pendingVerificationEmail");
+    if (!email) {
+      toast({
+        title: "Email onbekend",
+        description: "Ga terug naar inloggen en probeer opnieuw.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResending(true);
+    try {
+      const baseUrl = window.location.origin;
+      const response = await supabase.functions.invoke("send-verification-email", {
+        body: {
+          email,
+          redirectUrl: `${baseUrl}/api-verify`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error("Verzenden mislukt");
+      }
+
+      toast({
+        title: "Email verzonden!",
+        description: "Check je inbox (en spam folder) voor de nieuwe verificatie email.",
+      });
+
+      // Start 60s cooldown
+      setResendCooldown(60);
+      const timer = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (error: any) {
+      console.error("Resend error:", error);
+      toast({
+        title: "Verzenden mislukt",
+        description: "Probeer het later opnieuw.",
+        variant: "destructive",
+      });
+    } finally {
+      setResending(false);
+    }
+  };
+
   if (status === "error") {
     return (
       <div className="min-h-screen flex flex-col bg-muted/30">
@@ -196,7 +253,20 @@ const Verify = () => {
 
             <p className="text-xs text-muted-foreground mt-4">Geen email ontvangen? Check je spam folder.</p>
 
-            <div className="pt-4">
+            <div className="pt-2 space-y-2">
+              <Button
+                onClick={handleResendEmail}
+                variant="default"
+                className="w-full"
+                disabled={resending || resendCooldown > 0}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${resending ? "animate-spin" : ""}`} />
+                {resending
+                  ? "Verzenden..."
+                  : resendCooldown > 0
+                    ? `Opnieuw versturen (${resendCooldown}s)`
+                    : "Verificatie email opnieuw versturen"}
+              </Button>
               <Button onClick={handleGoBack} variant="outline" className="w-full">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Terug naar inloggen
