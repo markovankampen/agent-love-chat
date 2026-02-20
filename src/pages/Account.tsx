@@ -28,7 +28,7 @@ function AvatarWithSignedUrl({ photoUrl, size = "w-12 h-12", iconSize = "w-6 h-6
   return (
     <Avatar className={size}>
       {signedUrl ? (
-        <AvatarImage src={signedUrl} alt="Profielfoto" />
+        <AvatarImage src={signedUrl} alt="Profielfoto" className="object-cover object-top" />
       ) : (
         <AvatarFallback>
           <User className={`${iconSize} text-muted-foreground`} />
