@@ -61,9 +61,12 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    // Filter to only those with the fallback note
+    // Filter to only those with fallback/placeholder notes
     const failedRecords = (records || []).filter(
-      (r: any) => r.facial_features?.note?.includes("Face++ free limit reached")
+      (r: any) => r.facial_features?.note?.includes("Face++ free limit reached") ||
+                   r.facial_features?.note?.includes("Uploaded via reupload link") ||
+                   r.facial_features?.note?.includes("Face++ not available") ||
+                   r.facial_features?.note?.includes("Face++ error")
     );
 
     console.log(`Found ${failedRecords.length} records to retry`);
