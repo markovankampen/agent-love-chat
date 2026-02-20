@@ -263,6 +263,7 @@ export type Database = {
           eye_color: string | null
           facial_features: Json | null
           first_name: string | null
+          gender_preference: string | null
           hair_color: string | null
           id: string
           matching_complete: boolean | null
@@ -282,6 +283,7 @@ export type Database = {
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
+          gender_preference?: string | null
           hair_color?: string | null
           id: string
           matching_complete?: boolean | null
@@ -301,6 +303,7 @@ export type Database = {
           eye_color?: string | null
           facial_features?: Json | null
           first_name?: string | null
+          gender_preference?: string | null
           hair_color?: string | null
           id?: string
           matching_complete?: boolean | null
