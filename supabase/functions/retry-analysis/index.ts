@@ -96,22 +96,20 @@ serve(async (req) => {
       console.log(`🔄 Retrying analysis for user ${record.user_id}...`);
 
       try {
-        // Download image and send as base64 to avoid IMAGE_FILE_TOO_LARGE with URL
-        let imageBase64: string | null = null;
+        // Download image and send as image_file to avoid IMAGE_FILE_TOO_LARGE with URL
+        let imageBlob: Blob | null = null;
         try {
           const imgResp = await fetch(photoUrl);
           if (imgResp.ok) {
             const imgBuffer = await imgResp.arrayBuffer();
             const bytes = new Uint8Array(imgBuffer);
             
-            // Resize if > 2MB using OffscreenCanvas
-            let finalBytes = bytes;
+            // If > 2MB, resize using OffscreenCanvas (Deno only supports PNG output)
             if (bytes.length > 2 * 1024 * 1024) {
               console.log(`📐 Image too large (${(bytes.length / 1024 / 1024).toFixed(1)}MB), resizing...`);
               try {
-                const blob = new Blob([bytes], { type: "image/jpeg" });
-                const imageBitmap = await createImageBitmap(blob);
-                // Resize to max 800px on longest side
+                const srcBlob = new Blob([bytes], { type: "image/jpeg" });
+                const imageBitmap = await createImageBitmap(srcBlob);
                 const maxDim = 800;
                 const ratio = Math.min(maxDim / imageBitmap.width, maxDim / imageBitmap.height, 1);
                 const w = Math.round(imageBitmap.width * ratio);
@@ -119,20 +117,16 @@ serve(async (req) => {
                 const canvas = new OffscreenCanvas(w, h);
                 const ctx = canvas.getContext("2d")!;
                 ctx.drawImage(imageBitmap, 0, 0, w, h);
-                const resizedBlob = await canvas.convertToBlob({ type: "image/jpeg", quality: 0.6 });
-                finalBytes = new Uint8Array(await resizedBlob.arrayBuffer());
-                console.log(`✅ Resized to ${w}x${h}, ${(finalBytes.length / 1024).toFixed(0)}KB`);
+                // Deno edge runtime only supports PNG for convertToBlob
+                imageBlob = await canvas.convertToBlob({ type: "image/png" });
+                console.log(`✅ Resized to ${w}x${h}, ${(imageBlob.size / 1024).toFixed(0)}KB`);
               } catch (resizeErr) {
-                console.error("⚠️ Resize failed, trying raw base64:", resizeErr);
+                console.error("⚠️ Resize failed, sending original as file:", resizeErr);
+                imageBlob = new Blob([bytes], { type: "image/jpeg" });
               }
+            } else {
+              imageBlob = new Blob([bytes], { type: "image/jpeg" });
             }
-            
-            // Convert to base64
-            let binary = "";
-            for (let i = 0; i < finalBytes.length; i++) {
-              binary += String.fromCharCode(finalBytes[i]);
-            }
-            imageBase64 = btoa(binary);
           }
         } catch (dlErr) {
           console.error(`⚠️ Failed to download image for ${record.user_id}:`, dlErr);
@@ -141,8 +135,8 @@ serve(async (req) => {
         const formData = new FormData();
         formData.append("api_key", faceppApiKey);
         formData.append("api_secret", faceppApiSecret);
-        if (imageBase64) {
-          formData.append("image_base64", imageBase64);
+        if (imageBlob) {
+          formData.append("image_file", imageBlob, "photo.jpg");
         } else {
           formData.append("image_url", photoUrl);
         }
