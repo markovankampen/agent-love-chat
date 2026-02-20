@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList, Pause, Play, RotateCcw, BellOff, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList, Pause, Play, RotateCcw, BellOff, Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -123,6 +123,7 @@ export default function Admin() {
   const [showAuditLog, setShowAuditLog] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [userPage, setUserPage] = useState(0);
+  const [exportingLinks, setExportingLinks] = useState(false);
   const USERS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -211,6 +212,50 @@ export default function Admin() {
       setShowAuditLog(true);
     } catch (e: unknown) {
       toast({ title: "Error loading audit log", variant: "destructive" });
+    }
+  }
+
+  async function handleExportPhotoLinks() {
+    setExportingLinks(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-photo-links`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Export failed");
+      }
+      const contentType = res.headers.get("Content-Type") || "";
+      if (contentType.includes("application/json")) {
+        const json = await res.json();
+        toast({ title: "No users missing photos", description: json.message });
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `photo-magic-links-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "CSV downloaded", description: "Magic links exported successfully" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Export failed";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setExportingLinks(false);
     }
   }
 
@@ -309,6 +354,9 @@ export default function Admin() {
         </div>
         <p className="text-muted-foreground text-sm hidden md:block">Your matchmaking insights at a glance</p>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={handleExportPhotoLinks} disabled={exportingLinks}>
+            <Download className="h-4 w-4 mr-1" /> {exportingLinks ? "Exporting..." : "Export Photo Links"}
+          </Button>
           <Button size="sm" variant="outline" onClick={fetchAuditLogs}>
             <ClipboardList className="h-4 w-4 mr-1" /> Audit Log
           </Button>
