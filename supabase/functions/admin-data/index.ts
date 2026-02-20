@@ -84,7 +84,16 @@ serve(async (req) => {
 
     // Handle POST actions (delete profile, etc.)
     if (req.method === "POST") {
-      const body = await req.json();
+      let body: any = {};
+      try {
+        const text = await req.text();
+        if (text) body = JSON.parse(text);
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid request body" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       const { action, targetUserId, reason } = body;
 
       if (action === "delete_profile") {
