@@ -41,16 +41,24 @@ const Verify = () => {
       setUserEmail(email);
     }
 
-    // Check if user is already verified
+    // Check if user is already verified via custom_email_verified
     const checkIfAlreadyVerified = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-    if (session?.user?.email_confirmed_at) {
-        console.log("Already verified, redirecting...");
-        handleVerificationSuccess();
-        return;
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("custom_email_verified")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (profile?.custom_email_verified) {
+          console.log("Already verified (custom_email_verified), redirecting...");
+          handleVerificationSuccess();
+          return;
+        }
       }
     };
 
@@ -73,23 +81,24 @@ const Verify = () => {
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Start polling for verification every 2 seconds
+    // Start polling for custom_email_verified every 3 seconds
     const startPolling = () => {
       pollIntervalRef.current = setInterval(async () => {
         try {
           const {
             data: { session },
-            error,
-          } = await supabase.auth.refreshSession();
+          } = await supabase.auth.getSession();
 
-          // Ignore session missing errors during polling - user hasn't verified yet
-          if (error && !error.message?.includes("session missing")) {
-            console.error("Error refreshing session:", error);
-            return;
-          }
+          if (!session?.user) return;
 
-          if (session?.user?.email_confirmed_at) {
-            console.log("Email verified via polling!");
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("custom_email_verified")
+            .eq("id", session.user.id)
+            .maybeSingle();
+
+          if (profile?.custom_email_verified) {
+            console.log("Email verified via polling (custom_email_verified)!");
 
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
@@ -98,10 +107,9 @@ const Verify = () => {
             handleVerificationSuccess();
           }
         } catch (error) {
-          // Silently handle polling errors - they're expected before verification
           console.log("Polling check (waiting for verification)...");
         }
-      }, 2000);
+      }, 3000);
     };
 
     startPolling();
