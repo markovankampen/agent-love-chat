@@ -181,21 +181,97 @@ serve(async (req) => {
         );
       }
 
+      if (action === "pause_profile") {
+        if (!targetUserId) {
+          return new Response(JSON.stringify({ error: "targetUserId is required" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { data: profile } = await supabaseAdmin
+          .from("profiles").select("first_name, email, paused").eq("id", targetUserId).maybeSingle();
+        const newPaused = !(profile?.paused);
+        await supabaseAdmin.from("profiles").update({ paused: newPaused }).eq("id", targetUserId);
+        await supabaseAdmin.from("admin_audit_log").insert({
+          admin_user_id: userId,
+          action: newPaused ? "pause_profile" : "unpause_profile",
+          target_table: "profiles",
+          target_id: targetUserId,
+          details: {
+            reason: reason || "No reason provided",
+            user: profile?.first_name || profile?.email || "Unknown",
+          },
+        });
+        return new Response(
+          JSON.stringify({ success: true, paused: newPaused, message: newPaused ? "Profile paused" : "Profile unpaused" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (action === "restart_chat") {
+        if (!targetUserId) {
+          return new Response(JSON.stringify({ error: "targetUserId is required" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { data: profile } = await supabaseAdmin
+          .from("profiles").select("first_name, email").eq("id", targetUserId).maybeSingle();
+        // Delete conversations and reset matching_complete
+        await supabaseAdmin.from("conversations").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("matches").delete().or(`user_id.eq.${targetUserId},matched_user_id.eq.${targetUserId}`);
+        await supabaseAdmin.from("profiles").update({ matching_complete: false }).eq("id", targetUserId);
+        await supabaseAdmin.from("admin_audit_log").insert({
+          admin_user_id: userId,
+          action: "restart_chat",
+          target_table: "profiles",
+          target_id: targetUserId,
+          details: {
+            reason: reason || "No reason provided",
+            user: profile?.first_name || profile?.email || "Unknown",
+          },
+        });
+        return new Response(
+          JSON.stringify({ success: true, message: "Chat restarted successfully" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (action === "remove_notifications") {
+        if (!targetUserId) {
+          return new Response(JSON.stringify({ error: "targetUserId is required" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { data: profile } = await supabaseAdmin
+          .from("profiles").select("first_name, email").eq("id", targetUserId).maybeSingle();
+        await supabaseAdmin.from("notification_settings").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("admin_audit_log").insert({
+          admin_user_id: userId,
+          action: "remove_notifications",
+          target_table: "notification_settings",
+          target_id: targetUserId,
+          details: {
+            reason: reason || "No reason provided",
+            user: profile?.first_name || profile?.email || "Unknown",
+          },
+        });
+        return new Response(
+          JSON.stringify({ success: true, message: "Notifications removed successfully" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       if (action === "get_audit_log") {
         const logs = await fetchAllRows(supabaseAdmin, "admin_audit_log");
-        // Enrich with admin names
         const adminIds = [...new Set(logs.map((l: any) => l.admin_user_id))];
         const { data: adminProfiles } = await supabaseAdmin
           .from("profiles")
           .select("id, first_name, email")
           .in("id", adminIds);
-        
         const adminMap = new Map((adminProfiles || []).map((p: any) => [p.id, p]));
         const enrichedLogs = logs.map((l: any) => {
           const admin = adminMap.get(l.admin_user_id);
           return { ...l, admin_name: admin?.first_name || admin?.email || "Unknown" };
         });
-
         return new Response(
           JSON.stringify({ logs: enrichedLogs }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }

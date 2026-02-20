@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList } from "lucide-react";
+import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList, Pause, Play, RotateCcw, BellOff } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -33,6 +33,7 @@ interface Profile {
   email: string | null;
   date_of_birth: string | null;
   matching_complete: boolean | null;
+  paused: boolean | null;
   created_at: string | null;
   photo_url: string | null;
   attractiveness_score: number | null;
@@ -116,6 +117,7 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [showAuditLog, setShowAuditLog] = useState(false);
@@ -168,6 +170,27 @@ export default function Admin() {
       toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setDeletingUserId(null);
+    }
+  }
+
+  async function handleAdminAction(targetUserId: string, action: string, label: string) {
+    setActionUserId(targetUserId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: result, error } = await supabase.functions.invoke("admin-data", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { action, targetUserId },
+      });
+      if (error) throw error;
+      toast({ title: label, description: result.message });
+      checkAdminAndFetch();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : `${label} failed`;
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setActionUserId(null);
     }
   }
 
@@ -404,40 +427,73 @@ export default function Admin() {
                       <TableCell>{age ?? "—"}</TableCell>
                       <TableCell>{p.gender || "—"}</TableCell>
                       <TableCell>
-                        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">complete</Badge>
+                        {p.paused ? (
+                          <Badge variant="destructive">paused</Badge>
+                        ) : (
+                          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">complete</Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{timeAgo(p.created_at)}</TableCell>
                       <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete profile: {p.first_name || p.email || "User"}</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will permanently remove this user's profile, conversations, matches, and auth account. This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <Input
-                              placeholder="Reason for deletion (optional)"
-                              value={deleteReason}
-                              onChange={(e) => setDeleteReason(e.target.value)}
-                            />
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setDeleteReason("")}>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive hover:bg-destructive/90"
-                                onClick={() => handleDeleteProfile(p.id)}
-                                disabled={deletingUserId === p.id}
-                              >
-                                {deletingUserId === p.id ? "Deleting..." : "Delete permanently"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={p.paused ? "Unpause profile" : "Pause profile"}
+                            onClick={() => handleAdminAction(p.id, "pause_profile", p.paused ? "Profile unpaused" : "Profile paused")}
+                            disabled={actionUserId === p.id}
+                          >
+                            {p.paused ? <Play className="h-4 w-4 text-primary" /> : <Pause className="h-4 w-4 text-warning" />}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Restart chat"
+                            onClick={() => handleAdminAction(p.id, "restart_chat", "Chat restarted")}
+                            disabled={actionUserId === p.id}
+                          >
+                            <RotateCcw className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Remove notifications"
+                            onClick={() => handleAdminAction(p.id, "remove_notifications", "Notifications removed")}
+                            disabled={actionUserId === p.id}
+                          >
+                            <BellOff className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete profile: {p.first_name || p.email || "User"}</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently remove this user's profile, conversations, matches, and auth account. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <Input
+                                placeholder="Reason for deletion (optional)"
+                                value={deleteReason}
+                                onChange={(e) => setDeleteReason(e.target.value)}
+                              />
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setDeleteReason("")}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive hover:bg-destructive/90"
+                                  onClick={() => handleDeleteProfile(p.id)}
+                                  disabled={deletingUserId === p.id}
+                                >
+                                  {deletingUserId === p.id ? "Deleting..." : "Delete permanently"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
