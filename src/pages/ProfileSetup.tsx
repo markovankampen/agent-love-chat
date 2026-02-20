@@ -178,28 +178,57 @@ const ProfileSetup = () => {
     checkAuth();
   }, [navigate]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
+      // Only JPG/JPEG allowed
+      if (file.type !== "image/jpeg") {
+        toast({
+          title: "Ongeldig formaat",
+          description: "Upload een JPG/JPEG foto. Andere formaten worden niet ondersteund.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Max 2MB
+      if (file.size > 2 * 1024 * 1024) {
         toast({
           title: "Bestand te groot",
-          description: "Upload een foto kleiner dan 10MB",
+          description: "Upload een foto kleiner dan 2MB. Verklein je foto eerst via je telefoon of een online tool.",
           variant: "destructive",
         });
         return;
       }
-      
-      // Validate it's an image
-      if (!file.type.startsWith("image/")) {
+
+      // Validate dimensions
+      try {
+        const bitmap = await createImageBitmap(file);
+        if (bitmap.width > 1920 || bitmap.height > 1920) {
+          toast({
+            title: "Foto te groot",
+            description: `Je foto is ${bitmap.width}x${bitmap.height}px. Maximaal 1920x1920px.`,
+            variant: "destructive",
+          });
+          return;
+        }
+        if (bitmap.width < 200 || bitmap.height < 200) {
+          toast({
+            title: "Foto te klein",
+            description: "Upload een foto van minimaal 200x200 pixels.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch {
         toast({
-          title: "Ongeldig bestand",
-          description: "Upload een foto (JPG, PNG of HEIC)",
+          title: "Ongeldige foto",
+          description: "Dit bestand kan niet worden gelezen als foto.",
           variant: "destructive",
         });
         return;
       }
-      
+
       setSelectedFile(file);
       setShowVerificationPrompt(false);
       const url = URL.createObjectURL(file);
@@ -433,43 +462,9 @@ const ProfileSetup = () => {
       const [day, month, year] = dateOfBirth.split("/");
       const formattedDate = `${year}-${month}-${day}`;
 
-      // Convert to JPEG and resize to stay under Face++ 2MB limit (max 1280px)
+      // Upload as-is — validation already ensures JPG under 2MB, max 1920px
       let uploadFile: File | Blob = selectedFile;
-      let finalExt = "jpeg";
-      
-      try {
-        const bitmap = await createImageBitmap(selectedFile);
-        const maxDim = 1280;
-        const ratio = Math.min(maxDim / bitmap.width, maxDim / bitmap.height, 1);
-        const w = Math.round(bitmap.width * ratio);
-        const h = Math.round(bitmap.height * ratio);
-        
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(bitmap, 0, 0, w, h);
-          
-          // Try quality levels until under 1.8MB
-          let quality = 0.85;
-          let blob: Blob | null = null;
-          while (quality >= 0.3) {
-            blob = await new Promise<Blob | null>((resolve) =>
-              canvas.toBlob(resolve, "image/jpeg", quality)
-            );
-            if (blob && blob.size <= 1800 * 1024) break;
-            quality -= 0.1;
-          }
-          
-          if (blob) {
-            uploadFile = blob;
-            console.log(`📐 Resized to ${w}x${h}, ${(blob.size / 1024).toFixed(0)}KB, quality=${quality.toFixed(1)}`);
-          }
-        }
-      } catch (convErr) {
-        console.warn("Image resize failed, uploading original:", convErr);
-      }
+      const finalExt = "jpeg";
 
       // Upload photo to PERMANENT storage first
       const fileName = `${userId}/${Date.now()}.${finalExt}`;
@@ -747,7 +742,7 @@ const ProfileSetup = () => {
                     <Input
                       id="photo"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg"
                       onChange={handleFileSelect}
                       className="hidden"
                       disabled={analyzing}
