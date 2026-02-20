@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList, Pause, Play, RotateCcw, BellOff } from "lucide-react";
+import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList, Pause, Play, RotateCcw, BellOff, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -121,6 +121,9 @@ export default function Admin() {
   const [deleteReason, setDeleteReason] = useState("");
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [showAuditLog, setShowAuditLog] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [userPage, setUserPage] = useState(0);
+  const USERS_PER_PAGE = 10;
 
   useEffect(() => {
     checkAdminAndFetch();
@@ -278,14 +281,21 @@ export default function Admin() {
   }));
 
   const weeklySignups = getWeeklySignups(profiles);
-  // Sort completed profiles: those with facial_features (gender/age data) first
-  const sortedCompleted = [...completedProfiles].sort((a, b) => {
+  // All users: search, sort, paginate
+  const filteredProfiles = profiles.filter(p => {
+    if (!userSearch) return true;
+    const q = userSearch.toLowerCase();
+    return (p.first_name?.toLowerCase().includes(q)) || (p.email?.toLowerCase().includes(q));
+  });
+  const sortedProfiles = [...filteredProfiles].sort((a, b) => {
     const aHasData = (a.gender && a.date_of_birth) ? 1 : 0;
     const bHasData = (b.gender && b.date_of_birth) ? 1 : 0;
     if (bHasData !== aHasData) return bHasData - aHasData;
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   });
-  const recentCompleted = sortedCompleted.slice(0, 10);
+  const totalPages = Math.max(1, Math.ceil(sortedProfiles.length / USERS_PER_PAGE));
+  const safeUserPage = Math.min(userPage, totalPages - 1);
+  const paginatedProfiles = sortedProfiles.slice(safeUserPage * USERS_PER_PAGE, (safeUserPage + 1) * USERS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -389,10 +399,22 @@ export default function Admin() {
           </Card>
         </div>
 
-        {/* Recent Completed Users Table */}
+        {/* All Users Table */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Recent Users</CardTitle>
+          <CardHeader className="flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg">All Users</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={userSearch}
+                  onChange={(e) => { setUserSearch(e.target.value); setUserPage(0); }}
+                  className="pl-9 w-64"
+                />
+              </div>
+              <Badge variant="outline">{filteredProfiles.length} users</Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -409,7 +431,7 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentCompleted.map(p => {
+                {paginatedProfiles.map(p => {
                   const age = getAge(p.date_of_birth);
                   return (
                     <TableRow key={p.id}>
@@ -500,6 +522,31 @@ export default function Admin() {
                 })}
               </TableBody>
             </Table>
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {safeUserPage * USERS_PER_PAGE + 1}–{Math.min((safeUserPage + 1) * USERS_PER_PAGE, sortedProfiles.length)} of {sortedProfiles.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safeUserPage === 0}
+                  onClick={() => setUserPage(p => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">Page {safeUserPage + 1} of {totalPages}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safeUserPage >= totalPages - 1}
+                  onClick={() => setUserPage(p => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
