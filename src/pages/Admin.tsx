@@ -5,10 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera } from "lucide-react";
+import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
+interface AuditLogEntry {
+  id: string;
+  admin_user_id: string;
+  admin_name: string;
+  action: string;
+  target_table: string | null;
+  target_id: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}
 interface AdminData {
   fetched_at: string;
   admin_user_id: string;
@@ -103,6 +115,11 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [showAuditLog, setShowAuditLog] = useState(false);
+
   useEffect(() => {
     checkAdminAndFetch();
   }, []);
@@ -129,6 +146,45 @@ export default function Admin() {
   async function handleSignOut() {
     await supabase.auth.signOut();
     navigate("/auth");
+  }
+
+  async function handleDeleteProfile(targetUserId: string) {
+    setDeletingUserId(targetUserId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: result, error } = await supabase.functions.invoke("admin-data", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { action: "delete_profile", targetUserId, reason: deleteReason },
+      });
+      if (error) throw error;
+      toast({ title: "Profile deleted", description: result.message });
+      setDeleteReason("");
+      checkAdminAndFetch();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Delete failed";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setDeletingUserId(null);
+    }
+  }
+
+  async function fetchAuditLogs() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: result, error } = await supabase.functions.invoke("admin-data", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { action: "get_audit_log" },
+      });
+      if (error) throw error;
+      setAuditLogs(result.logs || []);
+      setShowAuditLog(true);
+    } catch (e: unknown) {
+      toast({ title: "Error loading audit log", variant: "destructive" });
+    }
   }
 
   if (loading) {
@@ -219,6 +275,9 @@ export default function Admin() {
         </div>
         <p className="text-muted-foreground text-sm hidden md:block">Your matchmaking insights at a glance</p>
         <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={fetchAuditLogs}>
+            <ClipboardList className="h-4 w-4 mr-1" /> Audit Log
+          </Button>
           <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground" onClick={() => toast({ title: "Matching triggered" })}>
             <Sparkles className="h-4 w-4 mr-1" /> Run Matching
           </Button>
@@ -322,6 +381,7 @@ export default function Admin() {
                   <TableHead>GENDER</TableHead>
                   <TableHead>STATUS</TableHead>
                   <TableHead>JOINED</TableHead>
+                  <TableHead>ACTIONS</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -346,6 +406,38 @@ export default function Admin() {
                         <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">complete</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{timeAgo(p.created_at)}</TableCell>
+                      <TableCell>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete profile: {p.first_name || p.email || "User"}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently remove this user's profile, conversations, matches, and auth account. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <Input
+                              placeholder="Reason for deletion (optional)"
+                              value={deleteReason}
+                              onChange={(e) => setDeleteReason(e.target.value)}
+                            />
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setDeleteReason("")}>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive hover:bg-destructive/90"
+                                onClick={() => handleDeleteProfile(p.id)}
+                                disabled={deletingUserId === p.id}
+                              >
+                                {deletingUserId === p.id ? "Deleting..." : "Delete permanently"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -393,6 +485,52 @@ export default function Admin() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Audit Log */}
+        {showAuditLog && (
+          <Card>
+            <CardHeader className="flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" /> Admin Audit Log
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowAuditLog(false)}>Close</Button>
+            </CardHeader>
+            <CardContent>
+              {auditLogs.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No actions recorded yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ADMIN</TableHead>
+                      <TableHead>ACTION</TableHead>
+                      <TableHead>TARGET</TableHead>
+                      <TableHead>REASON</TableHead>
+                      <TableHead>WHEN</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLogs.map(log => (
+                      <TableRow key={log.id}>
+                        <TableCell className="font-medium">{log.admin_name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{log.action}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {(log.details as Record<string, unknown>)?.deleted_user as string || log.target_id?.slice(0, 8) || "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {(log.details as Record<string, unknown>)?.reason as string || "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{timeAgo(log.created_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

@@ -29,64 +29,185 @@ async function fetchAllRows(supabaseAdmin: any, table: string, selectFields = "*
   return allRows;
 }
 
+async function authenticateAdmin(req: Request) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { error: "Unauthorized", status: 401 };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  const token = authHeader.replace("Bearer ", "");
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
+
+  if (userError || !user) {
+    return { error: "Unauthorized", status: 401 };
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+  const { data: roleData } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (!roleData) {
+    return { error: "Forbidden: Admin access required", status: 403 };
+  }
+
+  return { user, supabaseAdmin, supabaseUrl };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+    const auth = await authenticateAdmin(req);
+    if ("error" in auth) {
+      return new Response(JSON.stringify({ error: auth.error }), {
+        status: auth.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    const token = authHeader.replace("Bearer ", "");
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    const { user, supabaseAdmin } = auth;
     const userId = user.id;
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: roleData } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
+    // Handle POST actions (delete profile, etc.)
+    if (req.method === "POST") {
+      const body = await req.json();
+      const { action, targetUserId, reason } = body;
 
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Forbidden: Admin access required" }), {
-        status: 403,
+      if (action === "delete_profile") {
+        if (!targetUserId) {
+          return new Response(JSON.stringify({ error: "targetUserId is required" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Prevent deleting other admins
+        const { data: targetRole } = await supabaseAdmin
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", targetUserId)
+          .eq("role", "admin")
+          .maybeSingle();
+
+        if (targetRole) {
+          return new Response(JSON.stringify({ error: "Cannot delete an admin user" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Fetch profile details before deletion for audit
+        const { data: targetProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("first_name, email")
+          .eq("id", targetUserId)
+          .maybeSingle();
+
+        // Delete related data in order
+        await supabaseAdmin.from("face_analysis").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("conversations").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("matches").delete().or(`user_id.eq.${targetUserId},matched_user_id.eq.${targetUserId}`);
+        await supabaseAdmin.from("notification_settings").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("user_activity").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("email_verification_tokens").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("photo_reupload_tokens").delete().eq("user_id", targetUserId);
+        await supabaseAdmin.from("profiles").delete().eq("id", targetUserId);
+
+        // Delete auth user
+        const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
+        if (authDeleteError) {
+          console.error("Error deleting auth user:", authDeleteError);
+        }
+
+        // Log the action
+        await supabaseAdmin.from("admin_audit_log").insert({
+          admin_user_id: userId,
+          action: "delete_profile",
+          target_table: "profiles",
+          target_id: targetUserId,
+          details: {
+            reason: reason || "No reason provided",
+            deleted_user: targetProfile?.first_name || targetProfile?.email || "Unknown",
+          },
+        });
+
+        // Sync deletion to external
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          await fetch(`${supabaseUrl}/functions/v1/sync-to-external`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceKey}`,
+              "x-webhook-source": "database",
+            },
+            body: JSON.stringify({
+              type: "DELETE",
+              table: "profiles",
+              old_record: { id: targetUserId },
+            }),
+          });
+        } catch (e) {
+          console.error("Sync error (non-critical):", e);
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, message: "Profile deleted successfully" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (action === "get_audit_log") {
+        const logs = await fetchAllRows(supabaseAdmin, "admin_audit_log");
+        // Enrich with admin names
+        const adminIds = [...new Set(logs.map((l: any) => l.admin_user_id))];
+        const { data: adminProfiles } = await supabaseAdmin
+          .from("profiles")
+          .select("id, first_name, email")
+          .in("id", adminIds);
+        
+        const adminMap = new Map((adminProfiles || []).map((p: any) => [p.id, p]));
+        const enrichedLogs = logs.map((l: any) => {
+          const admin = adminMap.get(l.admin_user_id);
+          return { ...l, admin_name: admin?.first_name || admin?.email || "Unknown" };
+        });
+
+        return new Response(
+          JSON.stringify({ logs: enrichedLogs }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(JSON.stringify({ error: "Unknown action" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch all data
+    // GET: Fetch all data (existing logic)
     const profiles = await fetchAllRows(supabaseAdmin, "profiles");
     const matches = await fetchAllRows(supabaseAdmin, "matches");
     const conversations = await fetchAllRows(supabaseAdmin, "conversations", "id, user_id, role, created_at");
     const userActivity = await fetchAllRows(supabaseAdmin, "user_activity");
     const faceAnalysis = await fetchAllRows(supabaseAdmin, "face_analysis");
 
-    // Collect all file paths that need signed URLs (from profiles AND face_analysis)
+    // Collect all file paths that need signed URLs
     const allPaths = new Set<string>();
-
     profiles.forEach((p: any) => {
       if (p.photo_url && !p.photo_url.startsWith("http")) {
         allPaths.add(p.photo_url);
@@ -98,14 +219,12 @@ serve(async (req) => {
       }
     });
 
-    // Batch sign URLs
     let signedUrlMap: Record<string, string> = {};
     const pathsArray = Array.from(allPaths);
     if (pathsArray.length > 0) {
       const batchSize = 100;
       for (let i = 0; i < pathsArray.length; i += batchSize) {
         const batch = pathsArray.slice(i, i + batchSize);
-        // Try permanent bucket first
         const { data: signedData } = await supabaseAdmin.storage
           .from("profile-photos")
           .createSignedUrls(batch, 3600);
@@ -118,7 +237,6 @@ serve(async (req) => {
               missingPaths.push(batch[idx]);
             }
           });
-          // Fallback to temp bucket for legacy photos
           if (missingPaths.length > 0) {
             const { data: fallbackData } = await supabaseAdmin.storage
               .from("profile-photos-temp")
@@ -135,7 +253,6 @@ serve(async (req) => {
       }
     }
 
-    // Enrich profiles with gender and fresh photo URLs
     const enrichedProfiles = profiles.map((p: any) => {
       let gender: string | null = null;
       if (p.facial_features) {
@@ -146,7 +263,6 @@ serve(async (req) => {
       return { ...p, gender, photo_url: freshUrl };
     });
 
-    // Enrich face_analysis with fresh photo URLs
     const enrichedFaceAnalysis = faceAnalysis.map((fa: any) => {
       const freshUrl = (!fa.photo_url?.startsWith("http") && signedUrlMap[fa.photo_url]) || fa.photo_url;
       return { ...fa, photo_url: freshUrl };
