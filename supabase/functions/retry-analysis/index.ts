@@ -7,6 +7,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Fire-and-forget sync to external database
+async function triggerSync(supabaseUrl: string, serviceKey: string, table: string, type: string, record: Record<string, unknown>) {
+  try {
+    await fetch(`${supabaseUrl}/functions/v1/sync-to-external`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+        "x-webhook-source": "database",
+      },
+      body: JSON.stringify({ type, table, record }),
+    });
+    console.log(`✅ Sync triggered: ${type} on ${table}`);
+  } catch (e) {
+    console.error("⚠️ Sync trigger failed (non-critical):", e);
+  }
+}
+
 async function detectColorsWithAI(photoUrl: string, lovableApiKey: string) {
   try {
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -137,18 +155,22 @@ serve(async (req) => {
         }
 
         // Update face_analysis
-        await supabase.from("face_analysis").update({
+        const { data: faData } = await supabase.from("face_analysis").update({
           attractiveness_score: score,
           facial_features: facialFeatures,
-        }).eq("id", record.id);
+        }).eq("id", record.id).select().single();
 
         // Update profile
-        await supabase.from("profiles").update({
+        const { data: profileData } = await supabase.from("profiles").update({
           attractiveness_score: score,
           facial_features: facialFeatures,
           ...(eyeColor && { eye_color: eyeColor }),
           ...(hairColor && { hair_color: hairColor }),
-        }).eq("id", record.user_id);
+        }).eq("id", record.user_id).select().single();
+
+        // Sync to external DB
+        if (faData) triggerSync(supabaseUrl, serviceKey, "face_analysis", "UPDATE", faData as Record<string, unknown>);
+        if (profileData) triggerSync(supabaseUrl, serviceKey, "profiles", "UPDATE", profileData as Record<string, unknown>);
 
         console.log(`✅ ${record.user_id}: score=${score}, eye=${eyeColor}, hair=${hairColor}`);
         results.push({ user_id: record.user_id, status: "success", score, eyeColor, hairColor });
