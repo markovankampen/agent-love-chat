@@ -96,45 +96,33 @@ serve(async (req) => {
       console.log(`🔄 Retrying analysis for user ${record.user_id}...`);
 
       try {
-        // Download image and send as image_file to avoid IMAGE_FILE_TOO_LARGE with URL
+        // Download and resize image to stay under Face++ 2MB limit
         let imageBlob: Blob | null = null;
         try {
           const imgResp = await fetch(photoUrl);
           if (imgResp.ok) {
-            const imgBuffer = await imgResp.arrayBuffer();
-            const bytes = new Uint8Array(imgBuffer);
-            
-            // If > 2MB, resize using OffscreenCanvas (Deno only supports PNG output)
-            // Always resize to max 400px to stay under Face++ 2MB limit
-            {
-              console.log(`📐 Image size: ${(bytes.length / 1024).toFixed(0)}KB, resizing to max 400px...`);
-              try {
-                const srcBlob = new Blob([bytes], { type: "image/jpeg" });
-                const imageBitmap = await createImageBitmap(srcBlob);
-                const maxDim = 400;
-                const ratio = Math.min(maxDim / imageBitmap.width, maxDim / imageBitmap.height, 1);
-                const w = Math.round(imageBitmap.width * ratio);
-                const h = Math.round(imageBitmap.height * ratio);
-                const canvas = new OffscreenCanvas(w, h);
-                const ctx = canvas.getContext("2d")!;
-                ctx.drawImage(imageBitmap, 0, 0, w, h);
-                imageBlob = await canvas.convertToBlob({ type: "image/png" });
-                console.log(`✅ Resized to ${w}x${h}, ${(imageBlob.size / 1024).toFixed(0)}KB`);
-              } catch (resizeErr) {
-                console.error("⚠️ Resize failed, sending original as file:", resizeErr);
-                imageBlob = new Blob([bytes], { type: "image/jpeg" });
-              }
-            }
+            const bytes = new Uint8Array(await imgResp.arrayBuffer());
+            console.log(`📐 Original: ${(bytes.length / 1024).toFixed(0)}KB, resizing to 200px...`);
+            const srcBlob = new Blob([bytes], { type: "image/jpeg" });
+            const bmp = await createImageBitmap(srcBlob);
+            const maxDim = 200;
+            const ratio = Math.min(maxDim / bmp.width, maxDim / bmp.height, 1);
+            const w = Math.round(bmp.width * ratio);
+            const h = Math.round(bmp.height * ratio);
+            const canvas = new OffscreenCanvas(w, h);
+            canvas.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
+            imageBlob = await canvas.convertToBlob({ type: "image/png" });
+            console.log(`✅ Resized to ${w}x${h}, ${(imageBlob.size / 1024).toFixed(0)}KB`);
           }
         } catch (dlErr) {
-          console.error(`⚠️ Failed to download image for ${record.user_id}:`, dlErr);
+          console.error(`⚠️ Download/resize failed for ${record.user_id}:`, dlErr);
         }
 
         const formData = new FormData();
         formData.append("api_key", faceppApiKey);
         formData.append("api_secret", faceppApiSecret);
         if (imageBlob) {
-          formData.append("image_file", imageBlob, "photo.jpg");
+          formData.append("image_file", imageBlob, "photo.png");
         } else {
           formData.append("image_url", photoUrl);
         }
