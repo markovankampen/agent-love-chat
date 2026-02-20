@@ -89,5 +89,8 @@ verify_jwt = false
 [functions.process-reupload]
 verify_jwt = false
 
+[functions.export-photo-links]
+verify_jwt = false
+
 [analytics]
 enabled = false
