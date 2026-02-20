@@ -96,26 +96,40 @@ serve(async (req) => {
       console.log(`🔄 Retrying analysis for user ${record.user_id}...`);
 
       try {
-        // Download and resize image to stay under Face++ 2MB limit
+        // Download image and send as file to avoid IMAGE_FILE_TOO_LARGE with URL
         let imageBlob: Blob | null = null;
         try {
           const imgResp = await fetch(photoUrl);
           if (imgResp.ok) {
             const bytes = new Uint8Array(await imgResp.arrayBuffer());
-            console.log(`📐 Original: ${(bytes.length / 1024).toFixed(0)}KB, resizing to 200px...`);
-            const srcBlob = new Blob([bytes], { type: "image/jpeg" });
-            const bmp = await createImageBitmap(srcBlob);
-            const maxDim = 200;
-            const ratio = Math.min(maxDim / bmp.width, maxDim / bmp.height, 1);
-            const w = Math.round(bmp.width * ratio);
-            const h = Math.round(bmp.height * ratio);
-            const canvas = new OffscreenCanvas(w, h);
-            canvas.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
-            imageBlob = await canvas.convertToBlob({ type: "image/png" });
-            console.log(`✅ Resized to ${w}x${h}, ${(imageBlob.size / 1024).toFixed(0)}KB`);
+            const sizeKB = bytes.length / 1024;
+            console.log(`📐 Original: ${sizeKB.toFixed(0)}KB`);
+            
+            if (sizeKB > 1800) {
+              // Too large, try to resize via OffscreenCanvas (Deno only supports PNG input)
+              try {
+                const srcBlob = new Blob([bytes], { type: "image/png" });
+                const bmp = await createImageBitmap(srcBlob);
+                const maxDim = 400;
+                const ratio = Math.min(maxDim / bmp.width, maxDim / bmp.height, 1);
+                const w = Math.round(bmp.width * ratio);
+                const h = Math.round(bmp.height * ratio);
+                const canvas = new OffscreenCanvas(w, h);
+                canvas.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
+                imageBlob = await canvas.convertToBlob({ type: "image/png" });
+                console.log(`✅ Resized to ${w}x${h}, ${(imageBlob.size / 1024).toFixed(0)}KB`);
+              } catch (resizeErr) {
+                console.log(`⚠️ Resize failed, sending original as file: ${resizeErr}`);
+                imageBlob = new Blob([bytes], { type: "image/jpeg" });
+              }
+            } else {
+              // Under 2MB, send as-is
+              imageBlob = new Blob([bytes], { type: "image/jpeg" });
+              console.log(`✅ Under 2MB, sending as file directly`);
+            }
           }
         } catch (dlErr) {
-          console.error(`⚠️ Download/resize failed for ${record.user_id}:`, dlErr);
+          console.error(`⚠️ Download failed for ${record.user_id}:`, dlErr);
         }
 
         const formData = new FormData();
