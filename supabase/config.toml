@@ -92,5 +92,8 @@ verify_jwt = false
 [functions.export-photo-links]
 verify_jwt = false
 
+[functions.send-photo-reupload-batch]
+verify_jwt = false
+
 [analytics]
 enabled = false

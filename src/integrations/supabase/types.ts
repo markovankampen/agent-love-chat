@@ -225,6 +225,36 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_reupload_emails: {
+        Row: {
+          email: string
+          error_message: string | null
+          id: string
+          reupload_token: string | null
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          email: string
+          error_message?: string | null
+          id?: string
+          reupload_token?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          email?: string
+          error_message?: string | null
+          id?: string
+          reupload_token?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       photo_reupload_tokens: {
         Row: {
           created_at: string

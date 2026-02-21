@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList, Pause, Play, RotateCcw, BellOff, Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Heart, Users, Activity, MessageCircle, TrendingUp, Eye, LogOut, Sparkles, UserPlus, Clock, Camera, Trash2, Shield, ClipboardList, Pause, Play, RotateCcw, BellOff, Search, ChevronLeft, ChevronRight, Download, Mail, Send } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -124,6 +124,17 @@ export default function Admin() {
   const [userSearch, setUserSearch] = useState("");
   const [userPage, setUserPage] = useState(0);
   const [exportingLinks, setExportingLinks] = useState(false);
+  const [batchEmailStats, setBatchEmailStats] = useState<{
+    totalMissingPhotos: number;
+    totalAlreadyEmailed: number;
+    remaining: number;
+  } | null>(null);
+  const [batchEmailResult, setBatchEmailResult] = useState<{
+    attempted: number;
+    sent: number;
+    failed: number;
+  } | null>(null);
+  const [sendingBatch, setSendingBatch] = useState(false);
   const USERS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -256,6 +267,78 @@ export default function Admin() {
       toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setExportingLinks(false);
+    }
+  }
+
+  async function fetchBatchEmailStats() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      // Quick stats call with batchSize=0 to just get counts
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-photo-reupload-batch`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ batchSize: 0 }),
+        }
+      );
+      const result = await res.json();
+      if (result.totalMissingPhotos !== undefined) {
+        setBatchEmailStats({
+          totalMissingPhotos: result.totalMissingPhotos,
+          totalAlreadyEmailed: result.totalAlreadyEmailed,
+          remaining: result.remaining,
+        });
+      }
+    } catch (e) {
+      console.error("Error fetching batch email stats:", e);
+    }
+  }
+
+  async function handleSendBatch(batchSize: number) {
+    setSendingBatch(true);
+    setBatchEmailResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-photo-reupload-batch`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ batchSize }),
+        }
+      );
+      const result = await res.json();
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      setBatchEmailResult({
+        attempted: result.attempted,
+        sent: result.sent,
+        failed: result.failed,
+      });
+      setBatchEmailStats({
+        totalMissingPhotos: result.totalMissingPhotos,
+        totalAlreadyEmailed: result.totalAlreadyEmailed,
+        remaining: result.remaining,
+      });
+      toast({
+        title: "Batch verzonden",
+        description: `${result.sent} verzonden, ${result.failed} mislukt van ${result.attempted} pogingen.`,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Batch send failed";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setSendingBatch(false);
     }
   }
 
@@ -635,6 +718,88 @@ export default function Admin() {
                 );
               })}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Batch Photo Reupload Emails */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" /> Photo Reupload Email Batches
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={fetchBatchEmailStats} disabled={sendingBatch}>
+              Refresh Stats
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {batchEmailStats ? (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 rounded-lg bg-muted">
+                  <p className="text-2xl font-bold">{batchEmailStats.totalMissingPhotos}</p>
+                  <p className="text-xs text-muted-foreground">Missing Photos</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted">
+                  <p className="text-2xl font-bold">{batchEmailStats.totalAlreadyEmailed}</p>
+                  <p className="text-xs text-muted-foreground">Already Emailed</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-muted">
+                  <p className="text-2xl font-bold">{batchEmailStats.remaining}</p>
+                  <p className="text-xs text-muted-foreground">Remaining</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Click "Refresh Stats" to load current numbers.</p>
+            )}
+
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleSendBatch(10)}
+                disabled={sendingBatch || (batchEmailStats?.remaining === 0)}
+              >
+                <Send className="h-4 w-4 mr-1" />
+                {sendingBatch ? "Sending..." : "Send 10"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleSendBatch(50)}
+                disabled={sendingBatch || (batchEmailStats?.remaining === 0)}
+              >
+                <Send className="h-4 w-4 mr-1" />
+                {sendingBatch ? "Sending..." : "Send 50"}
+              </Button>
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => handleSendBatch(batchEmailStats?.remaining || 500)}
+                disabled={sendingBatch || (batchEmailStats?.remaining === 0)}
+              >
+                <Send className="h-4 w-4 mr-1" />
+                {sendingBatch ? "Sending..." : `Send Remaining (${batchEmailStats?.remaining ?? "?"})`}
+              </Button>
+            </div>
+
+            {batchEmailResult && (
+              <div className="border rounded-lg p-4 bg-card space-y-2">
+                <p className="font-semibold text-sm">Last Batch Result:</p>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p className="text-lg font-bold">{batchEmailResult.attempted}</p>
+                    <p className="text-xs text-muted-foreground">Attempted</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-primary">{batchEmailResult.sent}</p>
+                    <p className="text-xs text-muted-foreground">Sent</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-destructive">{batchEmailResult.failed}</p>
+                    <p className="text-xs text-muted-foreground">Failed</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
