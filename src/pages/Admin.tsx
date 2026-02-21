@@ -135,6 +135,12 @@ export default function Admin() {
     failed: number;
   } | null>(null);
   const [sendingBatch, setSendingBatch] = useState(false);
+  const [reuploadEmailLogs, setReuploadEmailLogs] = useState<{
+    id: string; user_id: string; email: string; sent_at: string | null; status: string; error_message: string | null; reupload_token: string | null;
+  }[]>([]);
+  const [showEmailLogs, setShowEmailLogs] = useState(false);
+  const [emailLogPage, setEmailLogPage] = useState(0);
+  const EMAIL_LOGS_PER_PAGE = 15;
   const USERS_PER_PAGE = 10;
 
   useEffect(() => {
@@ -299,6 +305,23 @@ export default function Admin() {
     }
   }
 
+  async function fetchReuploadEmailLogs() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: result, error } = await supabase.functions.invoke("admin-data", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { action: "get_reupload_email_logs" },
+      });
+      if (error) throw error;
+      setReuploadEmailLogs(result.logs || []);
+      setShowEmailLogs(true);
+    } catch (e) {
+      toast({ title: "Error loading email logs", variant: "destructive" });
+    }
+  }
+
   async function handleSendBatch(batchSize: number) {
     setSendingBatch(true);
     setBatchEmailResult(null);
@@ -361,6 +384,7 @@ export default function Admin() {
   const liveUsers = activeUsers.filter(u => u.is_online).length;
   const today = new Date().toDateString();
   const newToday = profiles.filter(p => p.created_at && new Date(p.created_at).toDateString() === today).length;
+  const missingPhotosCount = profiles.filter(p => !p.photo_url || p.photo_url.trim() === "").length;
   const totalMessages = data.tables.conversations?.count || 0;
   const totalMatches = matches.length;
   const pendingMatches = matches.filter(m => m.status === "pending").length;
@@ -462,11 +486,12 @@ export default function Admin() {
         </div>
 
         {/* Stat Cards Row 2 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard icon={<Heart className="h-5 w-5 text-destructive" />} value={totalMatches} label="Total Matches" />
           <StatCard icon={<Clock className="h-5 w-5 text-destructive" />} value={pendingMatches} label="Pending Matches" />
           <StatCard icon={<TrendingUp className="h-5 w-5 text-primary" />} value={`${matchRate}%`} label="Match Rate" />
           <StatCard icon={<Eye className="h-5 w-5 text-primary" />} value={declinedMatches} label="Declined" />
+          <StatCard icon={<Camera className="h-5 w-5 text-destructive" />} value={missingPhotosCount} label="Missing Photos" />
         </div>
 
         {/* Recent Profiles */}
@@ -799,6 +824,76 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Photo Reupload Email Logs */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" /> Photo Reupload Email Log
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={fetchReuploadEmailLogs}>
+              {showEmailLogs ? "Refresh Log" : "Load Log"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {!showEmailLogs ? (
+              <p className="text-sm text-muted-foreground">Click "Load Log" to view all sent reupload emails.</p>
+            ) : reuploadEmailLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No reupload emails sent yet.</p>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>EMAIL</TableHead>
+                      <TableHead>STATUS</TableHead>
+                      <TableHead>SENT AT</TableHead>
+                      <TableHead>ERROR</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reuploadEmailLogs
+                      .slice(emailLogPage * EMAIL_LOGS_PER_PAGE, (emailLogPage + 1) * EMAIL_LOGS_PER_PAGE)
+                      .map(log => (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-sm">{log.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={log.status === "sent" ? "default" : "destructive"}>
+                              {log.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {log.sent_at ? new Date(log.sent_at).toLocaleString() : "—"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            {log.error_message || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+                {reuploadEmailLogs.length > EMAIL_LOGS_PER_PAGE && (
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      {reuploadEmailLogs.length} total entries
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" disabled={emailLogPage === 0} onClick={() => setEmailLogPage(p => p - 1)}>
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        Page {emailLogPage + 1} of {Math.ceil(reuploadEmailLogs.length / EMAIL_LOGS_PER_PAGE)}
+                      </span>
+                      <Button variant="outline" size="sm" disabled={emailLogPage >= Math.ceil(reuploadEmailLogs.length / EMAIL_LOGS_PER_PAGE) - 1} onClick={() => setEmailLogPage(p => p + 1)}>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
