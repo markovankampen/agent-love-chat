@@ -65,6 +65,9 @@ enable_signup = false
 enable_confirmations = false
 
 # Edge Functions Configuration
+[functions.admin-data]
+verify_jwt = false
+
 [functions.sync-to-external]
 verify_jwt = false
 
