@@ -278,6 +278,14 @@ serve(async (req) => {
         );
       }
 
+      if (action === "get_reupload_email_logs") {
+        const logs = await fetchAllRows(supabaseAdmin, "photo_reupload_emails", "*", "sent_at");
+        return new Response(
+          JSON.stringify({ logs }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(JSON.stringify({ error: "Unknown action" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
