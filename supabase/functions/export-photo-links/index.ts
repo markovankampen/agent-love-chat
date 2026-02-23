@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse optional domain from body
-    let baseDomain = "https://agent-love-chat.lovable.app";
+    let baseDomain = "https://indebuurtontmoet.nl";
     try {
       const body = await req.json();
       if (body.redirectDomain) {
