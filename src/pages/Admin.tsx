@@ -135,6 +135,11 @@ export default function Admin() {
     failed: number;
   } | null>(null);
   const [sendingBatch, setSendingBatch] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState<{
+    attempted: number; sent: number; failed: number;
+    results?: Array<{ email: string; status: string; error?: string }>;
+  } | null>(null);
   const [reuploadEmailLogs, setReuploadEmailLogs] = useState<{
     id: string; user_id: string; email: string; sent_at: string | null; status: string; error_message: string | null; reupload_token: string | null;
   }[]>([]);
@@ -362,6 +367,43 @@ export default function Admin() {
       toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setSendingBatch(false);
+    }
+  }
+
+  async function handleSendTestEmail() {
+    setSendingTest(true);
+    setTestEmailResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-photo-reupload-batch`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ testMode: true }),
+        }
+      );
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+      setTestEmailResult({
+        attempted: result.attempted,
+        sent: result.sent,
+        failed: result.failed,
+        results: result.results,
+      });
+      toast({
+        title: "Test emails verzonden",
+        description: `${result.sent} verzonden, ${result.failed} mislukt van ${result.attempted} test adressen.`,
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Test send failed";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setSendingTest(false);
     }
   }
 
@@ -776,12 +818,22 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground">Click "Refresh Stats" to load current numbers.</p>
             )}
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleSendTestEmail}
+                disabled={sendingTest || sendingBatch}
+              >
+                <Mail className="h-4 w-4 mr-1" />
+                {sendingTest ? "Sending Test..." : "Send Test Emails"}
+              </Button>
+              <div className="w-px h-6 bg-border" />
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => handleSendBatch(10)}
-                disabled={sendingBatch || (batchEmailStats?.remaining === 0)}
+                disabled={sendingBatch || sendingTest || (batchEmailStats?.remaining === 0)}
               >
                 <Send className="h-4 w-4 mr-1" />
                 {sendingBatch ? "Sending..." : "Send 10"}
@@ -790,7 +842,7 @@ export default function Admin() {
                 size="sm"
                 variant="outline"
                 onClick={() => handleSendBatch(50)}
-                disabled={sendingBatch || (batchEmailStats?.remaining === 0)}
+                disabled={sendingBatch || sendingTest || (batchEmailStats?.remaining === 0)}
               >
                 <Send className="h-4 w-4 mr-1" />
                 {sendingBatch ? "Sending..." : "Send 50"}
@@ -799,12 +851,27 @@ export default function Admin() {
                 size="sm"
                 variant="default"
                 onClick={() => handleSendBatch(batchEmailStats?.remaining || 500)}
-                disabled={sendingBatch || (batchEmailStats?.remaining === 0)}
+                disabled={sendingBatch || sendingTest || (batchEmailStats?.remaining === 0)}
               >
                 <Send className="h-4 w-4 mr-1" />
                 {sendingBatch ? "Sending..." : `Send Remaining (${batchEmailStats?.remaining ?? "?"})`}
               </Button>
             </div>
+
+            {testEmailResult && (
+              <div className="border rounded-lg p-4 bg-card space-y-2">
+                <p className="font-semibold text-sm">Test Email Result:</p>
+                <div className="space-y-1">
+                  {testEmailResult.results?.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <Badge variant={r.status === "sent" ? "default" : "destructive"} className="text-xs">{r.status}</Badge>
+                      <span className="text-muted-foreground">{r.email}</span>
+                      {r.error && <span className="text-destructive text-xs">({r.error})</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {batchEmailResult && (
               <div className="border rounded-lg p-4 bg-card space-y-2">
