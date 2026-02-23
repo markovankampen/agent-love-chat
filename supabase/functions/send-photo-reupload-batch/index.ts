@@ -95,7 +95,7 @@ async function sendEmailWithRetry(
       const { data: emailData, error: emailError } = await resend.emails.send({
         from: "Matchmaker Flori <info@matchmakerflori.nl>",
         to: [to],
-        subject: "Vul je account aan — Matchmaker Flori",
+        subject: "Je account is nog niet compleet – actie nodig 💘",
         html,
       });
       if (emailError) {
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
     if (testMode) {
       console.log("=== TEST MODE: Sending to test addresses ===");
       const resend = new Resend(resendApiKey);
-      const baseUrl = "https://agent-love-chat.lovable.app";
+      const baseUrl = "https://indebuurtontmoet.nl";
       const results: Array<{ email: string; status: string; error?: string }> = [];
       let sentCount = 0;
       let failedCount = 0;
@@ -268,7 +268,7 @@ Deno.serve(async (req) => {
     console.log(`Sending to ${usersToEmail.length} users (${remaining} remaining total)`);
 
     const resend = new Resend(resendApiKey);
-    const baseUrl = "https://agent-love-chat.lovable.app";
+    const baseUrl = "https://indebuurtontmoet.nl";
     let sentCount = 0;
     let failedCount = 0;
     const results: Array<{ userId: string; email: string; status: string; error?: string }> = [];
