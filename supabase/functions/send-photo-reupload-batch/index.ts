@@ -228,8 +228,7 @@ Deno.serve(async (req) => {
 
     const { data: eligibleProfiles, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, first_name, photo_url, custom_email_verified")
-      .eq("custom_email_verified", true)
+      .select("id, email, first_name, photo_url")
       .or("photo_url.is.null,photo_url.eq.");
 
     if (profileError) throw profileError;
