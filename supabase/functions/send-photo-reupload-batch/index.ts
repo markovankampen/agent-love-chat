@@ -245,7 +245,7 @@ Deno.serve(async (req) => {
     const emailedUserIds = new Set((alreadyEmailed || []).map((r: any) => r.user_id));
     const totalAlreadyEmailed = emailedUserIds.size;
     const totalMissingPhotos = eligibleProfiles.length;
-    const eligibleToEmail = eligibleProfiles.filter((p) => !emailedUserIds.has(p.id) && p.email);
+    const eligibleToEmail = eligibleProfiles.filter((p) => !emailedUserIds.has(p.id) && p.email && !p.email.endsWith('@guest.com'));
     const remaining = eligibleToEmail.length;
 
     if (statsOnly) {
