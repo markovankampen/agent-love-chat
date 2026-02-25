@@ -47,7 +47,9 @@ const Auth = () => {
           throw error;
         }
 
-        navigate("/home");
+        // Route admins to /admin, others to /home or profile setup
+        const route = await getPostAuthRoute(data.user!.id);
+        navigate(route);
 
         toast({
           title: "Welkom terug!",

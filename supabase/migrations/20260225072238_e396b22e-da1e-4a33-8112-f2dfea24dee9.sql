@@ -1,0 +1,1 @@
+DELETE FROM photo_reupload_emails WHERE status = 'failed';
