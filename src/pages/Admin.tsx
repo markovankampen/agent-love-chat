@@ -532,7 +532,7 @@ export default function Admin() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={<Heart className="h-5 w-5 text-destructive" />} value={totalMatches} label="Total Matches" />
           <StatCard icon={<TrendingUp className="h-5 w-5 text-primary" />} value={`${matchRate}%`} label="Match Rate" />
-          <StatCard icon={<Eye className="h-5 w-5 text-primary" />} value={completedProfiles.length} label="Completed Profiles" />
+          <StatCard icon={<UserPlus className="h-5 w-5 text-primary" />} value={weeklySignups.reduce((sum, d) => sum + d.signups, 0)} label="Weekly Signups" />
           <StatCard icon={<Camera className="h-5 w-5 text-destructive" />} value={missingPhotosCount} label="Missing Photos" />
         </div>
 
