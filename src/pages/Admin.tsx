@@ -431,6 +431,10 @@ export default function Admin() {
   const missingPhotosCount = profiles.filter(p => !p.photo_url || p.photo_url.trim() === "").length;
   const totalMessages = data.tables.conversations?.count || 0;
   const totalMatches = matches.length;
+  const matchedUserIds = new Set(matches.flatMap(m => [m.user_id, m.matched_user_id]));
+  const matchedUsers = matchedUserIds.size;
+  const unmatchedUsers = Math.max(0, totalUsers - matchedUsers);
+  const matchRate = totalUsers > 0 ? ((matchedUsers / totalUsers) * 100).toFixed(1) : "0.0";
   const completedProfiles = profiles.filter(p => p.matching_complete);
 
   // Age distribution - exclude unknown
@@ -458,6 +462,10 @@ export default function Admin() {
   ];
 
   // Match activity
+  const matchActivityData = [
+    { name: "Matched", value: matchedUsers, pct: totalUsers > 0 ? ((matchedUsers / totalUsers) * 100).toFixed(1) : "0.0", color: "hsl(150, 60%, 45%)" },
+    { name: "Unmatched", value: unmatchedUsers, pct: totalUsers > 0 ? ((unmatchedUsers / totalUsers) * 100).toFixed(1) : "0.0", color: "hsl(35, 90%, 55%)" },
+  ];
 
   // Match pairs with profile lookup
   const profileMap = new Map(profiles.map(p => [p.id, p]));
@@ -521,9 +529,10 @@ export default function Admin() {
         </div>
 
         {/* Stat Cards Row 2 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard icon={<Heart className="h-5 w-5 text-destructive" />} value={totalMatches} label="Total Matches" />
-          <StatCard icon={<TrendingUp className="h-5 w-5 text-primary" />} value={completedProfiles.length} label="Completed Profiles" />
+          <StatCard icon={<TrendingUp className="h-5 w-5 text-primary" />} value={`${matchRate}%`} label="Match Rate" />
+          <StatCard icon={<Eye className="h-5 w-5 text-primary" />} value={completedProfiles.length} label="Completed Profiles" />
           <StatCard icon={<Camera className="h-5 w-5 text-destructive" />} value={missingPhotosCount} label="Missing Photos" />
         </div>
 
@@ -552,7 +561,7 @@ export default function Admin() {
           <PieChartCard title="Age Distribution" data={ageData} />
           <PieChartCard title="Gender Ratio" data={genderData} />
           <PieChartCard title="User Engagement" data={engagementData} />
-          
+          <PieChartCard title="Match Activity" data={matchActivityData} />
         </div>
 
         {/* Match Pairs & Weekly Signups */}
