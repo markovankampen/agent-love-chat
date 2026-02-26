@@ -145,8 +145,10 @@ export default function Admin() {
   }[]>([]);
   const [showEmailLogs, setShowEmailLogs] = useState(false);
   const [emailLogPage, setEmailLogPage] = useState(0);
+  const [matchPage, setMatchPage] = useState(0);
   const EMAIL_LOGS_PER_PAGE = 15;
   const USERS_PER_PAGE = 10;
+  const MATCHES_PER_PAGE = 10;
 
   useEffect(() => {
     checkAdminAndFetch();
@@ -572,9 +574,24 @@ export default function Admin() {
               <Badge variant="outline">{matches.length} matches</Badge>
             </CardHeader>
             <CardContent className="space-y-3">
-              {matchPairs.slice(0, 6).map(mp => (
+              {matchPairs.slice(matchPage * MATCHES_PER_PAGE, (matchPage + 1) * MATCHES_PER_PAGE).map(mp => (
                 <MatchPairCard key={mp.id} mp={mp} />
               ))}
+              {matches.length > MATCHES_PER_PAGE && (
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Page {matchPage + 1} of {Math.ceil(matches.length / MATCHES_PER_PAGE)}
+                  </p>
+                  <div className="flex gap-1">
+                    <Button variant="outline" size="sm" disabled={matchPage === 0} onClick={() => setMatchPage(p => p - 1)}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={(matchPage + 1) * MATCHES_PER_PAGE >= matches.length} onClick={() => setMatchPage(p => p + 1)}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
