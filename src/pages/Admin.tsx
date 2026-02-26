@@ -148,7 +148,7 @@ export default function Admin() {
   const [matchPage, setMatchPage] = useState(0);
   const EMAIL_LOGS_PER_PAGE = 15;
   const USERS_PER_PAGE = 10;
-  const MATCHES_PER_PAGE = 6;
+  const MATCHES_PER_PAGE = 10;
 
   useEffect(() => {
     checkAdminAndFetch();
@@ -431,9 +431,10 @@ export default function Admin() {
   const missingPhotosCount = profiles.filter(p => !p.photo_url || p.photo_url.trim() === "").length;
   const totalMessages = data.tables.conversations?.count || 0;
   const totalMatches = matches.length;
-  const completedMatches = matches.filter(m => m.status === "completed").length;
   const pendingMatches = matches.filter(m => m.status === "pending").length;
-  const matchRate = totalMatches > 0 ? ((completedMatches / totalMatches) * 100).toFixed(1) : "0.0";
+  const acceptedMatches = matches.filter(m => m.status === "accepted").length;
+  const declinedMatches = matches.filter(m => m.status === "declined").length;
+  const matchRate = totalMatches > 0 ? ((acceptedMatches / totalMatches) * 100).toFixed(1) : "0.0";
   const completedProfiles = profiles.filter(p => p.matching_complete);
 
   // Age distribution - exclude unknown
@@ -462,8 +463,9 @@ export default function Admin() {
 
   // Match activity
   const matchActivityData = [
-    { name: "Completed", value: completedMatches, pct: totalMatches > 0 ? ((completedMatches / totalMatches) * 100).toFixed(1) : "0.0", color: "hsl(150, 60%, 45%)" },
+    { name: "Accepted", value: acceptedMatches, pct: totalMatches > 0 ? ((acceptedMatches / totalMatches) * 100).toFixed(1) : "0.0", color: "hsl(150, 60%, 45%)" },
     { name: "Pending", value: pendingMatches, pct: totalMatches > 0 ? ((pendingMatches / totalMatches) * 100).toFixed(1) : "0.0", color: "hsl(35, 90%, 55%)" },
+    { name: "Declined", value: declinedMatches, pct: totalMatches > 0 ? ((declinedMatches / totalMatches) * 100).toFixed(1) : "0.0", color: "hsl(0, 84%, 60%)" },
   ];
 
   // Match pairs with profile lookup
@@ -528,10 +530,11 @@ export default function Admin() {
         </div>
 
         {/* Stat Cards Row 2 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatCard icon={<Heart className="h-5 w-5 text-destructive" />} value={totalMatches} label="Total Matches" />
-          <StatCard icon={<Sparkles className="h-5 w-5 text-primary" />} value={completedMatches} label="Completed Matches" />
           <StatCard icon={<Clock className="h-5 w-5 text-destructive" />} value={pendingMatches} label="Pending Matches" />
+          <StatCard icon={<TrendingUp className="h-5 w-5 text-primary" />} value={`${matchRate}%`} label="Match Rate" />
+          <StatCard icon={<Eye className="h-5 w-5 text-primary" />} value={declinedMatches} label="Declined" />
           <StatCard icon={<Camera className="h-5 w-5 text-destructive" />} value={missingPhotosCount} label="Missing Photos" />
         </div>
 
