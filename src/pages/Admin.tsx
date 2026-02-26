@@ -146,10 +146,11 @@ export default function Admin() {
   const [showEmailLogs, setShowEmailLogs] = useState(false);
   const [emailLogPage, setEmailLogPage] = useState(0);
   const [matchPage, setMatchPage] = useState(0);
+  const [faceAnalysisPage, setFaceAnalysisPage] = useState(0);
   const EMAIL_LOGS_PER_PAGE = 15;
   const USERS_PER_PAGE = 10;
   const MATCHES_PER_PAGE = 6;
-
+  const FACE_ANALYSIS_PER_PAGE = 20;
   useEffect(() => {
     checkAdminAndFetch();
   }, []);
@@ -773,7 +774,7 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {faceAnalyses.slice(0, 18).map(fa => {
+              {faceAnalyses.slice(faceAnalysisPage * FACE_ANALYSIS_PER_PAGE, (faceAnalysisPage + 1) * FACE_ANALYSIS_PER_PAGE).map(fa => {
                 const profile = profileMap.get(fa.user_id);
                 const name = profile?.first_name || profile?.email?.split("@")[0] || "User";
                 return (
@@ -800,6 +801,21 @@ export default function Admin() {
                 );
               })}
             </div>
+            {faceAnalyses.length > FACE_ANALYSIS_PER_PAGE && (
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Page {faceAnalysisPage + 1} of {Math.ceil(faceAnalyses.length / FACE_ANALYSIS_PER_PAGE)}
+                </p>
+                <div className="flex gap-1">
+                  <Button variant="outline" size="sm" disabled={faceAnalysisPage === 0} onClick={() => setFaceAnalysisPage(p => p - 1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={(faceAnalysisPage + 1) * FACE_ANALYSIS_PER_PAGE >= faceAnalyses.length} onClick={() => setFaceAnalysisPage(p => p + 1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
