@@ -245,12 +245,12 @@ async function processMatching(userId: string) {
       await supabase
         .from("matches")
         .update({
-          status: "notified",
+          status: "completed",
           email_sent_at: new Date().toISOString(),
         })
         .eq("id", insertedMatch.id);
       console.log("Background: Email sent and match updated");
-      triggerSync("matches", "UPDATE", { ...insertedMatch, status: "notified", email_sent_at: new Date().toISOString() } as Record<string, unknown>);
+      triggerSync("matches", "UPDATE", { ...insertedMatch, status: "completed", email_sent_at: new Date().toISOString() } as Record<string, unknown>);
     }
 
     // Mark user's matching as complete
