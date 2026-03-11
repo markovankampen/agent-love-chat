@@ -16,7 +16,7 @@ const Verify = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [resending, setResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
